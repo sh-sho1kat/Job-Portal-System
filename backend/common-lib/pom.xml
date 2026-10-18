@@ -7,7 +7,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
-        <groupId>com.sho1kat.job-portal</groupId>
+        <groupId>com.sho1kat</groupId>
         <artifactId>Job-Portal-System</artifactId>
         <version>0.0.1-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>

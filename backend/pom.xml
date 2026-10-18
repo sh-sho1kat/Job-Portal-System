@@ -9,7 +9,7 @@
         <version>4.1.1</version>
         <relativePath/>
     </parent>
-    <groupId>com.sho1kat.job-portal</groupId>
+    <groupId>com.sho1kat</groupId>
     <artifactId>Job-Portal-System</artifactId>
     <version>0.0.1-SNAPSHOT</version>
     <name>Job Portal System</name>
