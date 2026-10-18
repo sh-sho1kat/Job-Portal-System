@@ -1,0 +1,19 @@
+# IntelliJ IDEA
+.idea/
+*.iml
+
+# Maven
+**/target/
+
+# Node.js
+**/node_modules/
+frontend/dist/
+frontend/build/
+
+# Environment secrets
+.env
+.env.*
+!.env.example
+
+# Logs
+*.log
