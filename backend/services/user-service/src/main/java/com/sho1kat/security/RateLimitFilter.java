@@ -4,6 +4,8 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import lombok.RequiredArgsConstructor;
+import org.jspecify.annotations.NonNull;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.filter.OncePerRequestFilter;
@@ -19,6 +21,7 @@ import java.util.concurrent.atomic.AtomicLong;
  * (login / register / refresh brute-force protection).
  * In-memory on purpose: a shared limiter belongs in the API gateway once one exists.
  */
+@RequiredArgsConstructor
 public class RateLimitFilter extends OncePerRequestFilter {
 
     private static final int MAX_TRACKED_CLIENTS = 10_000;
@@ -29,16 +32,10 @@ public class RateLimitFilter extends OncePerRequestFilter {
 
     private final ConcurrentHashMap<String, Window> counters = new ConcurrentHashMap<>();
 
-    public RateLimitFilter(String pathPrefix, long maxRequests, Duration window) {
-        this.pathPrefix = pathPrefix;
-        this.maxRequests = maxRequests;
-        this.window = window;
-    }
-
     @Override
     protected void doFilterInternal(HttpServletRequest request,
-                                    HttpServletResponse response,
-                                    FilterChain filterChain) throws ServletException, IOException {
+                                    @NonNull HttpServletResponse response,
+                                    @NonNull FilterChain filterChain) throws ServletException, IOException {
 
         if (!request.getRequestURI().startsWith(pathPrefix)) {
             filterChain.doFilter(request, response);
@@ -46,7 +43,6 @@ public class RateLimitFilter extends OncePerRequestFilter {
         }
 
         String clientKey = clientKey(request);
-        // loopback/unknown clients are still tracked; a null key only skips limiting
         if (clientKey == null) {
             filterChain.doFilter(request, response);
             return;
@@ -63,8 +59,6 @@ public class RateLimitFilter extends OncePerRequestFilter {
             response.setHeader(HttpHeaders.RETRY_AFTER, String.valueOf(retryAfter));
             return;
         }
-
-        // keep the map bounded in case of many distinct (possibly spoofed) source addresses
         if (counters.size() > MAX_TRACKED_CLIENTS) {
             counters.values().removeIf(w -> isStale(w));
         }
@@ -76,10 +70,6 @@ public class RateLimitFilter extends OncePerRequestFilter {
         return w.resetAt().isBefore(Instant.now());
     }
 
-    /**
-     * Prefers the gateway-supplied X-Forwarded-For hop; note that the first hop is
-     * client-controlled and must be trusted only when the service sits behind the gateway.
-     */
     private String clientKey(HttpServletRequest request) {
         String forwarded = request.getHeader("X-Forwarded-For");
         if (forwarded != null && !forwarded.isBlank()) {

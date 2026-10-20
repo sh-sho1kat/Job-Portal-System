@@ -20,7 +20,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 
-@Slf4j
 @Service
 @RequiredArgsConstructor
 public class UserServiceImpl implements UserService {
@@ -65,12 +64,9 @@ public class UserServiceImpl implements UserService {
         user.setStatus(request.status());
         user.setSuspendedAt(request.status() == UserStatus.SUSPENDED ? Instant.now() : null);
 
-        // a disabled account must not keep working sessions anywhere
         if (request.status() != UserStatus.ACTIVE) {
             refreshTokenRepository.revokeAllByUserId(id);
         }
-
-        log.info("User status changed: id={}, status={}", id, request.status());
         return userMapper.toResponse(userRepository.save(user));
     }
 
@@ -84,7 +80,6 @@ public class UserServiceImpl implements UserService {
         user.setDeletedAt(Instant.now());
         refreshTokenRepository.revokeAllByUserId(id); // a deleted account must not keep working sessions
         userRepository.save(user);
-        log.info("User soft-deleted: id={}", id);
     }
 
     private User findActiveUserOrThrow(Long id) {

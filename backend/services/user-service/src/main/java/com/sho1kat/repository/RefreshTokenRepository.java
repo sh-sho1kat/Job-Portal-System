@@ -19,10 +19,6 @@ public interface RefreshTokenRepository extends JpaRepository<RefreshToken, Long
     @Query("update RefreshToken t set t.revoked = true where t.user.id = :userId and t.revoked = false")
     int revokeAllByUserId(@Param("userId") Long userId);
 
-    /**
-     * Deletes only expired tokens: revoked rows stay until their own expiry so that
-     * reuse detection keeps working for every token that could still be presented.
-     */
     @Modifying
     @Query("delete from RefreshToken t where t.expiresAt < :cutoff")
     int deleteExpiredBefore(@Param("cutoff") Instant cutoff);

@@ -16,12 +16,6 @@ import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.time.Instant;
 import java.util.List;
-
-/**
- * Central REST error handling for user-service: every failure exits through here,
- * producing one consistent {@link ErrorResponse} shape - including the conversion,
- * routing and media-type errors Spring Framework throws before validation.
- */
 @Slf4j
 @RestControllerAdvice
 public class ApiExceptionHandler {
@@ -93,7 +87,6 @@ public class ApiExceptionHandler {
                 .body(new ErrorResponse(status.value(), status.getReasonPhrase(), message, details, Instant.now()));
     }
 
-    /** Uniform error payload for every REST failure. */
     public record ErrorResponse(
             int status,
             String error,
