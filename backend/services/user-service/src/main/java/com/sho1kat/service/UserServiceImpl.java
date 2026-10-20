@@ -1,4 +1,4 @@
-package com.sho1kat.service.impl;
+package com.sho1kat.service;
 
 import com.sho1kat.dto.user_service.request.UpdateUserRequest;
 import com.sho1kat.dto.user_service.request.UpdateUserStatusRequest;
