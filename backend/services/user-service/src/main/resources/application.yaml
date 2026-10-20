@@ -1,5 +1,6 @@
 server:
   port: 5001
+
 spring:
   application:
     name: user-service
@@ -11,7 +12,7 @@ spring:
     driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:
-      ddl-auto: ${DDL_AUTO:update}   # default is for dev; set validate/none for production
+      ddl-auto: ${DDL_AUTO:update}
     show-sql: ${SHOW_SQL:true}
     properties:
       hibernate:
@@ -20,7 +21,7 @@ spring:
 
 app:
   jwt:
-    secret: ${JWT_SECRET}            # Base64, at least 32 bytes: openssl rand -base64 32
+    secret: ${JWT_SECRET}
     issuer: job-portal-user-service
     access-token-expiration-minutes: 15
     refresh-token-expiration-days: 7
