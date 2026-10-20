@@ -23,8 +23,11 @@ public record RegisterRequest(
 
         @NotBlank(message = "Password is required")
         @Size(min = 8, max = 64, message = "Password must be 8-64 characters")
-        @Pattern(regexp = "^(?=.*[A-Za-z])(?=.*\\d).+$",
-                message = "Password must contain at least one letter and one digit")
+        @Pattern(
+                regexp = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&]).+$",
+                message = "Password must contain at least one uppercase letter, " +
+                        "one lowercase letter, one digit, and one special character"
+        )
         String password,
 
         @Pattern(regexp = "^\\+?[0-9]{7,15}$", message = "Phone number is not valid")

@@ -43,12 +43,6 @@
                 <scope>import</scope>
             </dependency>
 
-<!--            <dependency>-->
-<!--                <groupId>com.sho1kat.job-portal</groupId>-->
-<!--                <artifactId>job-portal-common</artifactId>-->
-<!--                <version>${project.version}</version>-->
-<!--            </dependency>-->
-
             <dependency>
                 <groupId>io.jsonwebtoken</groupId>
                 <artifactId>jjwt-impl</artifactId>
@@ -59,7 +53,7 @@
                 <groupId>io.jsonwebtoken</groupId>
                 <artifactId>jjwt-api</artifactId>
                 <version>${jjwt.version}</version>
-                <scope>compile</scope>
+<!--                <scope>compile</scope>-->
             </dependency>
             <dependency>
                 <groupId>io.jsonwebtoken</groupId>

@@ -1,0 +1,432 @@
+{
+	"info": {
+		"_postman_id": "b1e2c3d4-5a6b-4c8d-9e0f-1a2b3c4d5e6f",
+		"name": "Job Portal System API",
+		"description": "Postman collection for all Job Portal System backend services.\n\n## Conventions\n- **One top-level folder per microservice** (e.g. `User Service`, `Job Service`, ...), one subfolder per controller.\n- **Collection variables** (see `Variables` tab):\n  - `baseUrl` — target host, defaults to `http://localhost:5001`\n  - `accessToken` / `refreshToken` — auto-saved by the `Login` and `Refresh` test scripts\n  - `userId` — the record used by `GET/PUT/PATCH/DELETE /api/users/{id}` requests\n- **Auth**: collection-level Bearer auth using `{{accessToken}}`; public requests override it with `No Auth`.\n- **Error shape**: every non-2xx response (except empty-body 401s from the security layer) is\n  `{\"status\":int,\"error\":str,\"message\":str,\"details\":array|null,\"timestamp\":str}`.\n\n## Extending\nWhen a new service/API is added, add a new top-level folder and follow the same conventions.\nSee `postman/README.md` in `common-lib`.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"auth": {
+		"type": "bearer",
+		"bearer": [
+			{
+				"key": "token",
+				"value": "{{accessToken}}",
+				"type": "string"
+			}
+		]
+	},
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "http://localhost:5001",
+			"type": "string"
+		},
+		{
+			"key": "accessToken",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "refreshToken",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "userId",
+			"value": "1",
+			"type": "string"
+		}
+	],
+	"item": [
+		{
+			"name": "User Service",
+			"description": "Authentication and user management APIs (port 5001).\n\nRoles: `ROLE_JOB_SEEKER`, `ROLE_EMPLOYER`, `ROLE_ADMIN`, `ROLE_SUPER_ADMIN`.\nUser statuses: `ACTIVE`, `INACTIVE`, `SUSPENDED`, `DELETED` (soft delete).",
+			"item": [
+				{
+					"name": "Auth",
+					"description": "Public authentication flows + authenticated password change.",
+					"item": [
+						{
+							"name": "Register",
+							"request": {
+								"auth": {
+									"type": "noauth"
+								},
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"firstName\": \"Shoikat\",\n  \"middleName\": null,\n  \"lastName\": \"Ahmed\",\n  \"email\": \"shoikat.new@example.com\",\n  \"password\": \"StrongPass123!\",\n  \"phoneNumber\": \"+8801712345678\",\n  \"userRole\": \"ROLE_JOB_SEEKER\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/api/auth/register",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"api",
+										"auth",
+										"register"
+									]
+								},
+								"description": "Create a new account.\n\n**Body** — `RegisterRequest`:\n- `firstName` (required, ≤50), `middleName` (optional, ≤50), `lastName` (required, ≤50)\n- `email` (required, valid email, ≤150, unique)\n- `password` (required, 8–64, needs upper+lower+digit+special `[@$!%*?&]`)\n- `phoneNumber` (optional, `+?[0-9]{7,15}`)\n- `userRole` (required): `ROLE_JOB_SEEKER` | `ROLE_EMPLOYER` | `ROLE_ADMIN` | `ROLE_SUPER_ADMIN`\n\n**Responses**\n- `201` → `UserResponse` (also saved to `{{registeredUserId}}`)\n- `400` → validation failed\n- `409` → email already registered"
+							},
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"type": "text/javascript",
+										"exec": [
+											"pm.test('201 Created', () => pm.response.to.have.status(201));",
+											"const body = pm.response.json();",
+											"if (body && body.id) pm.collectionVariables.set('registeredUserId', String(body.id));"
+										]
+									}
+								}
+							],
+							"response": []
+						},
+						{
+							"name": "Login",
+							"request": {
+								"auth": {
+									"type": "noauth"
+								},
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"email\": \"shoikat@example.com\",\n  \"password\": \"DemoPass123!\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/api/auth/login",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"api",
+										"auth",
+										"login"
+									]
+								},
+								"description": "Exchange credentials for a token pair.\n\n**Responses**\n- `200` → `AuthResponse` `{ accessToken, refreshToken, tokenType: \"Bearer\", expiresIn, user }` — tokens are auto-saved into `{{accessToken}}` / `{{refreshToken}}` / `{{userId}}`\n- `400` → validation failed\n- `401` → invalid credentials\n- `403` → account suspended or deleted\n\nDemo seeded accounts: `shoikat@example.com` (ADMIN), `tanvir.chowdhury@example.com` (SUPER_ADMIN), password `DemoPass123!`. 50 demo accounts `demo01…demo50.*@example.com` also exist (see `common-lib/postman/README.md`)."
+							},
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"type": "text/javascript",
+										"exec": [
+											"pm.test('200 OK', () => pm.response.to.have.status(200));",
+											"const body = pm.response.json();",
+											"if (body && body.accessToken) {",
+											"    pm.collectionVariables.set('accessToken', body.accessToken);",
+											"    pm.collectionVariables.set('refreshToken', body.refreshToken);",
+											"}",
+											"if (body && body.user && body.user.id) pm.collectionVariables.set('userId', String(body.user.id));"
+										]
+									}
+								}
+							],
+							"response": []
+						},
+						{
+							"name": "Refresh",
+							"request": {
+								"auth": {
+									"type": "noauth"
+								},
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/api/auth/refresh",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"api",
+										"auth",
+										"refresh"
+									]
+								},
+								"description": "Rotate a refresh token for a new token pair. The used token is revoked (single use); replaying a rotated token revokes the whole family.\n\n**Responses**\n- `200` → new `AuthResponse` (auto-saved, replacing the old pair)\n- `400` → blank token\n- `401` → unknown / expired / revoked / replayed token"
+							},
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"type": "text/javascript",
+										"exec": [
+											"pm.test('200 OK', () => pm.response.to.have.status(200));",
+											"const body = pm.response.json();",
+											"if (body && body.accessToken) {",
+											"    pm.collectionVariables.set('accessToken', body.accessToken);",
+											"    pm.collectionVariables.set('refreshToken', body.refreshToken);",
+											"}"
+										]
+									}
+								}
+							],
+							"response": []
+						},
+						{
+							"name": "Logout",
+							"request": {
+								"auth": {
+									"type": "noauth"
+								},
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/api/auth/logout",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"api",
+										"auth",
+										"logout"
+									]
+								},
+								"description": "Revoke one refresh token (idempotent — unknown tokens still return 204).\n\n**Responses**\n- `204` → token revoked (or was already unknown)\n- `400` → blank token"
+							},
+							"response": []
+						},
+						{
+							"name": "Change Password",
+							"request": {
+								"method": "PUT",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"currentPassword\": \"DemoPass123!\",\n  \"newPassword\": \"NewStrong456!\",\n  \"confirmPassword\": \"NewStrong456!\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/api/auth/me/password",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"api",
+										"auth",
+										"me",
+										"password"
+									]
+								},
+								"description": "Change the password of the authenticated user (Bearer token required).\n\n**Responses**\n- `204` → password changed\n- `400` → wrong current password, weak new password, or confirm-mismatch\n- `401` → not authenticated"
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Users",
+					"description": "User management. Self-access allowed for GET/PUT on your own id; everything else requires `ROLE_ADMIN` or `ROLE_SUPER_ADMIN`.",
+					"item": [
+						{
+							"name": "Get User By Id",
+							"request": {
+								"method": "GET",
+								"url": {
+									"raw": "{{baseUrl}}/api/users/{{userId}}",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"api",
+										"users",
+										"{{userId}}"
+									]
+								},
+								"description": "Fetch one user. A user may view their own record; any other record requires ADMIN / SUPER_ADMIN.\n\n**Responses**\n- `200` → `UserResponse`\n- `400` → non-numeric id\n- `401` → not authenticated\n- `403` → viewing someone else's record without an admin role\n- `404` → no such user"
+							},
+							"response": []
+						},
+						{
+							"name": "List Users",
+							"request": {
+								"method": "GET",
+								"url": {
+									"raw": "{{baseUrl}}/api/users?page=0&size=20&userRole=ROLE_JOB_SEEKER",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"api",
+										"users"
+									],
+									"query": [
+										{
+											"key": "page",
+											"value": "0",
+											"description": "0-based page index"
+										},
+										{
+											"key": "size",
+											"value": "20",
+											"description": "page size (default 20, capped at 2000)"
+										},
+										{
+											"key": "userRole",
+											"value": "ROLE_JOB_SEEKER",
+											"description": "optional filter: ROLE_JOB_SEEKER | ROLE_EMPLOYER | ROLE_ADMIN | ROLE_SUPER_ADMIN",
+											"disabled": true
+										}
+									]
+								},
+								"description": "Paged list of all users, newest first (admin only).\n\n**Responses**\n- `200` → Spring `Page<UserResponse>`\n- `401` → not authenticated\n- `403` → not ADMIN / SUPER_ADMIN"
+							},
+							"response": []
+						},
+						{
+							"name": "Update User",
+							"request": {
+								"method": "PUT",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"firstName\": \"Shoikat\",\n  \"middleName\": null,\n  \"lastName\": \"Ahmed\",\n  \"phoneNumber\": \"+8801712345678\",\n  \"profilePictureUrl\": null\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/api/users/{{userId}}",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"api",
+										"users",
+										"{{userId}}"
+									]
+								},
+								"description": "Update profile fields. A user may update their own profile; any other profile requires ADMIN / SUPER_ADMIN. Email, role and status are NOT editable here.\n\n**Body** — `UpdateUserRequest`: `firstName` (required, ≤50), `middleName` (optional, ≤50), `lastName` (required, ≤50), `phoneNumber` (optional), `profilePictureUrl` (optional, ≤255).\n\n**Responses**\n- `200` → updated `UserResponse`\n- `400` → validation failed\n- `403` → updating someone else's profile without an admin role\n- `404` → no such user"
+							},
+							"response": []
+						},
+						{
+							"name": "Update User Status",
+							"request": {
+								"method": "PATCH",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"status\": \"SUSPENDED\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/api/users/{{userId}}/status",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"api",
+										"users",
+										"{{userId}}",
+										"status"
+									]
+								},
+								"description": "Change a user's status (admin only). Suspending revokes all of the user's refresh tokens.\n\n**Body**: `status` = `ACTIVE` | `INACTIVE` | `SUSPENDED` | `DELETED`\n\n**Responses**\n- `200` → updated `UserResponse`\n- `400` → unknown status / null\n- `403` → not ADMIN / SUPER_ADMIN\n- `404` → no such user"
+							},
+							"response": []
+						},
+						{
+							"name": "Delete User",
+							"request": {
+								"method": "DELETE",
+								"url": {
+									"raw": "{{baseUrl}}/api/users/{{userId}}",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"api",
+										"users",
+										"{{userId}}"
+									]
+								},
+								"description": "Soft-delete a user (admin only): sets status to `DELETED` and revokes all refresh tokens.\n\n**Responses**\n- `204` → deleted\n- `403` → not ADMIN / SUPER_ADMIN\n- `404` → no such user"
+							},
+							"response": []
+						}
+					]
+				}
+			]
+		}
+	]
+}
