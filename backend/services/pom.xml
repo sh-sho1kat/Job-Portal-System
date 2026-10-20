@@ -20,6 +20,7 @@
 
     <modules>
         <module>user-service</module>
+        <module>company-service</module>
 <!--        <module>job-service</module>-->
 <!--        <module>application-service</module>-->
     </modules>
