@@ -8,12 +8,6 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
-
-/**
- * Housekeeping for refresh tokens: purges expired rows so the table does not
- * grow without bound. Runs in its own transaction; read path (token lookup)
- * is unaffected.
- */
 @Slf4j
 @Component
 @RequiredArgsConstructor

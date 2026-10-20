@@ -6,6 +6,8 @@ import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -15,6 +17,7 @@ import java.time.Instant;
 import java.util.Date;
 
 @Service
+@Getter
 public class JwtService {
 
     private final SecretKey key;
@@ -67,7 +70,4 @@ public class JwtService {
         return accessTokenTtl.toSeconds();
     }
 
-    public Duration getRefreshTokenTtl() {
-        return refreshTokenTtl;
-    }
 }

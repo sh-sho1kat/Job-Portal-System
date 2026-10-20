@@ -16,6 +16,9 @@ import com.sho1kat.repository.RefreshTokenRepository;
 import com.sho1kat.repository.UserRepository;
 import com.sho1kat.security.JwtService;
 import com.sho1kat.service.AuthService;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -33,20 +36,13 @@ import java.util.HexFormat;
 import java.util.Set;
 
 
-@Slf4j
 @Service
 @RequiredArgsConstructor
 public class AuthServiceImpl implements AuthService {
 
     private static final SecureRandom SECURE_RANDOM = new SecureRandom();
 
-    // computed once: a valid-format bcrypt hash of a known value, used only to burn the
-    // same BCrypt cost for unknown emails so response timing cannot enumerate accounts
-    private static final String DUMMY_HASH = new BCryptPasswordEncoder().encode("timing-equalizer");
-
-    // roles a user may self-select; privileged roles can only be granted by an admin
-    private static final Set<UserRole> SELF_REGISTRABLE_ROLES =
-            Set.of(UserRole.ROLE_JOB_SEEKER, UserRole.ROLE_EMPLOYER);
+    private static final Set<UserRole> PERMITTED_ROLES = Set.of(UserRole.ROLE_JOB_SEEKER, UserRole.ROLE_EMPLOYER);
 
     private final UserRepository userRepository;
     private final RefreshTokenRepository refreshTokenRepository;
@@ -57,42 +53,35 @@ public class AuthServiceImpl implements AuthService {
     @Override
     @Transactional
     public UserResponse register(RegisterRequest request) {
-        if (!SELF_REGISTRABLE_ROLES.contains(request.userRole())) {
-            throw ApiException.forbidden("This role cannot be assigned during registration");
-        }
-        if (userRepository.existsByEmailIgnoreCase(request.email().trim())) {
-            throw ApiException.conflict("Email is already registered");
-        }
+        validateUser(request.email().trim());
+        validateUserRole(request.userRole());
 
         User user = userMapper.toEntity(request, passwordEncoder.encode(request.password()));
         User saved = userRepository.save(user);
-        log.info("User created: id={}, role={}", saved.getId(), saved.getUserRole());
+
         return userMapper.toResponse(saved);
     }
 
     @Override
     @Transactional
     public AuthResponse login(LoginRequest request) {
-        // same error for unknown email and wrong password, so accounts cannot be enumerated
-        User user = userRepository.findByEmailIgnoreCase(request.email().trim()).orElse(null);
 
-        if (user == null) {
-            passwordEncoder.matches(request.password(), DUMMY_HASH); // keeps timing identical to a failed login
-            throw unauthorized("Invalid email or password");
-        }
-
-        if (!passwordEncoder.matches(request.password(), user.getPasswordHash())) {
-            throw unauthorized("Invalid email or password");
-        }
-
-        assertAccountUsable(user);
-
+        User user = authenticateUser(request.email(), request.password());
         user.setLastLoginAt(Instant.now());
-        log.info("User logged in: id={}", user.getId());
+
         return buildAuthResponse(user);
     }
 
-    // noRollbackFor: the "revoke all sessions" update below must survive the exception we throw after it
+    private User authenticateUser(@NotBlank(message = "Email is required") @Email(message = "Email is not valid") String email, @NotBlank(message = "Password is required") String password) {
+        User user = userRepository.findByEmailIgnoreCase(email)
+                .orElseThrow(() -> unauthorized("No User found with the provided email " + email));
+        if (!passwordEncoder.matches(password, user.getPasswordHash())) {
+            throw unauthorized("Invalid email or password");
+        }
+        validateUserStatus(user);
+        return user;
+    }
+
     @Override
     @Transactional(noRollbackFor = ApiException.class)
     public AuthResponse refresh(RefreshTokenRequest request) {
@@ -102,25 +91,22 @@ public class AuthServiceImpl implements AuthService {
         User user = stored.getUser();
 
         if (stored.isRevoked()) {
-            // an already-rotated token was presented again: assume it leaked and end every session
             refreshTokenRepository.revokeAllByUserId(user.getId());
-            log.warn("Revoked refresh token reused, all sessions revoked: userId={}", user.getId());
             throw unauthorized("Refresh token has been revoked");
         }
         if (stored.getExpiresAt().isBefore(Instant.now())) {
             throw unauthorized("Refresh token has expired");
         }
 
-        assertAccountUsable(user);
+        validateUserStatus(user);
 
-        stored.setRevoked(true); // rotation: each refresh token works once
+        stored.setRevoked(true);
         return buildAuthResponse(user);
     }
 
     @Override
     @Transactional
     public void logout(RefreshTokenRequest request) {
-        // idempotent: unknown or already revoked tokens are simply ignored
         refreshTokenRepository.findByTokenHash(sha256(request.refreshToken()))
                 .ifPresent(token -> token.setRevoked(true));
     }
@@ -141,7 +127,6 @@ public class AuthServiceImpl implements AuthService {
 
         user.setPasswordHash(passwordEncoder.encode(request.newPassword()));
         refreshTokenRepository.revokeAllByUserId(userId); // force re-login on every device
-        log.info("Password changed: id={}", userId);
     }
 
     private AuthResponse buildAuthResponse(User user) {
@@ -151,6 +136,7 @@ public class AuthServiceImpl implements AuthService {
                 accessToken,
                 refreshToken,
                 "Bearer",
+                "Authentication successful",
                 jwtService.getAccessTokenTtlSeconds(),
                 userMapper.toResponse(user)
         );
@@ -161,17 +147,18 @@ public class AuthServiceImpl implements AuthService {
         SECURE_RANDOM.nextBytes(bytes);
         String rawToken = Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
 
-        refreshTokenRepository.save(RefreshToken.builder()
+        refreshTokenRepository.save(
+                RefreshToken.builder()
                 .tokenHash(sha256(rawToken))
                 .user(user)
                 .expiresAt(Instant.now().plus(jwtService.getRefreshTokenTtl()))
                 .revoked(false)
                 .build());
 
-        return rawToken; // only the hash is stored; the raw value is shown to the client once
+        return rawToken;
     }
 
-    private void assertAccountUsable(User user) {
+    private void validateUserStatus(User user) {
         if (user.getStatus() == UserStatus.DELETED) {
             throw unauthorized("Invalid credentials");
         }
@@ -190,6 +177,18 @@ public class AuthServiceImpl implements AuthService {
             return HexFormat.of().formatHex(digest.digest(value.getBytes(StandardCharsets.UTF_8)));
         } catch (NoSuchAlgorithmException e) {
             throw new IllegalStateException("SHA-256 not available", e);
+        }
+    }
+
+    private void validateUserRole(@NotNull(message = "User role is required") UserRole userRole) {
+        if (!PERMITTED_ROLES.contains(userRole)) {
+            throw ApiException.forbidden("This role cannot be assigned during registration");
+        }
+    }
+
+    private void validateUser(@NotNull(message = "Email is required") String email) {
+        if (userRepository.existsByEmailIgnoreCase(email)) {
+            throw ApiException.conflict("Email is already registered");
         }
     }
 }
