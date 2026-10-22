@@ -59,7 +59,9 @@ public class CompanyMapper {
                 company.getCompanySize(),
                 company.getCompanyType(),
                 company.getIndustryType(),
-                company.getCompanyStatus()
+                company.getCompanyStatus(),
+                company.getSocialLinks(),
+                company.getLocations().stream().map(this::toLocationResponse).toList()
         );
     }
 
