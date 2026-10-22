@@ -26,15 +26,13 @@ import java.util.List;
 @RequiredArgsConstructor
 public class CompanyAdminServiceImpl implements CompanyAdminService {
 
-    private static final int MAX_PAGE_SIZE = 100;
-
     private final CompanyRepository companyRepository;
     private final CompanyMapper companyMapper;
 
     @Override
     @Transactional(readOnly = true)
     public Page<DetailedCompanyResponse> listCompanies(CompanyStatus status, String name, int page, int size) {
-        Pageable pageable = PageRequest.of(Math.max(page, 0), Math.clamp(size, 1, MAX_PAGE_SIZE),
+        Pageable pageable = PageRequest.of(Math.max(page, 0), Math.clamp(size, 1, 100),
                 Sort.by("createdAt").descending());
 
         List<Specification<Company>> parts = new ArrayList<>();

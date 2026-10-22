@@ -29,6 +29,12 @@ public record CreateCompanyRequest(
         @Size(max = 500) @Pattern(regexp = RegexPatterns.HTTP_URL, message = "website must be a valid URL")
         String website,
 
+        @Size(max = 255) @Pattern(regexp = RegexPatterns.EMAIL_REGEX, message = "email must be a valid email address")
+        String email,
+
+        @Size(max = 20) @Pattern(regexp = RegexPatterns.PHONE_NUMBER_REGEX, message = "phone must be a valid phone number")
+        String phone,
+
         @Min(value = 1800, message = "foundingYear is too far in the past")
         @Max(value = 2100, message = "foundingYear is invalid")
         Integer foundingYear,

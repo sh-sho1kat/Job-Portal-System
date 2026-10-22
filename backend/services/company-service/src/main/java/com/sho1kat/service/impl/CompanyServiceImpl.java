@@ -15,6 +15,7 @@ import com.sho1kat.mapper.CompanyMapper;
 import com.sho1kat.repository.CompanyRepository;
 import com.sho1kat.service.CompanyService;
 import jakarta.persistence.criteria.Join;
+import jakarta.persistence.criteria.JoinType;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -67,38 +68,48 @@ public class CompanyServiceImpl implements CompanyService {
     @Override
     @Transactional
     public DetailedCompanyResponse createCompany(Long ownerId, CreateCompanyRequest request) {
-        requireUserId(ownerId, "create a company");
+
+        verifyUserId(ownerId, "create a company");
+
         if (companyRepository.existsByOwnerId(ownerId)) {
             throw ApiException.conflict("This account already owns a company");
         }
+
         ensureNoDuplicatePlatforms(request.socialLinks());
+
         if (request.registrationNumber() != null && !request.registrationNumber().isBlank()
                 && companyRepository.existsByRegistrationNumber(request.registrationNumber().trim())) {
             throw ApiException.conflict("Registration number is already in use");
         }
 
-        Company company = companyMapper.toEntity(request, ownerId, nextSlug(request.name(), null));
+        Company company = companyMapper.toEntity(request, ownerId, convertToSlug(request.name(), null));
+
         return companyMapper.toDetailedResponse(companyRepository.save(company));
     }
 
     @Override
     @Transactional(readOnly = true)
     public DetailedCompanyResponse getMyCompany(Long ownerId) {
-        requireUserId(ownerId, "view your company");
+        verifyUserId(ownerId, "view your company");
+
         Company company = companyRepository.findByOwnerId(ownerId)
                 .filter(c -> c.getDeletedAt() == null)
                 .orElseThrow(() -> ApiException.notFound("No company profile exists for this account yet"));
+
         return companyMapper.toDetailedResponse(company);
     }
 
     @Override
     @Transactional
     public DetailedCompanyResponse updateCompany(Long companyId, Long requesterId, UpdateCompanyRequest request) {
+
         ensureNoDuplicatePlatforms(request.socialLinks());
+
         Company company = ownedCompany(companyId, requesterId);
+
         companyMapper.updateEntity(request, company);
-        // keep the slug in step with the (possibly renamed) company
-        company.setSlug(nextSlug(company.getName(), company.getSlug()));
+
+        company.setSlug(convertToSlug(company.getName(), company.getSlug()));
         return companyMapper.toDetailedResponse(companyRepository.save(company));
     }
 
@@ -113,6 +124,7 @@ public class CompanyServiceImpl implements CompanyService {
     // ---- helpers ----
 
     private Specification<Company> searchSpec(CompanySearchCriteria criteria) {
+
         List<Specification<Company>> parts = new ArrayList<>();
         parts.add((root, query, cb) -> cb.isNull(root.<String>get("deletedAt")));
         // the public catalogue only ever exposes verified, active companies
@@ -131,10 +143,8 @@ public class CompanyServiceImpl implements CompanyService {
         if (criteria.companyType() != null) {
             parts.add((root, query, cb) -> cb.equal(root.get("companyType"), criteria.companyType()));
         }
-        if (criteria.location() != null && !criteria.location().isBlank()) {
-            String pattern = "%" + criteria.location().trim().toLowerCase() + "%";
-            // matches across the joined locations, so mark the query distinct to keep
-            // multi-location companies from being duplicated in the page
+        if (criteria.location() != null && !criteria.location().isBlank()) {         // matches across the joined locations, so mark the query distinct to keep
+            String pattern = "%" + criteria.location().trim().toLowerCase() + "%";   // multi-location companies from being duplicated in the page
             parts.add((root, query, cb) -> {
                 query.distinct(true);
                 Join<Company, CompanyLocation> locations = root.join("locations", JoinType.LEFT);
@@ -155,7 +165,7 @@ public class CompanyServiceImpl implements CompanyService {
     }
 
     private Company ownedCompany(Long companyId, Long requesterId) {
-        requireUserId(requesterId, "manage this company");
+        verifyUserId(requesterId, "manage this company");
         Company company = companyRepository.findById(companyId)
                 .filter(c -> c.getDeletedAt() == null)
                 .orElseThrow(() -> ApiException.notFound("Company not found with id: " + companyId));
@@ -165,7 +175,7 @@ public class CompanyServiceImpl implements CompanyService {
         return company;
     }
 
-    private void requireUserId(Long id, String action) {
+    private void verifyUserId(Long id, String action) {
         if (id == null) {
             throw ApiException.unauthorized("Authentication is required to " + action);
         }
@@ -186,12 +196,10 @@ public class CompanyServiceImpl implements CompanyService {
         }
     }
 
-    /**
-     * Turn "Acme Labs" into "acme-labs", then extend with -2, -3, ... until the slug
-     * is free. {@code currentSlug} is tolerated as a candidate so renames that keep
-     * the same slug family do not loop.
-     */
-    private String nextSlug(String name, String currentSlug) {
+    private String convertToSlug(String name, String currentSlug) {
+        // Turn "Acme Labs" into "acme-labs", then extend with -2, -3, ... until the slug
+        // is free. {@code currentSlug} is tolerated as a candidate so renames that keep
+        // the same slug family do not loop.
         String base = slugify(name);
         String candidate = base;
         int suffix = 2;

@@ -2,7 +2,7 @@
 	"info": {
 		"_postman_id": "b1e2c3d4-5a6b-4c8d-9e0f-1a2b3c4d5e6f",
 		"name": "Job Portal System API",
-		"description": "Postman collection for all Job Portal System backend services.\n\n## Conventions\n- **One top-level folder per microservice** (e.g. `User Service`, `Job Service`, ...), one subfolder per controller.\n- **Collection variables** (see `Variables` tab):\n  - `baseUrl` — target host, defaults to `http://localhost:5001`\n  - `accessToken` / `refreshToken` — auto-saved by the `Login` and `Refresh` test scripts\n  - `userId` — the record used by `GET/PUT/PATCH/DELETE /api/users/{id}` requests\n- **Auth**: collection-level Bearer auth using `{{accessToken}}`; public requests override it with `No Auth`.\n- **Error shape**: every non-2xx response (except empty-body 401s from the security layer) is\n  `{\"status\":int,\"error\":str,\"message\":str,\"details\":array|null,\"timestamp\":str}`.\n\n## Extending\nWhen a new service/API is added, add a new top-level folder and follow the same conventions.\nSee `postman/README.md` in `common-lib`.",
+		"description": "Postman collection for all Job Portal System backend services.\n\n## Conventions\n- **One top-level folder per microservice** (e.g. `User Service`, `Job Service`, ...), one subfolder per controller.\n- **Collection variables** (see `Variables` tab):\n  - `baseUrl` — target host, defaults to `http://localhost:5001`\n  - `accessToken` / `refreshToken` — auto-saved by the `Login` and `Refresh` test scripts\n  - `userId` — the record used by `GET/PUT/PATCH/DELETE /api/users/{id}` requests\n  - `companyBaseUrl` — company-service host, defaults to `http://localhost:5002`\n  - `companyId` / `locationId` — ids used by the Company Service requests\n- **Auth**: collection-level Bearer auth using `{{accessToken}}`; public requests override it with `No Auth`.\n- **Error shape**: every non-2xx response (except empty-body 401s from the security layer) is\n  `{\"status\":int,\"error\":str,\"message\":str,\"details\":array|null,\"timestamp\":str}`.\n\n## Extending\nWhen a new service/API is added, add a new top-level folder and follow the same conventions.\nSee `postman/README.md` in `common-lib`.",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
 	"auth": {
@@ -34,6 +34,26 @@
 		{
 			"key": "userId",
 			"value": "1",
+			"type": "string"
+		},
+		{
+			"key": "companyBaseUrl",
+			"value": "http://localhost:5002",
+			"type": "string"
+		},
+		{
+			"key": "companyId",
+			"value": "1",
+			"type": "string"
+		},
+		{
+			"key": "locationId",
+			"value": "1",
+			"type": "string"
+		},
+		{
+			"key": "companySlug",
+			"value": "acme-labs",
 			"type": "string"
 		}
 	],
@@ -427,6 +447,614 @@
 					]
 				}
 			]
+		},
+		{
+			"name": "Company Service",
+			"description": "Company profiles, offices and admin verification (port 5002).\n\nStatuses: `PENDING_VERIFICATION`, `ACTIVE`, `SUSPENDED`, `REJECTED`. Sizes: `MICRO`, `SMALL`, `MEDIUM`, `LARGE`, `ENTERPRISE`. Types: `STARTUP`, `PRIVATE`, `PUBLIC_LISTED`, `GOVERNMENT`, `NON_PROFIT`, `EDUCATIONAL`, `SELF_EMPLOYED`. Social platforms: `LINKEDIN`, `TWITTER`, `FACEBOOK`, `GITHUB`, `INSTAGRAM`, `YOUTUBE`, `WEBSITE`.\n\n**Auth note**: JWT is not wired into this service yet. Owner/employer requests carry a temporary `X-User-Id` header (value: `{{userId}}` from the Login script — log in as an `ROLE_EMPLOYER` account first). Admin routes are unsecured for now.",
+			"item": [
+				{
+					"name": "Companies",
+					"description": "Public catalogue and the single owner profile.",
+					"item": [
+						{
+							"name": "Search Companies",
+							"request": {
+								"method": "GET",
+								"url": {
+									"raw": "{{companyBaseUrl}}/api/companies",
+									"host": [
+										"{{companyBaseUrl}}"
+									],
+									"path": [
+										"api",
+										"companies"
+									],
+									"query": [
+										{
+											"key": "page",
+											"value": "0",
+											"description": "0-based page index"
+										},
+										{
+											"key": "size",
+											"value": "20",
+											"description": "page size (capped at 100)"
+										},
+										{
+											"key": "name",
+											"value": "acme",
+											"description": "filter: name contains",
+											"disabled": true
+										},
+										{
+											"key": "industryType",
+											"value": "TECHNOLOGY",
+											"description": "filter: industry type",
+											"disabled": true
+										},
+										{
+											"key": "location",
+											"value": "Dhaka",
+											"description": "filter: any office city/state/country",
+											"disabled": true
+										},
+										{
+											"key": "companySize",
+											"value": "MEDIUM",
+											"description": "filter: MICRO|SMALL|MEDIUM|LARGE|ENTERPRISE",
+											"disabled": true
+										},
+										{
+											"key": "companyType",
+											"value": "PRIVATE",
+											"description": "filter: STARTUP|PRIVATE|PUBLIC_LISTED|GOVERNMENT|NON_PROFIT|EDUCATIONAL|SELF_EMPLOYED",
+											"disabled": true
+										}
+									]
+								},
+								"auth": {
+									"type": "noauth"
+								},
+								"description": "Public, paged search of verified, active (non-deleted) companies.\n\n**Query params** — `name` (contains, case-insensitive), `industryType`, `location` (matches city/state/country of any office), `companySize`, `companyType`, `page` (0-based), `size` (default 20, capped at 100).\n\n**Responses**\n- `200` → Spring `Page<CompanySummaryResponse>`"
+							},
+							"response": []
+						},
+						{
+							"name": "Get Company By Id",
+							"request": {
+								"method": "GET",
+								"url": {
+									"raw": "{{companyBaseUrl}}/api/companies/{{companyId}}",
+									"host": [
+										"{{companyBaseUrl}}"
+									],
+									"path": [
+										"api",
+										"companies",
+										"{{companyId}}"
+									]
+								},
+								"auth": {
+									"type": "noauth"
+								},
+								"description": "Fetch one verified, active company by id.\n\n**Responses**\n- `200` → `CompanyResponse`\n- `400` → non-numeric id\n- `404` → no such (or non-active) company"
+							},
+							"response": []
+						},
+						{
+							"name": "Get Company By Slug",
+							"request": {
+								"method": "GET",
+								"url": {
+									"raw": "{{companyBaseUrl}}/api/companies/slug/acme-labs",
+									"host": [
+										"{{companyBaseUrl}}"
+									],
+									"path": [
+										"api",
+										"companies",
+										"slug",
+										"acme-labs"
+									]
+								},
+								"auth": {
+									"type": "noauth"
+								},
+								"description": "Fetch one verified, active company by its URL slug (e.g. `acme-labs`, or `acme-labs-2` when earlier names collided).\n\n**Responses**\n- `200` → `CompanyResponse`\n- `404` → no such company"
+							},
+							"response": []
+						},
+						{
+							"name": "Create Company",
+							"request": {
+								"method": "POST",
+								"url": {
+									"raw": "{{companyBaseUrl}}/api/companies/create",
+									"host": [
+										"{{companyBaseUrl}}"
+									],
+									"path": [
+										"api",
+										"companies",
+										"create"
+									]
+								},
+								"header": [
+									{
+										"key": "X-User-Id",
+										"value": "{{userId}}",
+										"description": "temporary auth: user-service id of the caller"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"name\": \"Acme Labs\",\n  \"tagline\": \"Software that ships\",\n  \"description\": \"A Dhaka-based technology company building developer tools.\",\n  \"logoUrl\": \"https://acme-labs.example.com/logo.png\",\n  \"coverImageUrl\": \"https://acme-labs.example.com/cover.jpg\",\n  \"website\": \"https://acme-labs.com\",\n  \"email\": \"contact@acme-labs.com\",\n  \"phone\": \"+8801712345678\",\n  \"foundingYear\": 2015,\n  \"companySize\": \"MEDIUM\",\n  \"companyType\": \"PRIVATE\",\n  \"industryType\": \"TECHNOLOGY\",\n  \"registrationNumber\": \"TRAD/DNCC/123456\",\n  \"socialLinks\": [\n    {\n      \"platform\": \"LINKEDIN\",\n      \"url\": \"https://www.linkedin.com/company/acme-labs\"\n    },\n    {\n      \"platform\": \"GITHUB\",\n      \"url\": \"https://github.com/acme-labs\"\n    }\n  ]\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"description": "Create your company profile. One account owns **at most one company**. The new company starts in `PENDING_VERIFICATION` and only appears in the public search after an admin approval. The slug is derived from `name` (e.g. `acme-labs`), suffixing `-2`, `-3`, ... on collision.\n\n**Body** — `CreateCompanyRequest`:\n- `name` (required, ≤150), `tagline` (≤255), `description` (≤5000)\n- `logoUrl` / `coverImageUrl` / `website` (http(s) URLs, ≤500)\n- `email` (optional, valid email, ≤255), `phone` (optional, ≤20, `+?[1-9][0-9]{1,14}`)\n- `foundingYear` (1800–2100), `companySize`, `companyType`, `industryType` (required)\n- `registrationNumber` (≤100, globally unique)\n- `socialLinks` (≤10; unique `platform` + http(s) `url` each)\n\nThe id and slug are saved into `{{companyId}}` / `{{companySlug}}`.\n\n**Responses**\n- `201` → `CompanyResponse` (with `companyStatus`)\n- `400` → validation failed\n- `401` → missing/invalid `X-User-Id`\n- `409` → account already owns a company, or registration number in use"
+							},
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"type": "text/javascript",
+										"exec": [
+											"pm.test('2xx', () => pm.expect(pm.response.code).to.be.below(300));",
+											"const body = pm.response.json();",
+											"if (body && body.id) {",
+											"    pm.collectionVariables.set('companyId', String(body.id));",
+											"    if (body.slug) pm.collectionVariables.set('companySlug', String(body.slug));",
+											"}"
+										]
+									}
+								}
+							],
+							"response": []
+						},
+						{
+							"name": "Get My Company",
+							"request": {
+								"method": "GET",
+								"url": {
+									"raw": "{{companyBaseUrl}}/api/companies/my-company",
+									"host": [
+										"{{companyBaseUrl}}"
+									],
+									"path": [
+										"api",
+										"companies",
+										"my-company"
+									]
+								},
+								"header": [
+									{
+										"key": "X-User-Id",
+										"value": "{{userId}}",
+										"description": "temporary auth: user-service id of the caller"
+									}
+								],
+								"description": "Fetch the company owned by the `X-User-Id` account, including offices and social links.\n\n**Responses**\n- `200` → detailed `CompanyResponse`\n- `401` → missing/invalid `X-User-Id`\n- `404` → no company profile for this account yet"
+							},
+							"response": []
+						},
+						{
+							"name": "Update Company",
+							"request": {
+								"method": "PUT",
+								"url": {
+									"raw": "{{companyBaseUrl}}/api/companies/{{companyId}}",
+									"host": [
+										"{{companyBaseUrl}}"
+									],
+									"path": [
+										"api",
+										"companies",
+										"{{companyId}}"
+									]
+								},
+								"header": [
+									{
+										"key": "X-User-Id",
+										"value": "{{userId}}",
+										"description": "temporary auth: user-service id of the caller"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"name\": \"Acme Labs\",\n  \"tagline\": \"Software that ships\",\n  \"description\": \"A Dhaka-based technology company building developer tools.\",\n  \"logoUrl\": \"https://acme-labs.example.com/logo.png\",\n  \"coverImageUrl\": \"https://acme-labs.example.com/cover.jpg\",\n  \"website\": \"https://acme-labs.com\",\n  \"email\": \"contact@acme-labs.com\",\n  \"phone\": \"+8801712345678\",\n  \"foundingYear\": 2015,\n  \"companySize\": \"MEDIUM\",\n  \"companyType\": \"PRIVATE\",\n  \"industryType\": \"TECHNOLOGY\",\n  \"socialLinks\": [\n    {\n      \"platform\": \"LINKEDIN\",\n      \"url\": \"https://www.linkedin.com/company/acme-labs\"\n    },\n    {\n      \"platform\": \"GITHUB\",\n      \"url\": \"https://github.com/acme-labs\"\n    }\n  ]\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"description": "Replace the profile of your company (same fields as create, minus `registrationNumber` which is immutable). `socialLinks` are fully replaced by the list in the body. Renaming the company regenerates its slug when needed (the current slug stays if it still matches).\n\n**Responses**\n- `200` → detailed `CompanyResponse`\n- `400` → validation failed\n- `401` → missing/invalid `X-User-Id`\n- `403` → you are not the owner\n- `404` → no such company"
+							},
+							"response": []
+						},
+						{
+							"name": "Delete Company",
+							"request": {
+								"method": "DELETE",
+								"url": {
+									"raw": "{{companyBaseUrl}}/api/companies/{{companyId}}",
+									"host": [
+										"{{companyBaseUrl}}"
+									],
+									"path": [
+										"api",
+										"companies",
+										"{{companyId}}"
+									]
+								},
+								"header": [
+									{
+										"key": "X-User-Id",
+										"value": "{{userId}}",
+										"description": "temporary auth: user-service id of the caller"
+									}
+								],
+								"description": "Soft-delete your company (sets `deletedAt`; it disappears from public views).\n\n**Responses**\n- `204` → deleted\n- `401` → missing/invalid `X-User-Id`\n- `403` → you are not the owner\n- `404` → no such company"
+							},
+							"response": []
+						}
+					],
+					"response": []
+				},
+				{
+					"name": "Locations",
+					"description": "Offices of a company (owner-managed, publicly readable).",
+					"item": [
+						{
+							"name": "List Locations",
+							"request": {
+								"method": "GET",
+								"url": {
+									"raw": "{{companyBaseUrl}}/api/companies/{{companyId}}/locations",
+									"host": [
+										"{{companyBaseUrl}}"
+									],
+									"path": [
+										"api",
+										"companies",
+										"{{companyId}}",
+										"locations"
+									]
+								},
+								"auth": {
+									"type": "noauth"
+								},
+								"description": "All offices of a company, ordered by id.\n\n**Responses**\n- `200` → [`LocationResponse`]\n- `404` → no such company"
+							},
+							"response": []
+						},
+						{
+							"name": "Add Location",
+							"request": {
+								"method": "POST",
+								"url": {
+									"raw": "{{companyBaseUrl}}/api/companies/{{companyId}}/locations",
+									"host": [
+										"{{companyBaseUrl}}"
+									],
+									"path": [
+										"api",
+										"companies",
+										"{{companyId}}",
+										"locations"
+									]
+								},
+								"header": [
+									{
+										"key": "X-User-Id",
+										"value": "{{userId}}",
+										"description": "temporary auth: user-service id of the caller"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"label\": \"Head Office\",\n  \"addressLine\": \"House 10, Road 12, Banani\",\n  \"city\": \"Dhaka\",\n  \"state\": \"Dhaka\",\n  \"country\": \"Bangladesh\",\n  \"postalCode\": \"1213\",\n  \"headquarters\": true\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"description": "Add an office. Setting `headquarters: true` demotes any existing headquarters. The created location id is saved into `{{locationId}}`.\n\n**Body** — `LocationRequest`: `label` (≤100), `addressLine` (≤255), `city` (required, ≤100), `state` (≤100), `country` (required, ≤100), `postalCode` (≤20), `headquarters` (optional).\n\n**Responses**\n- `201` → `LocationResponse`\n- `400` → validation failed\n- `401` → missing/invalid `X-User-Id`\n- `403` → you are not the owner\n- `404` → no such company"
+							},
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"type": "text/javascript",
+										"exec": [
+											"pm.test('201 Created', () => pm.response.to.have.status(201));",
+											"const body = pm.response.json();",
+											"if (body && body.id) pm.collectionVariables.set('locationId', String(body.id));"
+										]
+									}
+								}
+							],
+							"response": []
+						},
+						{
+							"name": "Update Location",
+							"request": {
+								"method": "PUT",
+								"url": {
+									"raw": "{{companyBaseUrl}}/api/companies/{{companyId}}/locations/{{locationId}}",
+									"host": [
+										"{{companyBaseUrl}}"
+									],
+									"path": [
+										"api",
+										"companies",
+										"{{companyId}}",
+										"locations",
+										"{{locationId}}"
+									]
+								},
+								"header": [
+									{
+										"key": "X-User-Id",
+										"value": "{{userId}}",
+										"description": "temporary auth: user-service id of the caller"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"label\": \"Head Office\",\n  \"addressLine\": \"House 10, Road 12, Banani\",\n  \"city\": \"Dhaka\",\n  \"state\": \"Dhaka\",\n  \"country\": \"Bangladesh\",\n  \"postalCode\": \"1213\",\n  \"headquarters\": true\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"description": "Replace one office location (same fields as add). As with add, setting `headquarters: true` demotes the previous headquarters.\n\n**Responses**\n- `200` → `LocationResponse`\n- `400` → validation failed\n- `401` → missing/invalid `X-User-Id`\n- `403` → you are not the owner\n- `404` → no such company or location"
+							},
+							"response": []
+						},
+						{
+							"name": "Delete Location",
+							"request": {
+								"method": "DELETE",
+								"url": {
+									"raw": "{{companyBaseUrl}}/api/companies/{{companyId}}/locations/{{locationId}}",
+									"host": [
+										"{{companyBaseUrl}}"
+									],
+									"path": [
+										"api",
+										"companies",
+										"{{companyId}}",
+										"locations",
+										"{{locationId}}"
+									]
+								},
+								"header": [
+									{
+										"key": "X-User-Id",
+										"value": "{{userId}}",
+										"description": "temporary auth: user-service id of the caller"
+									}
+								],
+								"description": "Remove an office.\n\n**Responses**\n- `204` → deleted\n- `401` → missing/invalid `X-User-Id`\n- `403` → you are not the owner\n- `404` → no such company or location"
+							},
+							"response": []
+						}
+					],
+					"response": []
+				},
+				{
+					"name": "Company Admin",
+					"description": "Admin verification workflow for companies.\n\n**Auth note**: not enforced yet (JWT wiring pending) — will require an admin role once security lands.\n\nStatus lifecycle: `PENDING_VERIFICATION → ACTIVE` (approve), `PENDING_VERIFICATION → REJECTED` (reject), `ACTIVE → SUSPENDED`, `SUSPENDED → ACTIVE` (reactivate). Invalid transitions return `409`.",
+					"item": [
+						{
+							"name": "List Companies",
+							"request": {
+								"method": "GET",
+								"url": {
+									"raw": "{{companyBaseUrl}}/api/admin/companies",
+									"host": [
+										"{{companyBaseUrl}}"
+									],
+									"path": [
+										"api",
+										"admin",
+										"companies"
+									],
+									"query": [
+										{
+											"key": "page",
+											"value": "0",
+											"description": "0-based page index"
+										},
+										{
+											"key": "size",
+											"value": "20",
+											"description": "page size (capped at 100)"
+										},
+										{
+											"key": "status",
+											"value": "PENDING_VERIFICATION",
+											"description": "filter: status",
+											"disabled": true
+										},
+										{
+											"key": "name",
+											"value": "acme",
+											"description": "filter: name contains",
+											"disabled": true
+										}
+									]
+								},
+								"auth": {
+									"type": "noauth"
+								},
+								"description": "Paged list of all companies (any status), newest first.\n\n**Query params** — `status` (`PENDING_VERIFICATION`|`ACTIVE`|`SUSPENDED`|`REJECTED`), `name` (contains, case-insensitive), `page`, `size` (default 20, capped at 100).\n\n**Responses**\n- `200` → Spring `Page<CompanyResponse>`"
+							},
+							"response": []
+						},
+						{
+							"name": "Get Company (Admin)",
+							"request": {
+								"method": "GET",
+								"url": {
+									"raw": "{{companyBaseUrl}}/api/admin/companies/{{companyId}}",
+									"host": [
+										"{{companyBaseUrl}}"
+									],
+									"path": [
+										"api",
+										"admin",
+										"companies",
+										"{{companyId}}"
+									]
+								},
+								"auth": {
+									"type": "noauth"
+								},
+								"description": "Detailed view of one company in any status.\n\n**Responses**\n- `200` → detailed `CompanyResponse`\n- `400` → non-numeric id\n- `404` → no such company"
+							},
+							"response": []
+						},
+						{
+							"name": "Approve Company",
+							"request": {
+								"method": "POST",
+								"url": {
+									"raw": "{{companyBaseUrl}}/api/admin/companies/{{companyId}}/approve",
+									"host": [
+										"{{companyBaseUrl}}"
+									],
+									"path": [
+										"api",
+										"admin",
+										"companies",
+										"{{companyId}}",
+										"approve"
+									]
+								},
+								"auth": {
+									"type": "noauth"
+								},
+								"description": "`PENDING_VERIFICATION → ACTIVE` (sets `verifiedAt`; company joins the public search).\n\n**Responses**\n- `200` → updated detailed `CompanyResponse`\n- `404` → no such company\n- `409` → transition not allowed from the current status"
+							},
+							"response": []
+						},
+						{
+							"name": "Reject Company",
+							"request": {
+								"method": "POST",
+								"url": {
+									"raw": "{{companyBaseUrl}}/api/admin/companies/{{companyId}}/reject",
+									"host": [
+										"{{companyBaseUrl}}"
+									],
+									"path": [
+										"api",
+										"admin",
+										"companies",
+										"{{companyId}}",
+										"reject"
+									],
+									"query": [
+										{
+											"key": "reason",
+											"value": "Details do not match",
+											"description": "optional rejection reason",
+											"disabled": true
+										}
+									]
+								},
+								"auth": {
+									"type": "noauth"
+								},
+								"description": "`PENDING_VERIFICATION → REJECTED`.\n\n**Query params** — `reason` (optional, logged)\n\n**Responses**\n- `200` → updated detailed `CompanyResponse`\n- `404` → no such company\n- `409` → transition not allowed from the current status"
+							},
+							"response": []
+						},
+						{
+							"name": "Suspend Company",
+							"request": {
+								"method": "POST",
+								"url": {
+									"raw": "{{companyBaseUrl}}/api/admin/companies/{{companyId}}/suspend",
+									"host": [
+										"{{companyBaseUrl}}"
+									],
+									"path": [
+										"api",
+										"admin",
+										"companies",
+										"{{companyId}}",
+										"suspend"
+									],
+									"query": [
+										{
+											"key": "reason",
+											"value": "Policy violation",
+											"description": "optional suspension reason",
+											"disabled": true
+										}
+									]
+								},
+								"auth": {
+									"type": "noauth"
+								},
+								"description": "`ACTIVE → SUSPENDED` (company leaves the public search).\n\n**Query params** — `reason` (optional)\n\n**Responses**\n- `200` → updated detailed `CompanyResponse`\n- `404` → no such company\n- `409` → transition not allowed from the current status"
+							},
+							"response": []
+						},
+						{
+							"name": "Reactivate Company",
+							"request": {
+								"method": "POST",
+								"url": {
+									"raw": "{{companyBaseUrl}}/api/admin/companies/{{companyId}}/reactivate",
+									"host": [
+										"{{companyBaseUrl}}"
+									],
+									"path": [
+										"api",
+										"admin",
+										"companies",
+										"{{companyId}}",
+										"reactivate"
+									]
+								},
+								"auth": {
+									"type": "noauth"
+								},
+								"description": "`SUSPENDED → ACTIVE` (company returns to the public search).\n\n**Responses**\n- `200` → updated detailed `CompanyResponse`\n- `404` → no such company\n- `409` → transition not allowed from the current status"
+							},
+							"response": []
+						}
+					],
+					"response": []
+				}
+			],
+			"response": []
 		}
 	]
 }

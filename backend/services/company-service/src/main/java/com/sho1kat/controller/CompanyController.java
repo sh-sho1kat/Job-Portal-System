@@ -42,7 +42,7 @@ public class CompanyController {
 
     // ---- employer / owner ----
 
-    @PostMapping
+    @PostMapping("/create")
     public ResponseEntity<DetailedCompanyResponse> createCompany(
             @RequestHeader(name = RequesterId.HEADER, required = false) String ownerId,
             @Valid @RequestBody CreateCompanyRequest request) {
@@ -50,7 +50,7 @@ public class CompanyController {
                 .body(companyService.createCompany(RequesterId.from(ownerId), request));
     }
 
-    @GetMapping("/mine")
+    @GetMapping("/my-company")
     public ResponseEntity<DetailedCompanyResponse> getMyCompany(
             @RequestHeader(name = RequesterId.HEADER, required = false) String ownerId) {
         return ResponseEntity.ok(companyService.getMyCompany(RequesterId.from(ownerId)));

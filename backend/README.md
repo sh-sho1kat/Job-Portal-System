@@ -25,20 +25,22 @@ backend/
 ├── cloud/               # job-portal-cloud — Spring Cloud infra
 │                       #   (service discovery, config server, API gateway) — scaffolded
 └── services/            # job-portal-services — business microservices
-    └── user-service/    # authentication & user management (port 5001)
+    ├── user-service/    # authentication & user management (port 5001)
+    └── company-service/ # company profiles & admin verification (port 5002)
 ```
 
 | Module | Artifact | Description |
 |---|---|---|
-| `common-lib` | `job-portal-common` | Shared library: request/response DTOs, `UserRole`/`UserStatus` enums, `ApiException` base |
+| `common-lib` | `job-portal-common` | Shared library: request/response DTOs, `UserRole`/`UserStatus`/`Company*` enums, `ApiException` base |
 | `cloud` | `job-portal-cloud` | Spring Cloud infrastructure services (discovery, config server, API gateway) |
 | `services/user-service` | `user-service` | User authentication (JWT access + refresh tokens) and user/role management |
+| `services/company-service` | `company-service` | Company profiles, offices, and admin verification workflow |
 
 ## Requirements
 
 - **JDK 25**
 - **Maven 3.8+**
-- **PostgreSQL** (user-service database: `user_db`)
+- **PostgreSQL** (user-service database: `user_db`; company-service database: `company_db`)
 
 ## Build & Test
 
@@ -116,9 +118,89 @@ mvn spring-boot:run
 A ready-made Postman collection is available at
 `common-lib/postman/job-portal-system.postman_collection.json`.
 
+## Running the Company Service
+
+`company-service` listens on **port 5002** (`application.yaml`).
+
+```bash
+cd services/company-service
+mvn spring-boot:run
+```
+
+### Environment variables
+
+| Variable | Required | Description |
+|---|---|---|
+| `DB_USERNAME` | yes | PostgreSQL user |
+| `DB_PASSWORD` | yes | PostgreSQL password |
+| `DDL_AUTO` | no | Hibernate DDL mode (default `update`; use `validate`/`none` for production) |
+| `SHOW_SQL` | no | Log SQL statements (default `true`) |
+
+### Authentication note
+
+JWT validation is not wired into `company-service` yet (pending the API gateway).
+Until then, owner/employer endpoints read a temporary `X-User-Id` header
+holding the caller's user-service id; admin endpoints are unsecured for now
+(`com.sho1kat.controller.RequesterId` documents this stand-in). Public
+catalogue endpoints need no header.
+
+## API — company-service
+
+### Companies (`/api/companies`)
+
+| Method | Path | Access |
+|---|---|---|
+| `GET` | `/api/companies` | public — filters `name`, `industryType`, `location`, `companySize`, `companyType`; `page`, `size` (max 100) |
+| `GET` | `/api/companies/{id}` | public |
+| `GET` | `/api/companies/slug/{slug}` | public |
+| `POST` | `/api/companies/create` | employer via `X-User-Id` (one company per owner, starts `PENDING_VERIFICATION`) |
+| `GET` | `/api/companies/my-company` | employer via `X-User-Id` |
+| `PUT` | `/api/companies/{id}` | company owner via `X-User-Id` (renaming regenerates the slug) |
+| `DELETE` | `/api/companies/{id}` | company owner via `X-User-Id` (soft delete) |
+
+### Locations (`/api/companies/{companyId}/locations`)
+
+| Method | Path | Access |
+|---|---|---|
+| `GET` | `/api/companies/{companyId}/locations` | public |
+| `POST` | `/api/companies/{companyId}/locations` | company owner via `X-User-Id` |
+| `PUT` | `/api/companies/{companyId}/locations/{locationId}` | company owner via `X-User-Id` |
+| `DELETE` | `/api/companies/{companyId}/locations/{locationId}` | company owner via `X-User-Id` |
+
+### Admin verification (`/api/admin/companies`)
+
+| Method | Path | Availability |
+|---|---|---|
+| `GET` | `/api/admin/companies` | paged list, filters `status`, `name`; `page`, `size` |
+| `GET` | `/api/admin/companies/{companyId}` | detail view |
+| `POST` | `/api/admin/companies/{companyId}/approve` | `PENDING_VERIFICATION → ACTIVE` |
+| `POST` | `/api/admin/companies/{companyId}/reject` | `PENDING_VERIFICATION → REJECTED` |
+| `POST` | `/api/admin/companies/{companyId}/suspend` | `ACTIVE → SUSPENDED` |
+| `POST` | `/api/admin/companies/{companyId}/reactivate` | `SUSPENDED → ACTIVE` |
+
+### Request DTOs
+
+Statuses: `PENDING_VERIFICATION`, `ACTIVE`, `SUSPENDED`, `REJECTED`.
+Sizes: `MICRO`–`ENTERPRISE`. Types: `STARTUP`, `PRIVATE`, `GOVERNMENT`, ... .
+Industries: `TECHNOLOGY`, `FINANCE_BANKING`, ... (see `com.sho1kat.enums`).
+
+- **Create/Update company**: `name` (required, ≤150), `tagline` (≤255),
+  `description` (≤5000), `logoUrl`/`coverImageUrl`/`website` (http(s) URLs ≤500),
+  `email` (valid email, ≤255, optional), `phone` (≤20, optional),
+  `foundingYear` (1800–2100), `companySize`/`companyType`/`industryType`
+  (required), `registrationNumber` (≤100, unique),
+  `socialLinks` (≤10, unique platforms: `LINKEDIN`, `TWITTER`, `FACEBOOK`, `GITHUB`,
+  `INSTAGRAM`, `YOUTUBE`, `WEBSITE` — update is a full replace).
+- **Location**: `label` (≤100), `addressLine` (≤255), `city`/`country`
+  (required, ≤100), `state` (≤100), `postalCode` (≤20), `headquarters`
+  (setting it demotes the previous one).
+
 ## Roadmap
 
+- [x] User service (auth, user management)
+- [x] Company service (profiles, locations, admin verification)
 - [ ] Spring Cloud infrastructure in `cloud/` (service discovery, config server, API gateway)
+- [ ] JWT enforcement in company-service / gateway identity forwarding
 - [ ] Additional business services (jobs, applications, notifications)
 - [ ] AI-powered features (matching, recommendations)
 - [ ] Container images via Jib for each service

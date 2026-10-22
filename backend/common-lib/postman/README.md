@@ -6,23 +6,31 @@ Import file: [`job-portal-system.postman_collection.json`](job-portal-system.pos
 
 ## Setup after import
 
-1. Set the `baseUrl` collection variable (defaults to `http://localhost:5001`).
+1. Set the `baseUrl` collection variable (defaults to `http://localhost:5001`) and
+   `companyBaseUrl` (defaults to `http://localhost:5002`).
 2. Run **User Service → Auth → Login** once — its test script saves
    `accessToken`, `refreshToken`, and `userId` into collection variables.
    Every secured request then uses `{{accessToken}}` automatically
    (collection-level Bearer auth; public endpoints override with *No Auth*).
 3. `Refresh` rotates the pair and its script re-saves both tokens, so the
    collection always works against the latest token family.
+4. For the **Company Service** folder, log in as a `ROLE_EMPLOYER` account first —
+   owner requests carry the temporary `X-User-Id: {{userId}}` header and
+   **Company → Create Company** saves `companyId` / `companySlug`.
 
 ## Collection variables
 
 | Variable            | Set by                 | Purpose                                        |
 |---------------------|------------------------|------------------------------------------------|
-| `baseUrl`           | you                    | service host, e.g. `http://localhost:5001`     |
+| `baseUrl`           | you                    | user-service host, e.g. `http://localhost:5001` |
+| `companyBaseUrl`    | you                    | company-service host (default `http://localhost:5002`) |
 | `accessToken`       | Login / Refresh script | Bearer token for secured requests              |
 | `refreshToken`      | Login / Refresh script | used by Refresh / Logout bodies                |
-| `userId`            | Login script           | the `{id}` used by the `Users` folder requests |
+| `userId`            | Login script           | `{id}` used by the `Users` requests            |
 | `registeredUserId`  | Register script        | id of the last account created via Register    |
+| `companyId`         | Create Company script  | `{companyId}` used by the Company Service requests |
+| `companySlug`       | Create Company script  | `{slug}` used by *Get Company By Slug*         |
+| `locationId`        | Add Location script    | `{locationId}` used by the Locations requests  |
 
 ## Demo data currently in the local DB (`user_db`)
 

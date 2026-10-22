@@ -32,6 +32,8 @@ public class CompanyMapper {
                 .logoUrl(trimToNull(request.logoUrl()))
                 .coverImageUrl(trimToNull(request.coverImageUrl()))
                 .website(trimToNull(request.website()))
+                .email(trimToNull(request.email()))
+                .phone(trimToNull(request.phone()))
                 .foundingYear(request.foundingYear())
                 .companySize(request.companySize())
                 .companyType(request.companyType())
@@ -51,6 +53,8 @@ public class CompanyMapper {
                 company.getTagline(),
                 company.getLogoUrl(),
                 company.getWebsite(),
+                company.getEmail(),
+                company.getPhone(),
                 company.getFoundingYear(),
                 company.getCompanySize(),
                 company.getCompanyType(),
@@ -69,6 +73,8 @@ public class CompanyMapper {
                 company.getLogoUrl(),
                 company.getCoverImageUrl(),
                 company.getWebsite(),
+                company.getEmail(),
+                company.getPhone(),
                 company.getFoundingYear(),
                 company.getCompanySize(),
                 company.getCompanyType(),
@@ -89,6 +95,8 @@ public class CompanyMapper {
         company.setLogoUrl(trimToNull(request.logoUrl()));
         company.setCoverImageUrl(trimToNull(request.coverImageUrl()));
         company.setWebsite(trimToNull(request.website()));
+        company.setEmail(trimToNull(request.email()));
+        company.setPhone(trimToNull(request.phone()));
         company.setFoundingYear(request.foundingYear());
         company.setCompanySize(request.companySize());
         company.setCompanyType(request.companyType());

@@ -46,6 +46,13 @@ public class Company {
     private String logoUrl;
     private String coverImageUrl;
     private String website;
+
+    @Column(length = 255)
+    private String email;
+
+    @Column(length = 20)
+    private String phone;
+
     private Integer foundingYear;
 
     @Enumerated(EnumType.STRING)

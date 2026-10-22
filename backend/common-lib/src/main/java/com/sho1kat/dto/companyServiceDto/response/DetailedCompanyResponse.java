@@ -19,6 +19,8 @@ public record DetailedCompanyResponse(
         String logoUrl,
         String coverImageUrl,
         String website,
+        String email,
+        String phone,
         Integer foundingYear,
         CompanySize companySize,
         CompanyType companyType,
