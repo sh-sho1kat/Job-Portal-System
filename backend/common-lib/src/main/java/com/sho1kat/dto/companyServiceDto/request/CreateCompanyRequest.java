@@ -29,8 +29,8 @@ public record CreateCompanyRequest(
         @Size(max = 500) @Pattern(regexp = RegexPatterns.HTTP_URL, message = "website must be a valid URL")
         String website,
 
-        @Min(value = 1800, message = "foundedYear is too far in the past")
-        @Max(value = 2100, message = "foundedYear is invalid")
+        @Min(value = 1800, message = "foundingYear is too far in the past")
+        @Max(value = 2100, message = "foundingYear is invalid")
         Integer foundingYear,
 
         @NotNull(message = "companySize is required")
