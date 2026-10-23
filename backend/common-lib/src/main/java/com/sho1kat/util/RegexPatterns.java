@@ -10,5 +10,6 @@ public final class RegexPatterns {
     public static final String PHONE_NUMBER_REGEX = "^\\+?[1-9]\\d{1,14}$";
     public static final String HTTP_URL = "^https?://\\S+$";
     public static final String SLUG_REGEX = "^[a-z0-9]+(?:-[a-z0-9]+)*$";
+    public static final String CURRENCY_CODE = "^[A-Z]{3}$";
 
 }

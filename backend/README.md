@@ -26,7 +26,8 @@ backend/
 │                       #   (service discovery, config server, API gateway) — scaffolded
 └── services/            # job-portal-services — business microservices
     ├── user-service/    # authentication & user management (port 5001)
-    └── company-service/ # company profiles & admin verification (port 5002)
+    ├── company-service/ # company profiles & admin verification (port 5002)
+    └── job-service/     # job postings & admin review (port 5003)
 ```
 
 | Module | Artifact | Description |
@@ -35,12 +36,13 @@ backend/
 | `cloud` | `job-portal-cloud` | Spring Cloud infrastructure services (discovery, config server, API gateway) |
 | `services/user-service` | `user-service` | User authentication (JWT access + refresh tokens) and user/role management |
 | `services/company-service` | `company-service` | Company profiles, offices, and admin verification workflow |
+| `services/job-service` | `job-service` | Job postings (search, employer CRUD, admin review) |
 
 ## Requirements
 
 - **JDK 25**
 - **Maven 3.8+**
-- **PostgreSQL** (user-service database: `user_db`; company-service database: `company_db`)
+- **PostgreSQL** (user-service database: `user_db`; company-service database: `company_db`; job-service database: `job_db`)
 
 ## Build & Test
 
@@ -195,12 +197,86 @@ Industries: `TECHNOLOGY`, `FINANCE_BANKING`, ... (see `com.sho1kat.enums`).
   (required, ≤100), `state` (≤100), `postalCode` (≤20), `headquarters`
   (setting it demotes the previous one).
 
+## Running the Job Service
+
+`job-service` listens on **port 5003** (`application.yaml`).
+
+```bash
+cd services/job-service
+mvn spring-boot:run
+```
+
+### Environment variables
+
+| Variable | Required | Description |
+|---|---|---|
+| `DB_USERNAME` | yes | PostgreSQL user |
+| `DB_PASSWORD` | yes | PostgreSQL password |
+| `DDL_AUTO` | no | Hibernate DDL mode (default `update`; use `validate`/`none` for production) |
+| `SHOW_SQL` | no | Log SQL statements (default `true`) |
+
+### Authentication note
+
+Same stand-in as company-service: JWT validation is not wired into
+`job-service` yet. Employer endpoints read a temporary `X-User-Id` header
+holding the caller's user-service id; admin endpoints are unsecured for now
+(`com.sho1kat.controller.RequesterId` documents this). Public search
+endpoints need no header. `companyId` is also unverified for now — once the
+API gateway forwards identity, job-service will confirm the caller actually
+owns the company before accepting postings.
+
+## API — job-service
+
+### Jobs (`/api/jobs`)
+
+| Method | Path | Access |
+|---|---|---|
+| `GET` | `/api/jobs` | public — filters `keyword` (title/description), `companyId`, `employmentType`, `experienceLevel`, `workMode`, `location`, `salaryPeriod`; `page`, `size` (max 100) |
+| `GET` | `/api/jobs/{id}` | public (active, deadline not passed) |
+| `GET` | `/api/jobs/slug/{slug}` | public (active, deadline not passed) |
+| `POST` | `/api/jobs/create` | employer via `X-User-Id` (starts `PENDING_APPROVAL`) |
+| `GET` | `/api/jobs/my-jobs` | employer via `X-User-Id` |
+| `PUT` | `/api/jobs/{id}` | job poster via `X-User-Id` (renaming regenerates the slug; editing a rejected job resubmits it for approval) |
+| `POST` | `/api/jobs/{id}/close` | job poster via `X-User-Id` (`ACTIVE → CLOSED`) |
+| `DELETE` | `/api/jobs/{id}` | job poster via `X-User-Id` (soft delete) |
+
+### Admin review (`/api/admin/jobs`)
+
+| Method | Path | Availability |
+|---|---|---|
+| `GET` | `/api/admin/jobs` | paged list, filters `status`, `companyId`, `title`; `page`, `size` |
+| `GET` | `/api/admin/jobs/{jobId}` | detail view |
+| `POST` | `/api/admin/jobs/{jobId}/approve` | `PENDING_APPROVAL → ACTIVE` |
+| `POST` | `/api/admin/jobs/{jobId}/reject` | `PENDING_APPROVAL → REJECTED` |
+| `POST` | `/api/admin/jobs/{jobId}/suspend` | `ACTIVE → SUSPENDED` |
+| `POST` | `/api/admin/jobs/{jobId}/reactivate` | `SUSPENDED → ACTIVE` |
+
+### Request DTOs
+
+Statuses: `PENDING_APPROVAL`, `ACTIVE`, `REJECTED`, `SUSPENDED`, `CLOSED`.
+Employment types: `FULL_TIME`, `PART_TIME`, `CONTRACT`, `INTERNSHIP`, `TEMPORARY`,
+`FREELANCE`. Experience levels: `ENTRY_LEVEL`, `MID_LEVEL`, `SENIOR_LEVEL`, `LEAD`,
+`EXECUTIVE`. Work modes: `ON_SITE`, `HYBRID`, `REMOTE`. Salary periods: `HOURLY`,
+`MONTHLY`, `YEARLY`.
+
+- **Create/Update job**: `companyId` (required on create), `title` (required, ≤150),
+  `description` (required, ≤10000), `responsibilities`/`requirements` (≤10000),
+  `benefits` (≤5000), `employmentType`/`experienceLevel`/`workMode` (required),
+  `city`/`state`/`country` (≤100; required for `ON_SITE`/`HYBRID`),
+  `salaryMin`/`salaryMax` (≥0, min ≤ max, `salaryPeriod` required when a salary is
+  set), `salaryCurrency` (ISO 4217 code, e.g. `USD`), `vacancies` (1–10000),
+  `applicationDeadline` (must be today or later on create), `skills`
+  (≤20, ≤50 chars each, duplicates dropped).
+- The public catalogue hides pending/rejected/suspended/closed/deleted postings
+  and expired deadlines; admin views show everything not deleted.
+
 ## Roadmap
 
 - [x] User service (auth, user management)
 - [x] Company service (profiles, locations, admin verification)
+- [x] Job service (postings, employer CRUD, admin review)
 - [ ] Spring Cloud infrastructure in `cloud/` (service discovery, config server, API gateway)
-- [ ] JWT enforcement in company-service / gateway identity forwarding
-- [ ] Additional business services (jobs, applications, notifications)
+- [ ] JWT enforcement in company-service / job-service / gateway identity forwarding
+- [ ] Additional business services (applications, notifications)
 - [ ] AI-powered features (matching, recommendations)
 - [ ] Container images via Jib for each service
