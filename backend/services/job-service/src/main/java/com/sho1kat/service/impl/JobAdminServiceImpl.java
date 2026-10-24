@@ -6,6 +6,7 @@ import com.sho1kat.enums.JobStatus;
 import com.sho1kat.exception.ApiException;
 import com.sho1kat.mapper.JobMapper;
 import com.sho1kat.repository.JobRepository;
+import com.sho1kat.repository.JobSpecification;
 import com.sho1kat.service.JobAdminService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -18,8 +19,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.List;
 
 @Slf4j
 @Service
@@ -35,20 +34,7 @@ public class JobAdminServiceImpl implements JobAdminService {
         Pageable pageable = PageRequest.of(Math.max(page, 0), Math.clamp(size, 1, 100),
                 Sort.by("createdAt").descending());
 
-        List<Specification<Job>> parts = new ArrayList<>();
-        parts.add((root, query, cb) -> cb.isNull(root.<String>get("deletedAt")));
-        if (status != null) {
-            parts.add((root, query, cb) -> cb.equal(root.get("status"), status));
-        }
-        if (companyId != null) {
-            parts.add((root, query, cb) -> cb.equal(root.get("companyId"), companyId));
-        }
-        if (title != null && !title.isBlank()) {
-            String pattern = "%" + title.trim().toLowerCase() + "%";
-            parts.add((root, query, cb) -> cb.like(cb.lower(root.<String>get("title")), pattern));
-        }
-
-        return jobRepository.findAll(Specification.allOf(parts), pageable)
+        return jobRepository.findAll(JobSpecification.adminList(status, companyId, title), pageable)
                 .map(jobMapper::toDetailedResponse);
     }
 

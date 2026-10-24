@@ -7,13 +7,17 @@ import com.sho1kat.dto.jobServiceDto.response.DetailedJobResponse;
 import com.sho1kat.dto.jobServiceDto.response.JobResponse;
 import org.springframework.data.domain.Page;
 
+import java.util.List;
+
 public interface JobService {
     // ---- public ----
     Page<JobResponse> searchJobs(JobSearchCriteria criteria, int page, int size);
 
     JobResponse getJobById(Long id);
 
-    JobResponse getJobByCompanyId(Long companyId);
+    /** Public job listings of one company (active, not expired). */
+    List<JobResponse> getJobByCompanyId(Long companyId);
+
     // ---- employer / owner ----
     DetailedJobResponse createJob(Long employerId, CreateJobRequest request);
 
@@ -21,11 +25,11 @@ public interface JobService {
 
     DetailedJobResponse updateJob(Long jobId, Long requesterId, UpdateJobRequest request);
 
+    /** DRAFT -> ACTIVE */
     DetailedJobResponse publishJob(Long requesterId, Long jobId);
 
     /** ACTIVE -> CLOSED */
     DetailedJobResponse closeJob(Long jobId, Long requesterId);
 
     void deleteJob(Long jobId, Long requesterId);
-
 }

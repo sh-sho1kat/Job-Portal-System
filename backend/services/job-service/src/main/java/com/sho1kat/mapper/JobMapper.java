@@ -22,9 +22,10 @@ import java.util.List;
 public class JobMapper {
 
     /**
-     * New jobs always start pending admin approval; the slug is generated in the
-     * service layer (it must check uniqueness against the repository first) and
-     * taxonomy references are resolved in the service layer (existence checks).
+     * New jobs start as DRAFT and are published by the employer (publishJob);
+     * the slug is generated in the service layer (it must check uniqueness
+     * against the repository first) and taxonomy references are resolved in
+     * the service layer (existence checks).
      */
     public Job toEntity(CreateJobRequest request, Long ownerId, String slug,
                         JobCategory category, List<JobSkill> skills, List<JobTag> tags) {
