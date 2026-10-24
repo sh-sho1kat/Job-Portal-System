@@ -5,6 +5,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -28,4 +29,15 @@ public interface JobRepository extends JpaRepository<Job, Long>, JpaSpecificatio
 
     @Query("select count(j) > 0 from Job j join j.tags t where t.id = :tagId and j.deletedAt is null")
     boolean existsActiveJobForTag(@Param("tagId") Long tagId);
+
+    boolean existsByIdAndDeletedAtIsNull(Long id);
+
+    /** Atomic view bump; no-op for soft-deleted postings. */
+    @Modifying
+    @Query("update Job j set j.viewCount = j.viewCount + 1 where j.id = :id and j.deletedAt is null")
+    int incrementViewCount(@Param("id") Long id);
+
+    @Modifying
+    @Query("update Job j set j.applicationCount = j.applicationCount + 1 where j.id = :id")
+    int incrementApplicationCount(@Param("id") Long id);
 }

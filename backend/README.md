@@ -316,6 +316,10 @@ Employment types: `FULL_TIME`, `PART_TIME`, `CONTRACT`, `INTERNSHIP`, `TEMPORARY
   expired deadlines; admin views show everything not deleted. `CompanySummaryResponse`
   fields come denormalised onto job cards, but until the company-service
   integration only `id` is populated.
+- `DetailedJobResponse` carries real `viewCount`/`applicationCount` counters:
+  views increment atomically on every public `GET /api/jobs/{id}`, application
+  count is an integration point for the application flow (`incrementApplicationCount`,
+  active postings only).
 
 ## Roadmap
 
