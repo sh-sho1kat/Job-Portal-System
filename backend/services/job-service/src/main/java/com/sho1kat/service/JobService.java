@@ -32,4 +32,11 @@ public interface JobService {
     DetailedJobResponse closeJob(Long jobId, Long requesterId);
 
     void deleteJob(Long jobId, Long requesterId);
+
+    // ---- analytics ----
+    /** Registers one more view of a posting; wired into the public detail flow. */
+    void incrementViewCount(Long jobId);
+
+    /** Registers one more application on an active posting (integration point for the application flow). */
+    void incrementApplicationCount(Long jobId);
 }

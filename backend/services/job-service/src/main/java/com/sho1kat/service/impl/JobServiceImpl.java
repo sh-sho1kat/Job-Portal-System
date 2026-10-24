@@ -55,9 +55,11 @@ public class JobServiceImpl implements JobService {
     }
 
     @Override
-    @Transactional(readOnly = true)
+    @Transactional
     public JobResponse getJobById(Long id) {
-        return jobMapper.toResponse(visibleJob(id));
+        Job job = visibleJob(id);   // 404 unless publicly visible
+        incrementViewCount(id);     // count only postings that were actually served
+        return jobMapper.toResponse(job);
     }
 
     @Override
@@ -152,6 +154,31 @@ public class JobServiceImpl implements JobService {
         Job job = ownedJob(jobId, requesterId);
         job.setDeletedAt(Instant.now()); // soft delete; public queries filter on deletedAt
         jobRepository.save(job);
+    }
+
+    // ---- analytics ----
+
+    @Override
+    @Transactional
+    public void incrementViewCount(Long jobId) {
+        if (!jobRepository.existsById(jobId)) {
+            throw ApiException.notFound("Job not found with id: " + jobId);
+        }
+        // atomic DB bump; the WHERE clause already excludes soft-deleted postings
+        jobRepository.incrementViewCount(jobId);
+    }
+
+    @Override
+    @Transactional
+    public void incrementApplicationCount(Long jobId) {
+        Job job = jobRepository.findById(jobId)
+                .filter(j -> j.getDeletedAt() == null)
+                .orElseThrow(() -> ApiException.notFound("Job not found with id: " + jobId));
+        if (job.getStatus() != JobStatus.ACTIVE) {
+            throw ApiException.badRequest(
+                    "Applications can only be registered for active jobs (current status: " + job.getStatus() + ")");
+        }
+        jobRepository.incrementApplicationCount(jobId);
     }
 
     // ---- helpers ----

@@ -106,8 +106,8 @@ public class JobMapper {
                 job.getApplicationDeadline(),
                 job.getExpiresAt(),
                 job.getStatus(),
-                0L, // viewCount — wired up with the application service
-                0L, // applicationCount — wired up with the application service
+                job.getViewCount(),
+                job.getApplicationCount(),
                 job.getPublishedAt(),
                 job.getClosedAt(),
                 job.getCreatedAt(),

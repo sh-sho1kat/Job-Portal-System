@@ -107,6 +107,15 @@ public class Job {
     private LocalDate applicationDeadline;
     private LocalDate expiresAt;
 
+    // analytics counters, maintained with atomic DB-level increments
+    @Builder.Default
+    @Column(nullable = false)
+    private Long viewCount = 0L;
+
+    @Builder.Default
+    @Column(nullable = false)
+    private Long applicationCount = 0L;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     @Builder.Default
