@@ -1094,11 +1094,14 @@
                 "method": "GET",
                 "header": [],
                 "url": {
-                  "raw": "{{jobBaseUrl}}/api/jobs?keyword&categoryId&skillIds&tagIds&workMode&salaryPeriod&page&size",
+                  "raw": "{{jobBaseUrl}}/api/jobs?keyword=backend&categoryId={{jobCategoryId}}&skillIds={{jobSkillId}}&tagIds={{jobTagId}}&workMode=HYBRID&salaryPeriod=MONTHLY&page=0&size=20",
                   "host": [
                     "{{jobBaseUrl}}"
                   ],
-                  "path": [],
+                  "path": [
+                    "api",
+                    "jobs"
+                  ],
                   "query": [
                     {
                       "key": "keyword",
@@ -1147,7 +1150,11 @@
                   "host": [
                     "{{jobBaseUrl}}"
                   ],
-                  "path": []
+                  "path": [
+                    "api",
+                    "jobs",
+                    "{{jobId}}"
+                  ]
                 },
                 "description": "Public detail view. 404 unless the job is ACTIVE (drafts/closed/deleted are hidden). Each 200 bumps `viewCount` by 1 (atomic DB update)."
               }
@@ -1162,7 +1169,12 @@
                   "host": [
                     "{{jobBaseUrl}}"
                   ],
-                  "path": []
+                  "path": [
+                    "api",
+                    "jobs",
+                    "company",
+                    "{{companyId}}"
+                  ]
                 },
                 "description": "Route based on the company service — active postings of one company, ordered by newest."
               }
@@ -1192,7 +1204,11 @@
                   "host": [
                     "{{jobBaseUrl}}"
                   ],
-                  "path": []
+                  "path": [
+                    "api",
+                    "jobs",
+                    "create"
+                  ]
                 },
                 "description": "Create a draft posting owned by the requester (`X-User-Id`). 201 + DetailedJobResponse. Validations: salaryMin<=salaryMax, salaryPeriod required with any amount, ON_SITE requires city, category must exist+be active, all skill/tag ids must exist. The slug is generated server-side and unique (-2, -3 suffixes on collision).",
                 "body": {
@@ -1218,11 +1234,15 @@
                   }
                 ],
                 "url": {
-                  "raw": "{{jobBaseUrl}}/api/jobs/my-jobs?page&size",
+                  "raw": "{{jobBaseUrl}}/api/jobs/my-jobs?page=0&size=20",
                   "host": [
                     "{{jobBaseUrl}}"
                   ],
-                  "path": [],
+                  "path": [
+                    "api",
+                    "jobs",
+                    "my-jobs"
+                  ],
                   "query": [
                     {
                       "key": "page",
@@ -1257,7 +1277,11 @@
                   "host": [
                     "{{jobBaseUrl}}"
                   ],
-                  "path": []
+                  "path": [
+                    "api",
+                    "jobs",
+                    "{{jobId}}"
+                  ]
                 },
                 "description": "Full-replace update by the owner. Regenerates the slug on title changes; a REJECTED job returns to DRAFT for re-publishing. The company cannot be changed; the application deadline may already be elapsed.",
                 "body": {
@@ -1287,7 +1311,12 @@
                   "host": [
                     "{{jobBaseUrl}}"
                   ],
-                  "path": []
+                  "path": [
+                    "api",
+                    "jobs",
+                    "{{jobId}}",
+                    "publish"
+                  ]
                 },
                 "description": "Owner only. Only DRAFT jobs can be published; otherwise 400."
               }
@@ -1308,7 +1337,12 @@
                   "host": [
                     "{{jobBaseUrl}}"
                   ],
-                  "path": []
+                  "path": [
+                    "api",
+                    "jobs",
+                    "{{jobId}}",
+                    "close"
+                  ]
                 },
                 "description": "Owner only. Only ACTIVE jobs can be closed; otherwise 400."
               }
@@ -1329,7 +1363,11 @@
                   "host": [
                     "{{jobBaseUrl}}"
                   ],
-                  "path": []
+                  "path": [
+                    "api",
+                    "jobs",
+                    "{{jobId}}"
+                  ]
                 },
                 "description": "Owner only. Sets deletedAt (public views then 404 afterwards). Slug is never recycled."
               }
@@ -1351,11 +1389,15 @@
                   }
                 ],
                 "url": {
-                  "raw": "{{jobBaseUrl}}/api/admin/jobs?status&companyId&title&page&size",
+                  "raw": "{{jobBaseUrl}}/api/admin/jobs?status=ACTIVE&companyId={{companyId}}&title=&page=0&size=20",
                   "host": [
                     "{{jobBaseUrl}}"
                   ],
-                  "path": [],
+                  "path": [
+                    "api",
+                    "admin",
+                    "jobs"
+                  ],
                   "query": [
                     {
                       "key": "status",
@@ -1398,7 +1440,12 @@
                   "host": [
                     "{{jobBaseUrl}}"
                   ],
-                  "path": []
+                  "path": [
+                    "api",
+                    "admin",
+                    "jobs",
+                    "{{jobId}}"
+                  ]
                 },
                 "description": "Any job regardless of status, with viewCount/applicationCount. No view bump."
               }
@@ -1415,11 +1462,17 @@
                   }
                 ],
                 "url": {
-                  "raw": "{{jobBaseUrl}}/api/admin/jobs/{{jobId}}/suspend?reason",
+                  "raw": "{{jobBaseUrl}}/api/admin/jobs/{{jobId}}/suspend?reason=",
                   "host": [
                     "{{jobBaseUrl}}"
                   ],
-                  "path": [],
+                  "path": [
+                    "api",
+                    "admin",
+                    "jobs",
+                    "{{jobId}}",
+                    "suspend"
+                  ],
                   "query": [
                     {
                       "key": "reason",
@@ -1446,7 +1499,13 @@
                   "host": [
                     "{{jobBaseUrl}}"
                   ],
-                  "path": []
+                  "path": [
+                    "api",
+                    "admin",
+                    "jobs",
+                    "{{jobId}}",
+                    "reactivate"
+                  ]
                 },
                 "description": "ADMIN: flips a suspended posting back to ACTIVE."
               }
@@ -1466,7 +1525,10 @@
                   "host": [
                     "{{jobBaseUrl}}"
                   ],
-                  "path": []
+                  "path": [
+                    "api",
+                    "job-categories"
+                  ]
                 },
                 "description": "Public, active-only, assembled as a tree from parent/child links."
               }
@@ -1481,7 +1543,11 @@
                   "host": [
                     "{{jobBaseUrl}}"
                   ],
-                  "path": []
+                  "path": [
+                    "api",
+                    "job-categories",
+                    "{{jobCategoryId}}"
+                  ]
                 },
                 "description": "Public detail of an active category."
               }
@@ -1502,7 +1568,11 @@
                   "host": [
                     "{{jobBaseUrl}}"
                   ],
-                  "path": []
+                  "path": [
+                    "api",
+                    "job-categories",
+                    "all"
+                  ]
                 },
                 "description": "Flat list including inactive categories; requires the identity header."
               }
@@ -1527,7 +1597,10 @@
                   "host": [
                     "{{jobBaseUrl}}"
                   ],
-                  "path": []
+                  "path": [
+                    "api",
+                    "job-categories"
+                  ]
                 },
                 "description": "201. `parentId` optional (omit/null for roots); slug stays unique with `-2`, `-3`... suffixes.",
                 "body": {
@@ -1561,7 +1634,11 @@
                   "host": [
                     "{{jobBaseUrl}}"
                   ],
-                  "path": []
+                  "path": [
+                    "api",
+                    "job-categories",
+                    "{{jobCategoryId}}"
+                  ]
                 },
                 "description": "Full-replace: `name` + `parentId` (null = root). Cycle-checked: moving a category into one of its own descendants gives 400.",
                 "body": {
@@ -1591,7 +1668,11 @@
                   "host": [
                     "{{jobBaseUrl}}"
                   ],
-                  "path": []
+                  "path": [
+                    "api",
+                    "job-categories",
+                    "{{jobCategoryId}}"
+                  ]
                 },
                 "description": "204; 409 when the category has children or is referenced by any posting (incl. soft-deleted ones - deactivate instead)."
               }
@@ -1611,7 +1692,10 @@
                   "host": [
                     "{{jobBaseUrl}}"
                   ],
-                  "path": []
+                  "path": [
+                    "api",
+                    "job-skills"
+                  ]
                 },
                 "description": "Public, active only, ordered by name."
               }
@@ -1626,7 +1710,11 @@
                   "host": [
                     "{{jobBaseUrl}}"
                   ],
-                  "path": []
+                  "path": [
+                    "api",
+                    "job-skills",
+                    "{{jobSkillId}}"
+                  ]
                 },
                 "description": "Public detail of an active skill."
               }
@@ -1647,7 +1735,11 @@
                   "host": [
                     "{{jobBaseUrl}}"
                   ],
-                  "path": []
+                  "path": [
+                    "api",
+                    "job-skills",
+                    "all"
+                  ]
                 },
                 "description": "Flat list including inactive skills; requires the identity header."
               }
@@ -1672,7 +1764,10 @@
                   "host": [
                     "{{jobBaseUrl}}"
                   ],
-                  "path": []
+                  "path": [
+                    "api",
+                    "job-skills"
+                  ]
                 },
                 "description": "`category` enum: PROGRAMMING_LANGUAGE | FRAMEWORK | DATABASE | DEVOPS | CLOUD_PLATFORM | SOFT_SKILL | DESIGN | OTHER.",
                 "body": {
@@ -1706,7 +1801,11 @@
                   "host": [
                     "{{jobBaseUrl}}"
                   ],
-                  "path": []
+                  "path": [
+                    "api",
+                    "job-skills",
+                    "{{jobSkillId}}"
+                  ]
                 },
                 "body": {
                   "mode": "raw",
@@ -1736,7 +1835,11 @@
                   "host": [
                     "{{jobBaseUrl}}"
                   ],
-                  "path": []
+                  "path": [
+                    "api",
+                    "job-skills",
+                    "{{jobSkillId}}"
+                  ]
                 },
                 "description": "204; 409 while referenced by any posting."
               }
@@ -1752,11 +1855,14 @@
                 "method": "GET",
                 "header": [],
                 "url": {
-                  "raw": "{{jobBaseUrl}}/api/job-tags?page&size",
+                  "raw": "{{jobBaseUrl}}/api/job-tags?page=0&size=20",
                   "host": [
                     "{{jobBaseUrl}}"
                   ],
-                  "path": [],
+                  "path": [
+                    "api",
+                    "job-tags"
+                  ],
                   "query": [
                     {
                       "key": "page",
@@ -1781,7 +1887,11 @@
                   "host": [
                     "{{jobBaseUrl}}"
                   ],
-                  "path": []
+                  "path": [
+                    "api",
+                    "job-tags",
+                    "{{jobTagId}}"
+                  ]
                 },
                 "description": "Public detail of an active tag."
               }
@@ -1806,7 +1916,10 @@
                   "host": [
                     "{{jobBaseUrl}}"
                   ],
-                  "path": []
+                  "path": [
+                    "api",
+                    "job-tags"
+                  ]
                 },
                 "body": {
                   "mode": "raw",
@@ -1840,7 +1953,11 @@
                   "host": [
                     "{{jobBaseUrl}}"
                   ],
-                  "path": []
+                  "path": [
+                    "api",
+                    "job-tags",
+                    "{{jobTagId}}"
+                  ]
                 },
                 "body": {
                   "mode": "raw",
@@ -1870,7 +1987,11 @@
                   "host": [
                     "{{jobBaseUrl}}"
                   ],
-                  "path": []
+                  "path": [
+                    "api",
+                    "job-tags",
+                    "{{jobTagId}}"
+                  ]
                 },
                 "description": "204; 409 while referenced by any posting."
               }
