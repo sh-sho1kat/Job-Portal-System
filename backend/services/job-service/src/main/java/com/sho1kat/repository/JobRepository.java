@@ -9,16 +9,16 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
-import java.util.Optional;
+import java.util.List;
 
 @Repository
 public interface JobRepository extends JpaRepository<Job, Long>, JpaSpecificationExecutor<Job> {
 
-    Optional<Job> findBySlug(String slug);
-
     boolean existsBySlug(String slug);
 
     Page<Job> findByPostedByOwnerIdAndDeletedAtIsNull(Long postedByOwnerId, Pageable pageable);
+
+    List<Job> findByCompanyIdAndDeletedAtIsNullOrderByCreatedAtDesc(Long companyId);
 
     @Query("select count(j) > 0 from Job j where j.category.id = :categoryId and j.deletedAt is null")
     boolean existsActiveJobForCategory(@Param("categoryId") Long categoryId);

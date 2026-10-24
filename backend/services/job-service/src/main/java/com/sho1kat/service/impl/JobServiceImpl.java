@@ -14,8 +14,8 @@ import com.sho1kat.enums.SalaryPeriod;
 import com.sho1kat.enums.WorkMode;
 import com.sho1kat.exception.ApiException;
 import com.sho1kat.mapper.JobMapper;
-import com.sho1kat.repository.JobRepository;
 import com.sho1kat.repository.JobCategoryRepository;
+import com.sho1kat.repository.JobRepository;
 import com.sho1kat.repository.JobSpecification;
 import com.sho1kat.service.JobService;
 import com.sho1kat.service.JobSkillService;
@@ -62,42 +62,43 @@ public class JobServiceImpl implements JobService {
 
     @Override
     @Transactional(readOnly = true)
-    public JobResponse getJobBySlug(String slug) {
-        return jobMapper.toResponse(jobRepository.findBySlug(slug)
+    public List<JobResponse> getJobByCompanyId(Long companyId) {
+        return jobRepository.findByCompanyIdAndDeletedAtIsNullOrderByCreatedAtDesc(companyId)
+                .stream()
                 .filter(this::isVisible)
-                .orElseThrow(() -> ApiException.notFound("Job not found with slug: " + slug)));
+                .map(jobMapper::toResponse)
+                .toList();
     }
-
 
     // ---- employer / owner ----
 
     @Override
     @Transactional
-    public DetailedJobResponse createJob(Long ownerId, CreateJobRequest request) {
+    public DetailedJobResponse createJob(Long employerId, CreateJobRequest request) {
 
-        verifyUserId(ownerId, "post a job");
+        verifyUserId(employerId, "post a job");
 
         // companyId (and company ownership) are not verified yet: job-service has no
-        // company-service client until service discovery is wired up. The posting
-        // starts PENDING_APPROVAL, where an admin review is the safety net.
+        // company-service client until service discovery is wired up. Postings start
+        // as DRAFT and only exist publicly once the employer publishes them.
         validate(request);
         JobCategory category = requireActiveCategory(request.categoryId());
         List<JobSkill> skills = jobSkillService.getJobSkillsByIds(request.skillIds());
         List<JobTag> tags = jobTagService.getJobTagsByIds(request.tagIds());
 
-        Job job = jobMapper.toEntity(request, ownerId, convertToSlug(request.title(), null), category, skills, tags);
+        Job job = jobMapper.toEntity(request, employerId, convertToSlug(request.title(), null), category, skills, tags);
 
         return jobMapper.toDetailedResponse(jobRepository.save(job));
     }
 
     @Override
     @Transactional(readOnly = true)
-    public Page<DetailedJobResponse> getMyJobs(Long ownerId, int page, int size) {
-        verifyUserId(ownerId, "view your jobs");
+    public Page<DetailedJobResponse> getMyJobs(Long employerId, int page, int size) {
+        verifyUserId(employerId, "view your jobs");
 
         Pageable pageable = PageRequest.of(Math.max(page, 0), Math.clamp(size, 1, 100),
                 Sort.by("createdAt").descending());
-        return jobRepository.findByPostedByOwnerIdAndDeletedAtIsNull(ownerId, pageable)
+        return jobRepository.findByPostedByOwnerIdAndDeletedAtIsNull(employerId, pageable)
                 .map(jobMapper::toDetailedResponse);
     }
 
@@ -115,9 +116,21 @@ public class JobServiceImpl implements JobService {
 
         job.setSlug(convertToSlug(job.getTitle(), job.getSlug()));
         if (job.getStatus() == JobStatus.REJECTED) {
-            // edits send rejected postings back into the review queue
-            job.setStatus(JobStatus.PENDING_APPROVAL);
+            // edits send rejected postings back to the drafts for re-publishing
+            job.setStatus(JobStatus.DRAFT);
         }
+        return jobMapper.toDetailedResponse(jobRepository.save(job));
+    }
+
+    @Override
+    @Transactional
+    public DetailedJobResponse publishJob(Long requesterId, Long jobId) {
+        Job job = ownedJob(jobId, requesterId);
+        if (job.getStatus() != JobStatus.DRAFT) {
+            throw ApiException.badRequest("Only draft jobs can be published (current status: " + job.getStatus() + ")");
+        }
+        job.setStatus(JobStatus.ACTIVE);
+        job.setPublishedAt(Instant.now());
         return jobMapper.toDetailedResponse(jobRepository.save(job));
     }
 

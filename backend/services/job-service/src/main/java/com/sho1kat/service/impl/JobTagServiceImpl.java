@@ -13,6 +13,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -71,13 +72,19 @@ public class JobTagServiceImpl implements JobTagService {
         jobTagRepository.delete(tag);
     }
 
-    // ---- helpers ----
-
-    /**
-     * Convenience accessor for the JobSkillResponse record's fields.
-     */
-    public Long getId() {
-        return id;
+    @Override
+    @Transactional(readOnly = true)
+    public List<JobTag> getJobTagsByIds(Set<Long> ids) {
+        if (ids == null || ids.isEmpty()) {
+            return List.of();
+        }
+        List<JobTag> found = jobTagRepository.findAllById(ids);
+        if (found.size() != new LinkedHashSet<>(ids).size()) {
+            Set<Long> missing = new LinkedHashSet<>(ids);
+            missing.removeAll(found.stream().map(JobTag::getId).collect(Collectors.toList()));
+            throw ApiException.badRequest("Unknown tag ids: " + missing);
+        }
+        return found;
     }
 
     // ---- helpers ----

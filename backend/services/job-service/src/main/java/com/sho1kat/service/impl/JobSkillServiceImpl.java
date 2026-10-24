@@ -47,6 +47,15 @@ public class JobSkillServiceImpl implements JobSkillService {
 
     @Override
     @Transactional(readOnly = true)
+    public List<JobSkillResponse> getAllJobSkillsIncludingInactive() {
+        return jobSkillRepository.findAll(Sort.by("name").ascending())
+                .stream()
+                .map(jobSkillMapper::toResponse)
+                .toList();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public JobSkillResponse getJobSkillById(Long id) {
         return jobSkillMapper.toResponse(requireSkill(id));
     }

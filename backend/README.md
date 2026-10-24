@@ -231,50 +231,97 @@ owns the company before accepting postings.
 
 | Method | Path | Access |
 |---|---|---|
-| `GET` | `/api/jobs` | public — filters `keyword` (title/description), `companyId`, `employmentType`, `experienceLevel`, `workMode`, `location`, `salaryPeriod`; `page`, `size` (max 100) |
-| `GET` | `/api/jobs/{id}` | public (active, deadline not passed) |
-| `GET` | `/api/jobs/slug/{slug}` | public (active, deadline not passed) |
-| `POST` | `/api/jobs/create` | employer via `X-User-Id` (starts `PENDING_APPROVAL`) |
+| `GET` | `/api/jobs` | public — filters `keyword` (title/description), `companyId`, `employmentType`, `experienceLevel`, `workMode`, `location`, `salaryPeriod`, `categoryId`, `skillIds`, `tagIds`; `page`, `size` (max 100) |
+| `GET` | `/api/jobs/{id}` | public (active, deadline/expiry not passed) |
+| `GET` | `/api/jobs/company/{companyId}` | public — active, non-expired jobs of one company |
+| `POST` | `/api/jobs/create` | employer via `X-User-Id` (starts `DRAFT`) |
 | `GET` | `/api/jobs/my-jobs` | employer via `X-User-Id` |
-| `PUT` | `/api/jobs/{id}` | job poster via `X-User-Id` (renaming regenerates the slug; editing a rejected job resubmits it for approval) |
+| `PUT` | `/api/jobs/{id}` | job poster via `X-User-Id` (renaming regenerates the slug; editing a rejected job returns it to `DRAFT`) |
+| `POST` | `/api/jobs/{id}/publish` | job poster via `X-User-Id` (`DRAFT → ACTIVE`) |
 | `POST` | `/api/jobs/{id}/close` | job poster via `X-User-Id` (`ACTIVE → CLOSED`) |
 | `DELETE` | `/api/jobs/{id}` | job poster via `X-User-Id` (soft delete) |
 
-### Admin review (`/api/admin/jobs`)
+### Admin (`/api/admin/jobs`)
 
 | Method | Path | Availability |
 |---|---|---|
 | `GET` | `/api/admin/jobs` | paged list, filters `status`, `companyId`, `title`; `page`, `size` |
 | `GET` | `/api/admin/jobs/{jobId}` | detail view |
-| `POST` | `/api/admin/jobs/{jobId}/approve` | `PENDING_APPROVAL → ACTIVE` |
-| `POST` | `/api/admin/jobs/{jobId}/reject` | `PENDING_APPROVAL → REJECTED` |
 | `POST` | `/api/admin/jobs/{jobId}/suspend` | `ACTIVE → SUSPENDED` |
 | `POST` | `/api/admin/jobs/{jobId}/reactivate` | `SUSPENDED → ACTIVE` |
 
+### Job categories (`/api/job-categories`)
+
+| Method | Path | Access |
+|---|---|---|
+| `GET` | `/api/job-categories` | public — active categories as a tree (parent/children) |
+| `GET` | `/api/job-categories/{id}` | public |
+| `GET` | `/api/job-categories/all` | authenticated via `X-User-Id` — flat list incl. inactive |
+| `POST` | `/api/job-categories` | `X-User-Id` |
+| `PUT` | `/api/job-categories/{id}` | `X-User-Id` (re-parenting is cycle-checked) |
+| `DELETE` | `/api/job-categories/{id}` | `X-User-Id` (blocked while it has children or is referenced by active jobs) |
+
+### Job skills (`/api/job-skills`)
+
+| Method | Path | Access |
+|---|---|---|
+| `GET` | `/api/job-skills` | public — active skills |
+| `GET` | `/api/job-skills/{id}` | public |
+| `GET` | `/api/job-skills/all` | authenticated via `X-User-Id` — incl. inactive |
+| `POST` | `/api/job-skills` | `X-User-Id` |
+| `PUT` | `/api/job-skills/{id}` | `X-User-Id` |
+| `DELETE` | `/api/job-skills/{id}` | `X-User-Id` (blocked while referenced by active jobs) |
+
+### Job tags (`/api/job-tags`)
+
+| Method | Path | Access |
+|---|---|---|
+| `GET` | `/api/job-tags` | public |
+| `GET` | `/api/job-tags/{id}` | public |
+| `POST` | `/api/job-tags` | `X-User-Id` |
+| `PUT` | `/api/job-tags/{id}` | `X-User-Id` |
+| `DELETE` | `/api/job-tags/{id}` | `X-User-Id` (blocked while referenced by active jobs) |
+
+Taxonomy CRUD is open to employers/admins for now via the `X-User-Id`
+stand-in; once role enforcement lands, writes should tighten to admins only.
+
 ### Request DTOs
 
-Statuses: `PENDING_APPROVAL`, `ACTIVE`, `REJECTED`, `SUSPENDED`, `CLOSED`.
+Statuses: `DRAFT`, `ACTIVE`, `REJECTED`, `SUSPENDED`, `CLOSED`, `FILLED`,
+`EXPIRED` (jobs are authored as `DRAFT` and published by the employer; `FILLED`
+and `EXPIRED` have no automatic transitions yet).
 Employment types: `FULL_TIME`, `PART_TIME`, `CONTRACT`, `INTERNSHIP`, `TEMPORARY`,
 `FREELANCE`. Experience levels: `ENTRY_LEVEL`, `MID_LEVEL`, `SENIOR_LEVEL`, `LEAD`,
 `EXECUTIVE`. Work modes: `ON_SITE`, `HYBRID`, `REMOTE`. Salary periods: `HOURLY`,
-`MONTHLY`, `YEARLY`.
+`MONTHLY`, `YEARLY`. Skill categories (on skills): `PROGRAMMING_LANGUAGE`, `FRAMEWORK`,
+`DATABASE`, `CLOUD_PLATFORM`, `DEVOPS`, `DESIGN`, `SOFT_SKILL`, `TOOL`, `LANGUAGE`, `OTHER`.
 
-- **Create/Update job**: `companyId` (required on create), `title` (required, ≤150),
-  `description` (required, ≤10000), `responsibilities`/`requirements` (≤10000),
-  `benefits` (≤5000), `employmentType`/`experienceLevel`/`workMode` (required),
-  `city`/`state`/`country` (≤100; required for `ON_SITE`/`HYBRID`),
-  `salaryMin`/`salaryMax` (≥0, min ≤ max, `salaryPeriod` required when a salary is
-  set), `salaryCurrency` (ISO 4217 code, e.g. `USD`), `vacancies` (1–10000),
-  `applicationDeadline` (must be today or later on create), `skills`
-  (≤20, ≤50 chars each, duplicates dropped).
-- The public catalogue hides pending/rejected/suspended/closed/deleted postings
-  and expired deadlines; admin views show everything not deleted.
+- **Create job**: `companyId` (required), `title` (required, ≤150), `description`
+  (required, ≤10000), `responsibilities`/`requirements` (≤10000), `benefits` (≤5000),
+  `employmentType`/`experienceLevel`/`workMode` (required), location
+  `address`/`city`/`state`/`country`/`zipCode` (`city`+`country` required for
+  `ON_SITE`/`HYBRID`), `salaryMin`/`salaryMax` (decimal ≥0, min ≤ max,
+  `salaryPeriod` required when a salary is set), `salaryCurrency` (ISO 4217 code,
+  e.g. `USD`), `categoryId` (required, must be an active category),
+  `skillIds`/`tagIds` (≤20 each, must exist), `vacancies` (1–10000),
+  `applicationDeadline`/`expiresAt` (today or later on create).
+  **Update job**: same fields minus `companyId`; deadline/expiry are not required
+  to be future so unrelated edits never get blocked.
+- **Job category**: `name` (required, ≤100; slug derived), `description` (≤1000),
+  `iconUrl` (http(s) URL, ≤500), `parentId` (optional, for sub-categories),
+  `active` (update: `null` keeps current).
+- **Job skill**: `name` (required), `category` (`SkillCategory`, required), `active`.
+- **Job tag**: `name` (required).
+- The public catalogue hides drafts/rejected/closed/deleted postings and
+  expired deadlines; admin views show everything not deleted. `CompanySummaryResponse`
+  fields come denormalised onto job cards, but until the company-service
+  integration only `id` is populated.
 
 ## Roadmap
 
 - [x] User service (auth, user management)
 - [x] Company service (profiles, locations, admin verification)
-- [x] Job service (postings, employer CRUD, admin review)
+- [x] Job service (postings, taxonomy categories/skills/tags, employer publishing)
 - [ ] Spring Cloud infrastructure in `cloud/` (service discovery, config server, API gateway)
 - [ ] JWT enforcement in company-service / job-service / gateway identity forwarding
 - [ ] Additional business services (applications, notifications)

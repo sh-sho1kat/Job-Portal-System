@@ -12,6 +12,9 @@ public interface JobSkillService {
 
     List<JobSkillResponse> getAllJobSkills();
 
+    /** Flat list including inactive ones (management screens). */
+    List<JobSkillResponse> getAllJobSkillsIncludingInactive();
+
     JobSkillResponse getJobSkillById(Long id);
 
     JobSkillResponse updateJobSkill(Long id, Long requesterId, JobSkillRequest request);

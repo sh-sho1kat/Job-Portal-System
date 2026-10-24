@@ -13,6 +13,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/jobs")
 @RequiredArgsConstructor
@@ -35,8 +37,8 @@ public class JobController {
         return ResponseEntity.ok(jobService.getJobById(id));
     }
 
-    @GetMapping("/company/{company-id}")
-    public ResponseEntity<JobResponse> getJobByCompanyId(@PathVariable Long companyId) {
+    @GetMapping("/company/{companyId}")
+    public ResponseEntity<List<JobResponse>> getJobByCompanyId(@PathVariable Long companyId) {
         return ResponseEntity.ok(jobService.getJobByCompanyId(companyId));
     }
 
@@ -64,6 +66,14 @@ public class JobController {
             @RequestHeader(name = RequesterId.HEADER, required = false) String requesterId,
             @Valid @RequestBody UpdateJobRequest request) {
         return ResponseEntity.ok(jobService.updateJob(id, RequesterId.from(requesterId), request));
+    }
+
+    /** DRAFT -> ACTIVE */
+    @PostMapping("/{id}/publish")
+    public ResponseEntity<DetailedJobResponse> publishJob(
+            @PathVariable Long id,
+            @RequestHeader(name = RequesterId.HEADER, required = false) String requesterId) {
+        return ResponseEntity.ok(jobService.publishJob(RequesterId.from(requesterId), id));
     }
 
     /** ACTIVE -> CLOSED */
