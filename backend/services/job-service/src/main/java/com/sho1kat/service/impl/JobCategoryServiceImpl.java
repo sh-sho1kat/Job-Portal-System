@@ -8,6 +8,7 @@ import com.sho1kat.mapper.JobCategoryMapper;
 import com.sho1kat.repository.JobCategoryRepository;
 import com.sho1kat.repository.JobRepository;
 import com.sho1kat.service.JobCategoryService;
+import com.sho1kat.util.SlugUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -153,20 +154,12 @@ public class JobCategoryServiceImpl implements JobCategoryService {
     }
 
     private String convertToSlug(String name, String currentSlug) {
-        String base = slugify(name);
+        String base = SlugUtils.slugify(name, "category");
         String candidate = base;
         int suffix = 2;
         while (jobCategoryRepository.existsBySlug(candidate) && !candidate.equals(currentSlug)) {
             candidate = base + "-" + suffix++;
         }
         return candidate;
-    }
-
-    private String slugify(String value) {
-        String slug = value.trim().toLowerCase()
-                .replace("'", "")
-                .replaceAll("[^a-z0-9]+", "-")
-                .replaceAll("^-+|-+$", "");
-        return slug.isBlank() ? "category" : slug;
     }
 }

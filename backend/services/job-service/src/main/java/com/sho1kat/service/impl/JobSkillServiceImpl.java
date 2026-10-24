@@ -8,6 +8,7 @@ import com.sho1kat.mapper.JobSkillMapper;
 import com.sho1kat.repository.JobRepository;
 import com.sho1kat.repository.JobSkillRepository;
 import com.sho1kat.service.JobSkillService;
+import com.sho1kat.util.SlugUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
@@ -111,20 +112,12 @@ public class JobSkillServiceImpl implements JobSkillService {
     }
 
     private String convertToSlug(String name, String currentSlug) {
-        String base = slugify(name);
+        String base = SlugUtils.slugify(name, "skill");
         String candidate = base;
         int suffix = 2;
         while (jobSkillRepository.existsBySlug(candidate) && !candidate.equals(currentSlug)) {
             candidate = base + "-" + suffix++;
         }
         return candidate;
-    }
-
-    private String slugify(String value) {
-        String slug = value.trim().toLowerCase()
-                .replace("'", "")
-                .replaceAll("[^a-z0-9]+", "-")
-                .replaceAll("^-+|-+$", "");
-        return slug.isBlank() ? "skill" : slug;
     }
 }

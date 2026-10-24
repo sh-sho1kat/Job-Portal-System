@@ -8,6 +8,7 @@ import com.sho1kat.mapper.JobTagMapper;
 import com.sho1kat.repository.JobRepository;
 import com.sho1kat.repository.JobTagRepository;
 import com.sho1kat.service.JobTagService;
+import com.sho1kat.util.SlugUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
@@ -101,20 +102,12 @@ public class JobTagServiceImpl implements JobTagService {
     }
 
     private String convertToSlug(String name, String currentSlug) {
-        String base = slugify(name);
+        String base = SlugUtils.slugify(name, "tag");
         String candidate = base;
         int suffix = 2;
         while (jobTagRepository.existsBySlug(candidate) && !candidate.equals(currentSlug)) {
             candidate = base + "-" + suffix++;
         }
         return candidate;
-    }
-
-    private String slugify(String value) {
-        String slug = value.trim().toLowerCase()
-                .replace("'", "")
-                .replaceAll("[^a-z0-9]+", "-")
-                .replaceAll("^-+|-+$", "");
-        return slug.isBlank() ? "tag" : slug;
     }
 }

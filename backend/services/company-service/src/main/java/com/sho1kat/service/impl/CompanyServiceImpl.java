@@ -14,6 +14,7 @@ import com.sho1kat.exception.ApiException;
 import com.sho1kat.mapper.CompanyMapper;
 import com.sho1kat.repository.CompanyRepository;
 import com.sho1kat.service.CompanyService;
+import com.sho1kat.util.SlugUtils;
 import jakarta.persistence.criteria.Join;
 import jakarta.persistence.criteria.JoinType;
 import lombok.RequiredArgsConstructor;
@@ -200,20 +201,12 @@ public class CompanyServiceImpl implements CompanyService {
         // Turn "Acme Labs" into "acme-labs", then extend with -2, -3, ... until the slug
         // is free. {@code currentSlug} is tolerated as a candidate so renames that keep
         // the same slug family do not loop.
-        String base = slugify(name);
+        String base = SlugUtils.slugify(name, "company");
         String candidate = base;
         int suffix = 2;
         while (companyRepository.existsBySlug(candidate) && !candidate.equals(currentSlug)) {
             candidate = base + "-" + suffix++;
         }
         return candidate;
-    }
-
-    private String slugify(String value) {
-        String slug = value.trim().toLowerCase()
-                .replace("'", "")
-                .replaceAll("[^a-z0-9]+", "-")
-                .replaceAll("^-+|-+$", "");
-        return slug.isBlank() ? "company" : slug;
     }
 }

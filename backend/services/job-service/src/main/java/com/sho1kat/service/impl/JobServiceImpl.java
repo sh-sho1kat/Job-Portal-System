@@ -20,6 +20,7 @@ import com.sho1kat.repository.JobSpecification;
 import com.sho1kat.service.JobService;
 import com.sho1kat.service.JobSkillService;
 import com.sho1kat.service.JobTagService;
+import com.sho1kat.util.SlugUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -261,20 +262,12 @@ public class JobServiceImpl implements JobService {
         // Turn "Senior Java Developer" into "senior-java-developer", then extend with
         // -2, -3, ... until the slug is free. {@code currentSlug} is tolerated as a
         // candidate so renames that keep the same slug family do not loop.
-        String base = slugify(title);
+        String base = SlugUtils.slugify(title, "job");
         String candidate = base;
         int suffix = 2;
         while (jobRepository.existsBySlug(candidate) && !candidate.equals(currentSlug)) {
             candidate = base + "-" + suffix++;
         }
         return candidate;
-    }
-
-    private String slugify(String value) {
-        String slug = value.trim().toLowerCase()
-                .replace("'", "")
-                .replaceAll("[^a-z0-9]+", "-")
-                .replaceAll("^-+|-+$", "");
-        return slug.isBlank() ? "job" : slug;
     }
 }
