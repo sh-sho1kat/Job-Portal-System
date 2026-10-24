@@ -68,7 +68,7 @@ public class JobTagServiceImpl implements JobTagService {
 
         JobTag tag = requireTag(id);
         if (jobRepository.existsActiveJobForTag(id)) {
-            throw ApiException.conflict("Tag is still referenced by active jobs");
+            throw ApiException.conflict("Tag is still referenced by job postings");
         }
         jobTagRepository.delete(tag);
     }

@@ -21,13 +21,16 @@ public interface JobRepository extends JpaRepository<Job, Long>, JpaSpecificatio
 
     List<Job> findByCompanyIdAndDeletedAtIsNullOrderByCreatedAtDesc(Long companyId);
 
-    @Query("select count(j) > 0 from Job j where j.category.id = :categoryId and j.deletedAt is null")
+    // Deletion guards count ANY posting reference — soft-deleted jobs keep their
+    // category/join-table rows, so a narrower "active only" check would let a
+    // DELETE slip through and die later on the FK constraint (HTTP 500).
+    @Query("select count(j) > 0 from Job j where j.category.id = :categoryId")
     boolean existsActiveJobForCategory(@Param("categoryId") Long categoryId);
 
-    @Query("select count(j) > 0 from Job j join j.skills s where s.id = :skillId and j.deletedAt is null")
+    @Query("select count(j) > 0 from Job j join j.skills s where s.id = :skillId")
     boolean existsActiveJobForSkill(@Param("skillId") Long skillId);
 
-    @Query("select count(j) > 0 from Job j join j.tags t where t.id = :tagId and j.deletedAt is null")
+    @Query("select count(j) > 0 from Job j join j.tags t where t.id = :tagId")
     boolean existsActiveJobForTag(@Param("tagId") Long tagId);
 
     boolean existsByIdAndDeletedAtIsNull(Long id);

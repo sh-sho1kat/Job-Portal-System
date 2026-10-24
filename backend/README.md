@@ -259,7 +259,7 @@ owns the company before accepting postings.
 | `GET` | `/api/job-categories/all` | authenticated via `X-User-Id` — flat list incl. inactive |
 | `POST` | `/api/job-categories` | `X-User-Id` |
 | `PUT` | `/api/job-categories/{id}` | `X-User-Id` (re-parenting is cycle-checked) |
-| `DELETE` | `/api/job-categories/{id}` | `X-User-Id` (blocked while it has children or is referenced by active jobs) |
+| `DELETE` | `/api/job-categories/{id}` | `X-User-Id` (blocked while it has children or any job posting — incl. soft-deleted, whose FK rows persist — still references it) |
 
 ### Job skills (`/api/job-skills`)
 
@@ -270,7 +270,7 @@ owns the company before accepting postings.
 | `GET` | `/api/job-skills/all` | authenticated via `X-User-Id` — incl. inactive |
 | `POST` | `/api/job-skills` | `X-User-Id` |
 | `PUT` | `/api/job-skills/{id}` | `X-User-Id` |
-| `DELETE` | `/api/job-skills/{id}` | `X-User-Id` (blocked while referenced by active jobs) |
+| `DELETE` | `/api/job-skills/{id}` | `X-User-Id` (blocked while any posting references it; delete-protection counts soft-deleted postings too) |
 
 ### Job tags (`/api/job-tags`)
 
@@ -280,10 +280,30 @@ owns the company before accepting postings.
 | `GET` | `/api/job-tags/{id}` | public |
 | `POST` | `/api/job-tags` | `X-User-Id` |
 | `PUT` | `/api/job-tags/{id}` | `X-User-Id` |
-| `DELETE` | `/api/job-tags/{id}` | `X-User-Id` (blocked while referenced by active jobs) |
+| `DELETE` | `/api/job-tags/{id}` | `X-User-Id` (blocked while any posting references it; delete-protection counts soft-deleted postings too) |
 
 Taxonomy CRUD is open to employers/admins for now via the `X-User-Id`
 stand-in; once role enforcement lands, writes should tighten to admins only.
+
+### Seeding sample data & final API smoke test
+
+`services/job-service/seed/` ships two helpers (both use the running service
+on port 5003, so they exercise the real HTTP surface and land random JSON in
+`job_db`):
+
+```bash
+# repeatable random seed: 3 root + 4 child categories, 11 skills, 5 tags,
+# 6 randomized postings across companies 1-3 (4 published, 1 closed, 1 draft)
+python3 seed/seed.py [base_url] [owner_id]     # defaults: localhost:5003, 1001
+
+# full API smoke suite (lifecycle, filters, admin, guards, error paths);
+# logs its created ids and leaves a couple of postings behind
+./seed/api-tests.sh                            # owner 2002; PASS/FAIL per check
+```
+
+Slugs come from the shared `com.sho1kat.util.SlugUtils` in common-lib
+(company-service + job-service), with per-service `-2`, `-3` suffixing for
+collisions; slugs of deleted jobs are never recycled.
 
 ### Request DTOs
 

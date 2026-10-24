@@ -1,1060 +1,1883 @@
 {
-	"info": {
-		"_postman_id": "b1e2c3d4-5a6b-4c8d-9e0f-1a2b3c4d5e6f",
-		"name": "Job Portal System API",
-		"description": "Postman collection for all Job Portal System backend services.\n\n## Conventions\n- **One top-level folder per microservice** (e.g. `User Service`, `Job Service`, ...), one subfolder per controller.\n- **Collection variables** (see `Variables` tab):\n  - `baseUrl` — target host, defaults to `http://localhost:5001`\n  - `accessToken` / `refreshToken` — auto-saved by the `Login` and `Refresh` test scripts\n  - `userId` — the record used by `GET/PUT/PATCH/DELETE /api/users/{id}` requests\n  - `companyBaseUrl` — company-service host, defaults to `http://localhost:5002`\n  - `companyId` / `locationId` — ids used by the Company Service requests\n- **Auth**: collection-level Bearer auth using `{{accessToken}}`; public requests override it with `No Auth`.\n- **Error shape**: every non-2xx response (except empty-body 401s from the security layer) is\n  `{\"status\":int,\"error\":str,\"message\":str,\"details\":array|null,\"timestamp\":str}`.\n\n## Extending\nWhen a new service/API is added, add a new top-level folder and follow the same conventions.\nSee `postman/README.md` in `common-lib`.",
-		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
-	},
-	"auth": {
-		"type": "bearer",
-		"bearer": [
-			{
-				"key": "token",
-				"value": "{{accessToken}}",
-				"type": "string"
-			}
-		]
-	},
-	"variable": [
-		{
-			"key": "baseUrl",
-			"value": "http://localhost:5001",
-			"type": "string"
-		},
-		{
-			"key": "accessToken",
-			"value": "",
-			"type": "string"
-		},
-		{
-			"key": "refreshToken",
-			"value": "",
-			"type": "string"
-		},
-		{
-			"key": "userId",
-			"value": "1",
-			"type": "string"
-		},
-		{
-			"key": "companyBaseUrl",
-			"value": "http://localhost:5002",
-			"type": "string"
-		},
-		{
-			"key": "companyId",
-			"value": "1",
-			"type": "string"
-		},
-		{
-			"key": "locationId",
-			"value": "1",
-			"type": "string"
-		},
-		{
-			"key": "companySlug",
-			"value": "acme-labs",
-			"type": "string"
-		}
-	],
-	"item": [
-		{
-			"name": "User Service",
-			"description": "Authentication and user management APIs (port 5001).\n\nRoles: `ROLE_JOB_SEEKER`, `ROLE_EMPLOYER`, `ROLE_ADMIN`, `ROLE_SUPER_ADMIN`.\nUser statuses: `ACTIVE`, `INACTIVE`, `SUSPENDED`, `DELETED` (soft delete).",
-			"item": [
-				{
-					"name": "Auth",
-					"description": "Public authentication flows + authenticated password change.",
-					"item": [
-						{
-							"name": "Register",
-							"request": {
-								"auth": {
-									"type": "noauth"
-								},
-								"method": "POST",
-								"header": [
-									{
-										"key": "Content-Type",
-										"value": "application/json"
-									}
-								],
-								"body": {
-									"mode": "raw",
-									"raw": "{\n  \"firstName\": \"Shoikat\",\n  \"middleName\": null,\n  \"lastName\": \"Ahmed\",\n  \"email\": \"shoikat.new@example.com\",\n  \"password\": \"StrongPass123!\",\n  \"phoneNumber\": \"+8801712345678\",\n  \"userRole\": \"ROLE_JOB_SEEKER\"\n}",
-									"options": {
-										"raw": {
-											"language": "json"
-										}
-									}
-								},
-								"url": {
-									"raw": "{{baseUrl}}/api/auth/register",
-									"host": [
-										"{{baseUrl}}"
-									],
-									"path": [
-										"api",
-										"auth",
-										"register"
-									]
-								},
-								"description": "Create a new account.\n\n**Body** — `RegisterRequest`:\n- `firstName` (required, ≤50), `middleName` (optional, ≤50), `lastName` (required, ≤50)\n- `email` (required, valid email, ≤150, unique)\n- `password` (required, 8–64, needs upper+lower+digit+special `[@$!%*?&]`)\n- `phoneNumber` (optional, `+?[0-9]{7,15}`)\n- `userRole` (required): `ROLE_JOB_SEEKER` | `ROLE_EMPLOYER` | `ROLE_ADMIN` | `ROLE_SUPER_ADMIN`\n\n**Responses**\n- `201` → `UserResponse` (also saved to `{{registeredUserId}}`)\n- `400` → validation failed\n- `409` → email already registered"
-							},
-							"event": [
-								{
-									"listen": "test",
-									"script": {
-										"type": "text/javascript",
-										"exec": [
-											"pm.test('201 Created', () => pm.response.to.have.status(201));",
-											"const body = pm.response.json();",
-											"if (body && body.id) pm.collectionVariables.set('registeredUserId', String(body.id));"
-										]
-									}
-								}
-							],
-							"response": []
-						},
-						{
-							"name": "Login",
-							"request": {
-								"auth": {
-									"type": "noauth"
-								},
-								"method": "POST",
-								"header": [
-									{
-										"key": "Content-Type",
-										"value": "application/json"
-									}
-								],
-								"body": {
-									"mode": "raw",
-									"raw": "{\n  \"email\": \"shoikat@example.com\",\n  \"password\": \"DemoPass123!\"\n}",
-									"options": {
-										"raw": {
-											"language": "json"
-										}
-									}
-								},
-								"url": {
-									"raw": "{{baseUrl}}/api/auth/login",
-									"host": [
-										"{{baseUrl}}"
-									],
-									"path": [
-										"api",
-										"auth",
-										"login"
-									]
-								},
-								"description": "Exchange credentials for a token pair.\n\n**Responses**\n- `200` → `AuthResponse` `{ accessToken, refreshToken, tokenType: \"Bearer\", expiresIn, user }` — tokens are auto-saved into `{{accessToken}}` / `{{refreshToken}}` / `{{userId}}`\n- `400` → validation failed\n- `401` → invalid credentials\n- `403` → account suspended or deleted\n\nDemo seeded accounts: `shoikat@example.com` (ADMIN), `tanvir.chowdhury@example.com` (SUPER_ADMIN), password `DemoPass123!`. 50 demo accounts `demo01…demo50.*@example.com` also exist (see `common-lib/postman/README.md`)."
-							},
-							"event": [
-								{
-									"listen": "test",
-									"script": {
-										"type": "text/javascript",
-										"exec": [
-											"pm.test('200 OK', () => pm.response.to.have.status(200));",
-											"const body = pm.response.json();",
-											"if (body && body.accessToken) {",
-											"    pm.collectionVariables.set('accessToken', body.accessToken);",
-											"    pm.collectionVariables.set('refreshToken', body.refreshToken);",
-											"}",
-											"if (body && body.user && body.user.id) pm.collectionVariables.set('userId', String(body.user.id));"
-										]
-									}
-								}
-							],
-							"response": []
-						},
-						{
-							"name": "Refresh",
-							"request": {
-								"auth": {
-									"type": "noauth"
-								},
-								"method": "POST",
-								"header": [
-									{
-										"key": "Content-Type",
-										"value": "application/json"
-									}
-								],
-								"body": {
-									"mode": "raw",
-									"raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}",
-									"options": {
-										"raw": {
-											"language": "json"
-										}
-									}
-								},
-								"url": {
-									"raw": "{{baseUrl}}/api/auth/refresh",
-									"host": [
-										"{{baseUrl}}"
-									],
-									"path": [
-										"api",
-										"auth",
-										"refresh"
-									]
-								},
-								"description": "Rotate a refresh token for a new token pair. The used token is revoked (single use); replaying a rotated token revokes the whole family.\n\n**Responses**\n- `200` → new `AuthResponse` (auto-saved, replacing the old pair)\n- `400` → blank token\n- `401` → unknown / expired / revoked / replayed token"
-							},
-							"event": [
-								{
-									"listen": "test",
-									"script": {
-										"type": "text/javascript",
-										"exec": [
-											"pm.test('200 OK', () => pm.response.to.have.status(200));",
-											"const body = pm.response.json();",
-											"if (body && body.accessToken) {",
-											"    pm.collectionVariables.set('accessToken', body.accessToken);",
-											"    pm.collectionVariables.set('refreshToken', body.refreshToken);",
-											"}"
-										]
-									}
-								}
-							],
-							"response": []
-						},
-						{
-							"name": "Logout",
-							"request": {
-								"auth": {
-									"type": "noauth"
-								},
-								"method": "POST",
-								"header": [
-									{
-										"key": "Content-Type",
-										"value": "application/json"
-									}
-								],
-								"body": {
-									"mode": "raw",
-									"raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}",
-									"options": {
-										"raw": {
-											"language": "json"
-										}
-									}
-								},
-								"url": {
-									"raw": "{{baseUrl}}/api/auth/logout",
-									"host": [
-										"{{baseUrl}}"
-									],
-									"path": [
-										"api",
-										"auth",
-										"logout"
-									]
-								},
-								"description": "Revoke one refresh token (idempotent — unknown tokens still return 204).\n\n**Responses**\n- `204` → token revoked (or was already unknown)\n- `400` → blank token"
-							},
-							"response": []
-						},
-						{
-							"name": "Change Password",
-							"request": {
-								"method": "PUT",
-								"header": [
-									{
-										"key": "Content-Type",
-										"value": "application/json"
-									}
-								],
-								"body": {
-									"mode": "raw",
-									"raw": "{\n  \"currentPassword\": \"DemoPass123!\",\n  \"newPassword\": \"NewStrong456!\",\n  \"confirmPassword\": \"NewStrong456!\"\n}",
-									"options": {
-										"raw": {
-											"language": "json"
-										}
-									}
-								},
-								"url": {
-									"raw": "{{baseUrl}}/api/auth/me/password",
-									"host": [
-										"{{baseUrl}}"
-									],
-									"path": [
-										"api",
-										"auth",
-										"me",
-										"password"
-									]
-								},
-								"description": "Change the password of the authenticated user (Bearer token required).\n\n**Responses**\n- `204` → password changed\n- `400` → wrong current password, weak new password, or confirm-mismatch\n- `401` → not authenticated"
-							},
-							"response": []
-						}
-					]
-				},
-				{
-					"name": "Users",
-					"description": "User management. Self-access allowed for GET/PUT on your own id; everything else requires `ROLE_ADMIN` or `ROLE_SUPER_ADMIN`.",
-					"item": [
-						{
-							"name": "Get User By Id",
-							"request": {
-								"method": "GET",
-								"url": {
-									"raw": "{{baseUrl}}/api/users/{{userId}}",
-									"host": [
-										"{{baseUrl}}"
-									],
-									"path": [
-										"api",
-										"users",
-										"{{userId}}"
-									]
-								},
-								"description": "Fetch one user. A user may view their own record; any other record requires ADMIN / SUPER_ADMIN.\n\n**Responses**\n- `200` → `UserResponse`\n- `400` → non-numeric id\n- `401` → not authenticated\n- `403` → viewing someone else's record without an admin role\n- `404` → no such user"
-							},
-							"response": []
-						},
-						{
-							"name": "List Users",
-							"request": {
-								"method": "GET",
-								"url": {
-									"raw": "{{baseUrl}}/api/users?page=0&size=20&userRole=ROLE_JOB_SEEKER",
-									"host": [
-										"{{baseUrl}}"
-									],
-									"path": [
-										"api",
-										"users"
-									],
-									"query": [
-										{
-											"key": "page",
-											"value": "0",
-											"description": "0-based page index"
-										},
-										{
-											"key": "size",
-											"value": "20",
-											"description": "page size (default 20, capped at 2000)"
-										},
-										{
-											"key": "userRole",
-											"value": "ROLE_JOB_SEEKER",
-											"description": "optional filter: ROLE_JOB_SEEKER | ROLE_EMPLOYER | ROLE_ADMIN | ROLE_SUPER_ADMIN",
-											"disabled": true
-										}
-									]
-								},
-								"description": "Paged list of all users, newest first (admin only).\n\n**Responses**\n- `200` → Spring `Page<UserResponse>`\n- `401` → not authenticated\n- `403` → not ADMIN / SUPER_ADMIN"
-							},
-							"response": []
-						},
-						{
-							"name": "Update User",
-							"request": {
-								"method": "PUT",
-								"header": [
-									{
-										"key": "Content-Type",
-										"value": "application/json"
-									}
-								],
-								"body": {
-									"mode": "raw",
-									"raw": "{\n  \"firstName\": \"Shoikat\",\n  \"middleName\": null,\n  \"lastName\": \"Ahmed\",\n  \"phoneNumber\": \"+8801712345678\",\n  \"profilePictureUrl\": null\n}",
-									"options": {
-										"raw": {
-											"language": "json"
-										}
-									}
-								},
-								"url": {
-									"raw": "{{baseUrl}}/api/users/{{userId}}",
-									"host": [
-										"{{baseUrl}}"
-									],
-									"path": [
-										"api",
-										"users",
-										"{{userId}}"
-									]
-								},
-								"description": "Update profile fields. A user may update their own profile; any other profile requires ADMIN / SUPER_ADMIN. Email, role and status are NOT editable here.\n\n**Body** — `UpdateUserRequest`: `firstName` (required, ≤50), `middleName` (optional, ≤50), `lastName` (required, ≤50), `phoneNumber` (optional), `profilePictureUrl` (optional, ≤255).\n\n**Responses**\n- `200` → updated `UserResponse`\n- `400` → validation failed\n- `403` → updating someone else's profile without an admin role\n- `404` → no such user"
-							},
-							"response": []
-						},
-						{
-							"name": "Update User Status",
-							"request": {
-								"method": "PATCH",
-								"header": [
-									{
-										"key": "Content-Type",
-										"value": "application/json"
-									}
-								],
-								"body": {
-									"mode": "raw",
-									"raw": "{\n  \"status\": \"SUSPENDED\"\n}",
-									"options": {
-										"raw": {
-											"language": "json"
-										}
-									}
-								},
-								"url": {
-									"raw": "{{baseUrl}}/api/users/{{userId}}/status",
-									"host": [
-										"{{baseUrl}}"
-									],
-									"path": [
-										"api",
-										"users",
-										"{{userId}}",
-										"status"
-									]
-								},
-								"description": "Change a user's status (admin only). Suspending revokes all of the user's refresh tokens.\n\n**Body**: `status` = `ACTIVE` | `INACTIVE` | `SUSPENDED` | `DELETED`\n\n**Responses**\n- `200` → updated `UserResponse`\n- `400` → unknown status / null\n- `403` → not ADMIN / SUPER_ADMIN\n- `404` → no such user"
-							},
-							"response": []
-						},
-						{
-							"name": "Delete User",
-							"request": {
-								"method": "DELETE",
-								"url": {
-									"raw": "{{baseUrl}}/api/users/{{userId}}",
-									"host": [
-										"{{baseUrl}}"
-									],
-									"path": [
-										"api",
-										"users",
-										"{{userId}}"
-									]
-								},
-								"description": "Soft-delete a user (admin only): sets status to `DELETED` and revokes all refresh tokens.\n\n**Responses**\n- `204` → deleted\n- `403` → not ADMIN / SUPER_ADMIN\n- `404` → no such user"
-							},
-							"response": []
-						}
-					]
-				}
-			]
-		},
-		{
-			"name": "Company Service",
-			"description": "Company profiles, offices and admin verification (port 5002).\n\nStatuses: `PENDING_VERIFICATION`, `ACTIVE`, `SUSPENDED`, `REJECTED`. Sizes: `MICRO`, `SMALL`, `MEDIUM`, `LARGE`, `ENTERPRISE`. Types: `STARTUP`, `PRIVATE`, `PUBLIC_LISTED`, `GOVERNMENT`, `NON_PROFIT`, `EDUCATIONAL`, `SELF_EMPLOYED`. Social platforms: `LINKEDIN`, `TWITTER`, `FACEBOOK`, `GITHUB`, `INSTAGRAM`, `YOUTUBE`, `WEBSITE`.\n\n**Auth note**: JWT is not wired into this service yet. Owner/employer requests carry a temporary `X-User-Id` header (value: `{{userId}}` from the Login script — log in as an `ROLE_EMPLOYER` account first). Admin routes are unsecured for now.",
-			"item": [
-				{
-					"name": "Companies",
-					"description": "Public catalogue and the single owner profile.",
-					"item": [
-						{
-							"name": "Search Companies",
-							"request": {
-								"method": "GET",
-								"url": {
-									"raw": "{{companyBaseUrl}}/api/companies",
-									"host": [
-										"{{companyBaseUrl}}"
-									],
-									"path": [
-										"api",
-										"companies"
-									],
-									"query": [
-										{
-											"key": "page",
-											"value": "0",
-											"description": "0-based page index"
-										},
-										{
-											"key": "size",
-											"value": "20",
-											"description": "page size (capped at 100)"
-										},
-										{
-											"key": "name",
-											"value": "acme",
-											"description": "filter: name contains",
-											"disabled": true
-										},
-										{
-											"key": "industryType",
-											"value": "TECHNOLOGY",
-											"description": "filter: industry type",
-											"disabled": true
-										},
-										{
-											"key": "location",
-											"value": "Dhaka",
-											"description": "filter: any office city/state/country",
-											"disabled": true
-										},
-										{
-											"key": "companySize",
-											"value": "MEDIUM",
-											"description": "filter: MICRO|SMALL|MEDIUM|LARGE|ENTERPRISE",
-											"disabled": true
-										},
-										{
-											"key": "companyType",
-											"value": "PRIVATE",
-											"description": "filter: STARTUP|PRIVATE|PUBLIC_LISTED|GOVERNMENT|NON_PROFIT|EDUCATIONAL|SELF_EMPLOYED",
-											"disabled": true
-										}
-									]
-								},
-								"auth": {
-									"type": "noauth"
-								},
-								"description": "Public, paged search of verified, active (non-deleted) companies.\n\n**Query params** — `name` (contains, case-insensitive), `industryType`, `location` (matches city/state/country of any office), `companySize`, `companyType`, `page` (0-based), `size` (default 20, capped at 100).\n\n**Responses**\n- `200` → Spring `Page<CompanySummaryResponse>`"
-							},
-							"response": []
-						},
-						{
-							"name": "Get Company By Id",
-							"request": {
-								"method": "GET",
-								"url": {
-									"raw": "{{companyBaseUrl}}/api/companies/{{companyId}}",
-									"host": [
-										"{{companyBaseUrl}}"
-									],
-									"path": [
-										"api",
-										"companies",
-										"{{companyId}}"
-									]
-								},
-								"auth": {
-									"type": "noauth"
-								},
-								"description": "Fetch one verified, active company by id.\n\n**Responses**\n- `200` → `CompanyResponse`\n- `400` → non-numeric id\n- `404` → no such (or non-active) company"
-							},
-							"response": []
-						},
-						{
-							"name": "Get Company By Slug",
-							"request": {
-								"method": "GET",
-								"url": {
-									"raw": "{{companyBaseUrl}}/api/companies/slug/acme-labs",
-									"host": [
-										"{{companyBaseUrl}}"
-									],
-									"path": [
-										"api",
-										"companies",
-										"slug",
-										"acme-labs"
-									]
-								},
-								"auth": {
-									"type": "noauth"
-								},
-								"description": "Fetch one verified, active company by its URL slug (e.g. `acme-labs`, or `acme-labs-2` when earlier names collided).\n\n**Responses**\n- `200` → `CompanyResponse`\n- `404` → no such company"
-							},
-							"response": []
-						},
-						{
-							"name": "Create Company",
-							"request": {
-								"method": "POST",
-								"url": {
-									"raw": "{{companyBaseUrl}}/api/companies/create",
-									"host": [
-										"{{companyBaseUrl}}"
-									],
-									"path": [
-										"api",
-										"companies",
-										"create"
-									]
-								},
-								"header": [
-									{
-										"key": "X-User-Id",
-										"value": "{{userId}}",
-										"description": "temporary auth: user-service id of the caller"
-									},
-									{
-										"key": "Content-Type",
-										"value": "application/json"
-									}
-								],
-								"body": {
-									"mode": "raw",
-									"raw": "{\n  \"name\": \"Acme Labs\",\n  \"tagline\": \"Software that ships\",\n  \"description\": \"A Dhaka-based technology company building developer tools.\",\n  \"logoUrl\": \"https://acme-labs.example.com/logo.png\",\n  \"coverImageUrl\": \"https://acme-labs.example.com/cover.jpg\",\n  \"website\": \"https://acme-labs.com\",\n  \"email\": \"contact@acme-labs.com\",\n  \"phone\": \"+8801712345678\",\n  \"foundingYear\": 2015,\n  \"companySize\": \"MEDIUM\",\n  \"companyType\": \"PRIVATE\",\n  \"industryType\": \"TECHNOLOGY\",\n  \"registrationNumber\": \"TRAD/DNCC/123456\",\n  \"socialLinks\": [\n    {\n      \"platform\": \"LINKEDIN\",\n      \"url\": \"https://www.linkedin.com/company/acme-labs\"\n    },\n    {\n      \"platform\": \"GITHUB\",\n      \"url\": \"https://github.com/acme-labs\"\n    }\n  ]\n}",
-									"options": {
-										"raw": {
-											"language": "json"
-										}
-									}
-								},
-								"description": "Create your company profile. One account owns **at most one company**. The new company starts in `PENDING_VERIFICATION` and only appears in the public search after an admin approval. The slug is derived from `name` (e.g. `acme-labs`), suffixing `-2`, `-3`, ... on collision.\n\n**Body** — `CreateCompanyRequest`:\n- `name` (required, ≤150), `tagline` (≤255), `description` (≤5000)\n- `logoUrl` / `coverImageUrl` / `website` (http(s) URLs, ≤500)\n- `email` (optional, valid email, ≤255), `phone` (optional, ≤20, `+?[1-9][0-9]{1,14}`)\n- `foundingYear` (1800–2100), `companySize`, `companyType`, `industryType` (required)\n- `registrationNumber` (≤100, globally unique)\n- `socialLinks` (≤10; unique `platform` + http(s) `url` each)\n\nThe id and slug are saved into `{{companyId}}` / `{{companySlug}}`.\n\n**Responses**\n- `201` → `CompanyResponse` (with `companyStatus`)\n- `400` → validation failed\n- `401` → missing/invalid `X-User-Id`\n- `409` → account already owns a company, or registration number in use"
-							},
-							"event": [
-								{
-									"listen": "test",
-									"script": {
-										"type": "text/javascript",
-										"exec": [
-											"pm.test('2xx', () => pm.expect(pm.response.code).to.be.below(300));",
-											"const body = pm.response.json();",
-											"if (body && body.id) {",
-											"    pm.collectionVariables.set('companyId', String(body.id));",
-											"    if (body.slug) pm.collectionVariables.set('companySlug', String(body.slug));",
-											"}"
-										]
-									}
-								}
-							],
-							"response": []
-						},
-						{
-							"name": "Get My Company",
-							"request": {
-								"method": "GET",
-								"url": {
-									"raw": "{{companyBaseUrl}}/api/companies/my-company",
-									"host": [
-										"{{companyBaseUrl}}"
-									],
-									"path": [
-										"api",
-										"companies",
-										"my-company"
-									]
-								},
-								"header": [
-									{
-										"key": "X-User-Id",
-										"value": "{{userId}}",
-										"description": "temporary auth: user-service id of the caller"
-									}
-								],
-								"description": "Fetch the company owned by the `X-User-Id` account, including offices and social links.\n\n**Responses**\n- `200` → detailed `CompanyResponse`\n- `401` → missing/invalid `X-User-Id`\n- `404` → no company profile for this account yet"
-							},
-							"response": []
-						},
-						{
-							"name": "Update Company",
-							"request": {
-								"method": "PUT",
-								"url": {
-									"raw": "{{companyBaseUrl}}/api/companies/{{companyId}}",
-									"host": [
-										"{{companyBaseUrl}}"
-									],
-									"path": [
-										"api",
-										"companies",
-										"{{companyId}}"
-									]
-								},
-								"header": [
-									{
-										"key": "X-User-Id",
-										"value": "{{userId}}",
-										"description": "temporary auth: user-service id of the caller"
-									},
-									{
-										"key": "Content-Type",
-										"value": "application/json"
-									}
-								],
-								"body": {
-									"mode": "raw",
-									"raw": "{\n  \"name\": \"Acme Labs\",\n  \"tagline\": \"Software that ships\",\n  \"description\": \"A Dhaka-based technology company building developer tools.\",\n  \"logoUrl\": \"https://acme-labs.example.com/logo.png\",\n  \"coverImageUrl\": \"https://acme-labs.example.com/cover.jpg\",\n  \"website\": \"https://acme-labs.com\",\n  \"email\": \"contact@acme-labs.com\",\n  \"phone\": \"+8801712345678\",\n  \"foundingYear\": 2015,\n  \"companySize\": \"MEDIUM\",\n  \"companyType\": \"PRIVATE\",\n  \"industryType\": \"TECHNOLOGY\",\n  \"socialLinks\": [\n    {\n      \"platform\": \"LINKEDIN\",\n      \"url\": \"https://www.linkedin.com/company/acme-labs\"\n    },\n    {\n      \"platform\": \"GITHUB\",\n      \"url\": \"https://github.com/acme-labs\"\n    }\n  ]\n}",
-									"options": {
-										"raw": {
-											"language": "json"
-										}
-									}
-								},
-								"description": "Replace the profile of your company (same fields as create, minus `registrationNumber` which is immutable). `socialLinks` are fully replaced by the list in the body. Renaming the company regenerates its slug when needed (the current slug stays if it still matches).\n\n**Responses**\n- `200` → detailed `CompanyResponse`\n- `400` → validation failed\n- `401` → missing/invalid `X-User-Id`\n- `403` → you are not the owner\n- `404` → no such company"
-							},
-							"response": []
-						},
-						{
-							"name": "Delete Company",
-							"request": {
-								"method": "DELETE",
-								"url": {
-									"raw": "{{companyBaseUrl}}/api/companies/{{companyId}}",
-									"host": [
-										"{{companyBaseUrl}}"
-									],
-									"path": [
-										"api",
-										"companies",
-										"{{companyId}}"
-									]
-								},
-								"header": [
-									{
-										"key": "X-User-Id",
-										"value": "{{userId}}",
-										"description": "temporary auth: user-service id of the caller"
-									}
-								],
-								"description": "Soft-delete your company (sets `deletedAt`; it disappears from public views).\n\n**Responses**\n- `204` → deleted\n- `401` → missing/invalid `X-User-Id`\n- `403` → you are not the owner\n- `404` → no such company"
-							},
-							"response": []
-						}
-					],
-					"response": []
-				},
-				{
-					"name": "Locations",
-					"description": "Offices of a company (owner-managed, publicly readable).",
-					"item": [
-						{
-							"name": "List Locations",
-							"request": {
-								"method": "GET",
-								"url": {
-									"raw": "{{companyBaseUrl}}/api/companies/{{companyId}}/locations",
-									"host": [
-										"{{companyBaseUrl}}"
-									],
-									"path": [
-										"api",
-										"companies",
-										"{{companyId}}",
-										"locations"
-									]
-								},
-								"auth": {
-									"type": "noauth"
-								},
-								"description": "All offices of a company, ordered by id.\n\n**Responses**\n- `200` → [`LocationResponse`]\n- `404` → no such company"
-							},
-							"response": []
-						},
-						{
-							"name": "Add Location",
-							"request": {
-								"method": "POST",
-								"url": {
-									"raw": "{{companyBaseUrl}}/api/companies/{{companyId}}/locations",
-									"host": [
-										"{{companyBaseUrl}}"
-									],
-									"path": [
-										"api",
-										"companies",
-										"{{companyId}}",
-										"locations"
-									]
-								},
-								"header": [
-									{
-										"key": "X-User-Id",
-										"value": "{{userId}}",
-										"description": "temporary auth: user-service id of the caller"
-									},
-									{
-										"key": "Content-Type",
-										"value": "application/json"
-									}
-								],
-								"body": {
-									"mode": "raw",
-									"raw": "{\n  \"label\": \"Head Office\",\n  \"addressLine\": \"House 10, Road 12, Banani\",\n  \"city\": \"Dhaka\",\n  \"state\": \"Dhaka\",\n  \"country\": \"Bangladesh\",\n  \"postalCode\": \"1213\",\n  \"headquarters\": true\n}",
-									"options": {
-										"raw": {
-											"language": "json"
-										}
-									}
-								},
-								"description": "Add an office. Setting `headquarters: true` demotes any existing headquarters. The created location id is saved into `{{locationId}}`.\n\n**Body** — `LocationRequest`: `label` (≤100), `addressLine` (≤255), `city` (required, ≤100), `state` (≤100), `country` (required, ≤100), `postalCode` (≤20), `headquarters` (optional).\n\n**Responses**\n- `201` → `LocationResponse`\n- `400` → validation failed\n- `401` → missing/invalid `X-User-Id`\n- `403` → you are not the owner\n- `404` → no such company"
-							},
-							"event": [
-								{
-									"listen": "test",
-									"script": {
-										"type": "text/javascript",
-										"exec": [
-											"pm.test('201 Created', () => pm.response.to.have.status(201));",
-											"const body = pm.response.json();",
-											"if (body && body.id) pm.collectionVariables.set('locationId', String(body.id));"
-										]
-									}
-								}
-							],
-							"response": []
-						},
-						{
-							"name": "Update Location",
-							"request": {
-								"method": "PUT",
-								"url": {
-									"raw": "{{companyBaseUrl}}/api/companies/{{companyId}}/locations/{{locationId}}",
-									"host": [
-										"{{companyBaseUrl}}"
-									],
-									"path": [
-										"api",
-										"companies",
-										"{{companyId}}",
-										"locations",
-										"{{locationId}}"
-									]
-								},
-								"header": [
-									{
-										"key": "X-User-Id",
-										"value": "{{userId}}",
-										"description": "temporary auth: user-service id of the caller"
-									},
-									{
-										"key": "Content-Type",
-										"value": "application/json"
-									}
-								],
-								"body": {
-									"mode": "raw",
-									"raw": "{\n  \"label\": \"Head Office\",\n  \"addressLine\": \"House 10, Road 12, Banani\",\n  \"city\": \"Dhaka\",\n  \"state\": \"Dhaka\",\n  \"country\": \"Bangladesh\",\n  \"postalCode\": \"1213\",\n  \"headquarters\": true\n}",
-									"options": {
-										"raw": {
-											"language": "json"
-										}
-									}
-								},
-								"description": "Replace one office location (same fields as add). As with add, setting `headquarters: true` demotes the previous headquarters.\n\n**Responses**\n- `200` → `LocationResponse`\n- `400` → validation failed\n- `401` → missing/invalid `X-User-Id`\n- `403` → you are not the owner\n- `404` → no such company or location"
-							},
-							"response": []
-						},
-						{
-							"name": "Delete Location",
-							"request": {
-								"method": "DELETE",
-								"url": {
-									"raw": "{{companyBaseUrl}}/api/companies/{{companyId}}/locations/{{locationId}}",
-									"host": [
-										"{{companyBaseUrl}}"
-									],
-									"path": [
-										"api",
-										"companies",
-										"{{companyId}}",
-										"locations",
-										"{{locationId}}"
-									]
-								},
-								"header": [
-									{
-										"key": "X-User-Id",
-										"value": "{{userId}}",
-										"description": "temporary auth: user-service id of the caller"
-									}
-								],
-								"description": "Remove an office.\n\n**Responses**\n- `204` → deleted\n- `401` → missing/invalid `X-User-Id`\n- `403` → you are not the owner\n- `404` → no such company or location"
-							},
-							"response": []
-						}
-					],
-					"response": []
-				},
-				{
-					"name": "Company Admin",
-					"description": "Admin verification workflow for companies.\n\n**Auth note**: not enforced yet (JWT wiring pending) — will require an admin role once security lands.\n\nStatus lifecycle: `PENDING_VERIFICATION → ACTIVE` (approve), `PENDING_VERIFICATION → REJECTED` (reject), `ACTIVE → SUSPENDED`, `SUSPENDED → ACTIVE` (reactivate). Invalid transitions return `409`.",
-					"item": [
-						{
-							"name": "List Companies",
-							"request": {
-								"method": "GET",
-								"url": {
-									"raw": "{{companyBaseUrl}}/api/admin/companies",
-									"host": [
-										"{{companyBaseUrl}}"
-									],
-									"path": [
-										"api",
-										"admin",
-										"companies"
-									],
-									"query": [
-										{
-											"key": "page",
-											"value": "0",
-											"description": "0-based page index"
-										},
-										{
-											"key": "size",
-											"value": "20",
-											"description": "page size (capped at 100)"
-										},
-										{
-											"key": "status",
-											"value": "PENDING_VERIFICATION",
-											"description": "filter: status",
-											"disabled": true
-										},
-										{
-											"key": "name",
-											"value": "acme",
-											"description": "filter: name contains",
-											"disabled": true
-										}
-									]
-								},
-								"auth": {
-									"type": "noauth"
-								},
-								"description": "Paged list of all companies (any status), newest first.\n\n**Query params** — `status` (`PENDING_VERIFICATION`|`ACTIVE`|`SUSPENDED`|`REJECTED`), `name` (contains, case-insensitive), `page`, `size` (default 20, capped at 100).\n\n**Responses**\n- `200` → Spring `Page<CompanyResponse>`"
-							},
-							"response": []
-						},
-						{
-							"name": "Get Company (Admin)",
-							"request": {
-								"method": "GET",
-								"url": {
-									"raw": "{{companyBaseUrl}}/api/admin/companies/{{companyId}}",
-									"host": [
-										"{{companyBaseUrl}}"
-									],
-									"path": [
-										"api",
-										"admin",
-										"companies",
-										"{{companyId}}"
-									]
-								},
-								"auth": {
-									"type": "noauth"
-								},
-								"description": "Detailed view of one company in any status.\n\n**Responses**\n- `200` → detailed `CompanyResponse`\n- `400` → non-numeric id\n- `404` → no such company"
-							},
-							"response": []
-						},
-						{
-							"name": "Approve Company",
-							"request": {
-								"method": "POST",
-								"url": {
-									"raw": "{{companyBaseUrl}}/api/admin/companies/{{companyId}}/approve",
-									"host": [
-										"{{companyBaseUrl}}"
-									],
-									"path": [
-										"api",
-										"admin",
-										"companies",
-										"{{companyId}}",
-										"approve"
-									]
-								},
-								"auth": {
-									"type": "noauth"
-								},
-								"description": "`PENDING_VERIFICATION → ACTIVE` (sets `verifiedAt`; company joins the public search).\n\n**Responses**\n- `200` → updated detailed `CompanyResponse`\n- `404` → no such company\n- `409` → transition not allowed from the current status"
-							},
-							"response": []
-						},
-						{
-							"name": "Reject Company",
-							"request": {
-								"method": "POST",
-								"url": {
-									"raw": "{{companyBaseUrl}}/api/admin/companies/{{companyId}}/reject",
-									"host": [
-										"{{companyBaseUrl}}"
-									],
-									"path": [
-										"api",
-										"admin",
-										"companies",
-										"{{companyId}}",
-										"reject"
-									],
-									"query": [
-										{
-											"key": "reason",
-											"value": "Details do not match",
-											"description": "optional rejection reason",
-											"disabled": true
-										}
-									]
-								},
-								"auth": {
-									"type": "noauth"
-								},
-								"description": "`PENDING_VERIFICATION → REJECTED`.\n\n**Query params** — `reason` (optional, logged)\n\n**Responses**\n- `200` → updated detailed `CompanyResponse`\n- `404` → no such company\n- `409` → transition not allowed from the current status"
-							},
-							"response": []
-						},
-						{
-							"name": "Suspend Company",
-							"request": {
-								"method": "POST",
-								"url": {
-									"raw": "{{companyBaseUrl}}/api/admin/companies/{{companyId}}/suspend",
-									"host": [
-										"{{companyBaseUrl}}"
-									],
-									"path": [
-										"api",
-										"admin",
-										"companies",
-										"{{companyId}}",
-										"suspend"
-									],
-									"query": [
-										{
-											"key": "reason",
-											"value": "Policy violation",
-											"description": "optional suspension reason",
-											"disabled": true
-										}
-									]
-								},
-								"auth": {
-									"type": "noauth"
-								},
-								"description": "`ACTIVE → SUSPENDED` (company leaves the public search).\n\n**Query params** — `reason` (optional)\n\n**Responses**\n- `200` → updated detailed `CompanyResponse`\n- `404` → no such company\n- `409` → transition not allowed from the current status"
-							},
-							"response": []
-						},
-						{
-							"name": "Reactivate Company",
-							"request": {
-								"method": "POST",
-								"url": {
-									"raw": "{{companyBaseUrl}}/api/admin/companies/{{companyId}}/reactivate",
-									"host": [
-										"{{companyBaseUrl}}"
-									],
-									"path": [
-										"api",
-										"admin",
-										"companies",
-										"{{companyId}}",
-										"reactivate"
-									]
-								},
-								"auth": {
-									"type": "noauth"
-								},
-								"description": "`SUSPENDED → ACTIVE` (company returns to the public search).\n\n**Responses**\n- `200` → updated detailed `CompanyResponse`\n- `404` → no such company\n- `409` → transition not allowed from the current status"
-							},
-							"response": []
-						}
-					],
-					"response": []
-				}
-			],
-			"response": []
-		}
-	]
+  "info": {
+    "_postman_id": "b1e2c3d4-5a6b-4c8d-9e0f-1a2b3c4d5e6f",
+    "name": "Job Portal System API",
+    "description": "Postman collection for all Job Portal System backend services.\n\n## Conventions\n- **One top-level folder per microservice** (e.g. `User Service`, `Job Service`, ...), one subfolder per controller.\n- **Collection variables** (see `Variables` tab):\n  - `baseUrl` — target host, defaults to `http://localhost:5001`\n  - `accessToken` / `refreshToken` — auto-saved by the `Login` and `Refresh` test scripts\n  - `userId` — the record used by `GET/PUT/PATCH/DELETE /api/users/{id}` requests\n  - `companyBaseUrl` — company-service host, defaults to `http://localhost:5002`\n  - `companyId` / `locationId` — ids used by the Company Service requests\n- **Auth**: collection-level Bearer auth using `{{accessToken}}`; public requests override it with `No Auth`.\n- **Error shape**: every non-2xx response (except empty-body 401s from the security layer) is\n  `{\"status\":int,\"error\":str,\"message\":str,\"details\":array|null,\"timestamp\":str}`.\n\n## Extending\nWhen a new service/API is added, add a new top-level folder and follow the same conventions.\nSee `postman/README.md` in `common-lib`.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{accessToken}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:5001",
+      "type": "string"
+    },
+    {
+      "key": "accessToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "refreshToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "userId",
+      "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "companyBaseUrl",
+      "value": "http://localhost:5002",
+      "type": "string"
+    },
+    {
+      "key": "companyId",
+      "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "locationId",
+      "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "companySlug",
+      "value": "acme-labs",
+      "type": "string"
+    },
+    {
+      "key": "jobBaseUrl",
+      "value": "http://localhost:5003",
+      "type": "string"
+    },
+    {
+      "key": "jobId",
+      "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "jobCategoryId",
+      "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "jobSkillId",
+      "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "jobTagId",
+      "value": "1",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "User Service",
+      "description": "Authentication and user management APIs (port 5001).\n\nRoles: `ROLE_JOB_SEEKER`, `ROLE_EMPLOYER`, `ROLE_ADMIN`, `ROLE_SUPER_ADMIN`.\nUser statuses: `ACTIVE`, `INACTIVE`, `SUSPENDED`, `DELETED` (soft delete).",
+      "item": [
+        {
+          "name": "Auth",
+          "description": "Public authentication flows + authenticated password change.",
+          "item": [
+            {
+              "name": "Register",
+              "request": {
+                "auth": {
+                  "type": "noauth"
+                },
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"firstName\": \"Shoikat\",\n  \"middleName\": null,\n  \"lastName\": \"Ahmed\",\n  \"email\": \"shoikat.new@example.com\",\n  \"password\": \"StrongPass123!\",\n  \"phoneNumber\": \"+8801712345678\",\n  \"userRole\": \"ROLE_JOB_SEEKER\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/auth/register",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "auth",
+                    "register"
+                  ]
+                },
+                "description": "Create a new account.\n\n**Body** — `RegisterRequest`:\n- `firstName` (required, ≤50), `middleName` (optional, ≤50), `lastName` (required, ≤50)\n- `email` (required, valid email, ≤150, unique)\n- `password` (required, 8–64, needs upper+lower+digit+special `[@$!%*?&]`)\n- `phoneNumber` (optional, `+?[0-9]{7,15}`)\n- `userRole` (required): `ROLE_JOB_SEEKER` | `ROLE_EMPLOYER` | `ROLE_ADMIN` | `ROLE_SUPER_ADMIN`\n\n**Responses**\n- `201` → `UserResponse` (also saved to `{{registeredUserId}}`)\n- `400` → validation failed\n- `409` → email already registered"
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('201 Created', () => pm.response.to.have.status(201));",
+                      "const body = pm.response.json();",
+                      "if (body && body.id) pm.collectionVariables.set('registeredUserId', String(body.id));"
+                    ]
+                  }
+                }
+              ],
+              "response": []
+            },
+            {
+              "name": "Login",
+              "request": {
+                "auth": {
+                  "type": "noauth"
+                },
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"shoikat@example.com\",\n  \"password\": \"DemoPass123!\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/auth/login",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "auth",
+                    "login"
+                  ]
+                },
+                "description": "Exchange credentials for a token pair.\n\n**Responses**\n- `200` → `AuthResponse` `{ accessToken, refreshToken, tokenType: \"Bearer\", expiresIn, user }` — tokens are auto-saved into `{{accessToken}}` / `{{refreshToken}}` / `{{userId}}`\n- `400` → validation failed\n- `401` → invalid credentials\n- `403` → account suspended or deleted\n\nDemo seeded accounts: `shoikat@example.com` (ADMIN), `tanvir.chowdhury@example.com` (SUPER_ADMIN), password `DemoPass123!`. 50 demo accounts `demo01…demo50.*@example.com` also exist (see `common-lib/postman/README.md`)."
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('200 OK', () => pm.response.to.have.status(200));",
+                      "const body = pm.response.json();",
+                      "if (body && body.accessToken) {",
+                      "    pm.collectionVariables.set('accessToken', body.accessToken);",
+                      "    pm.collectionVariables.set('refreshToken', body.refreshToken);",
+                      "}",
+                      "if (body && body.user && body.user.id) pm.collectionVariables.set('userId', String(body.user.id));"
+                    ]
+                  }
+                }
+              ],
+              "response": []
+            },
+            {
+              "name": "Refresh",
+              "request": {
+                "auth": {
+                  "type": "noauth"
+                },
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/auth/refresh",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "auth",
+                    "refresh"
+                  ]
+                },
+                "description": "Rotate a refresh token for a new token pair. The used token is revoked (single use); replaying a rotated token revokes the whole family.\n\n**Responses**\n- `200` → new `AuthResponse` (auto-saved, replacing the old pair)\n- `400` → blank token\n- `401` → unknown / expired / revoked / replayed token"
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('200 OK', () => pm.response.to.have.status(200));",
+                      "const body = pm.response.json();",
+                      "if (body && body.accessToken) {",
+                      "    pm.collectionVariables.set('accessToken', body.accessToken);",
+                      "    pm.collectionVariables.set('refreshToken', body.refreshToken);",
+                      "}"
+                    ]
+                  }
+                }
+              ],
+              "response": []
+            },
+            {
+              "name": "Logout",
+              "request": {
+                "auth": {
+                  "type": "noauth"
+                },
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/auth/logout",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "auth",
+                    "logout"
+                  ]
+                },
+                "description": "Revoke one refresh token (idempotent — unknown tokens still return 204).\n\n**Responses**\n- `204` → token revoked (or was already unknown)\n- `400` → blank token"
+              },
+              "response": []
+            },
+            {
+              "name": "Change Password",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"currentPassword\": \"DemoPass123!\",\n  \"newPassword\": \"NewStrong456!\",\n  \"confirmPassword\": \"NewStrong456!\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/auth/me/password",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "auth",
+                    "me",
+                    "password"
+                  ]
+                },
+                "description": "Change the password of the authenticated user (Bearer token required).\n\n**Responses**\n- `204` → password changed\n- `400` → wrong current password, weak new password, or confirm-mismatch\n- `401` → not authenticated"
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "Users",
+          "description": "User management. Self-access allowed for GET/PUT on your own id; everything else requires `ROLE_ADMIN` or `ROLE_SUPER_ADMIN`.",
+          "item": [
+            {
+              "name": "Get User By Id",
+              "request": {
+                "method": "GET",
+                "url": {
+                  "raw": "{{baseUrl}}/api/users/{{userId}}",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "users",
+                    "{{userId}}"
+                  ]
+                },
+                "description": "Fetch one user. A user may view their own record; any other record requires ADMIN / SUPER_ADMIN.\n\n**Responses**\n- `200` → `UserResponse`\n- `400` → non-numeric id\n- `401` → not authenticated\n- `403` → viewing someone else's record without an admin role\n- `404` → no such user"
+              },
+              "response": []
+            },
+            {
+              "name": "List Users",
+              "request": {
+                "method": "GET",
+                "url": {
+                  "raw": "{{baseUrl}}/api/users?page=0&size=20&userRole=ROLE_JOB_SEEKER",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "users"
+                  ],
+                  "query": [
+                    {
+                      "key": "page",
+                      "value": "0",
+                      "description": "0-based page index"
+                    },
+                    {
+                      "key": "size",
+                      "value": "20",
+                      "description": "page size (default 20, capped at 2000)"
+                    },
+                    {
+                      "key": "userRole",
+                      "value": "ROLE_JOB_SEEKER",
+                      "description": "optional filter: ROLE_JOB_SEEKER | ROLE_EMPLOYER | ROLE_ADMIN | ROLE_SUPER_ADMIN",
+                      "disabled": true
+                    }
+                  ]
+                },
+                "description": "Paged list of all users, newest first (admin only).\n\n**Responses**\n- `200` → Spring `Page<UserResponse>`\n- `401` → not authenticated\n- `403` → not ADMIN / SUPER_ADMIN"
+              },
+              "response": []
+            },
+            {
+              "name": "Update User",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"firstName\": \"Shoikat\",\n  \"middleName\": null,\n  \"lastName\": \"Ahmed\",\n  \"phoneNumber\": \"+8801712345678\",\n  \"profilePictureUrl\": null\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/users/{{userId}}",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "users",
+                    "{{userId}}"
+                  ]
+                },
+                "description": "Update profile fields. A user may update their own profile; any other profile requires ADMIN / SUPER_ADMIN. Email, role and status are NOT editable here.\n\n**Body** — `UpdateUserRequest`: `firstName` (required, ≤50), `middleName` (optional, ≤50), `lastName` (required, ≤50), `phoneNumber` (optional), `profilePictureUrl` (optional, ≤255).\n\n**Responses**\n- `200` → updated `UserResponse`\n- `400` → validation failed\n- `403` → updating someone else's profile without an admin role\n- `404` → no such user"
+              },
+              "response": []
+            },
+            {
+              "name": "Update User Status",
+              "request": {
+                "method": "PATCH",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"status\": \"SUSPENDED\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/users/{{userId}}/status",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "users",
+                    "{{userId}}",
+                    "status"
+                  ]
+                },
+                "description": "Change a user's status (admin only). Suspending revokes all of the user's refresh tokens.\n\n**Body**: `status` = `ACTIVE` | `INACTIVE` | `SUSPENDED` | `DELETED`\n\n**Responses**\n- `200` → updated `UserResponse`\n- `400` → unknown status / null\n- `403` → not ADMIN / SUPER_ADMIN\n- `404` → no such user"
+              },
+              "response": []
+            },
+            {
+              "name": "Delete User",
+              "request": {
+                "method": "DELETE",
+                "url": {
+                  "raw": "{{baseUrl}}/api/users/{{userId}}",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "users",
+                    "{{userId}}"
+                  ]
+                },
+                "description": "Soft-delete a user (admin only): sets status to `DELETED` and revokes all refresh tokens.\n\n**Responses**\n- `204` → deleted\n- `403` → not ADMIN / SUPER_ADMIN\n- `404` → no such user"
+              },
+              "response": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Company Service",
+      "description": "Company profiles, offices and admin verification (port 5002).\n\nStatuses: `PENDING_VERIFICATION`, `ACTIVE`, `SUSPENDED`, `REJECTED`. Sizes: `MICRO`, `SMALL`, `MEDIUM`, `LARGE`, `ENTERPRISE`. Types: `STARTUP`, `PRIVATE`, `PUBLIC_LISTED`, `GOVERNMENT`, `NON_PROFIT`, `EDUCATIONAL`, `SELF_EMPLOYED`. Social platforms: `LINKEDIN`, `TWITTER`, `FACEBOOK`, `GITHUB`, `INSTAGRAM`, `YOUTUBE`, `WEBSITE`.\n\n**Auth note**: JWT is not wired into this service yet. Owner/employer requests carry a temporary `X-User-Id` header (value: `{{userId}}` from the Login script — log in as an `ROLE_EMPLOYER` account first). Admin routes are unsecured for now.",
+      "item": [
+        {
+          "name": "Companies",
+          "description": "Public catalogue and the single owner profile.",
+          "item": [
+            {
+              "name": "Search Companies",
+              "request": {
+                "method": "GET",
+                "url": {
+                  "raw": "{{companyBaseUrl}}/api/companies",
+                  "host": [
+                    "{{companyBaseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "companies"
+                  ],
+                  "query": [
+                    {
+                      "key": "page",
+                      "value": "0",
+                      "description": "0-based page index"
+                    },
+                    {
+                      "key": "size",
+                      "value": "20",
+                      "description": "page size (capped at 100)"
+                    },
+                    {
+                      "key": "name",
+                      "value": "acme",
+                      "description": "filter: name contains",
+                      "disabled": true
+                    },
+                    {
+                      "key": "industryType",
+                      "value": "TECHNOLOGY",
+                      "description": "filter: industry type",
+                      "disabled": true
+                    },
+                    {
+                      "key": "location",
+                      "value": "Dhaka",
+                      "description": "filter: any office city/state/country",
+                      "disabled": true
+                    },
+                    {
+                      "key": "companySize",
+                      "value": "MEDIUM",
+                      "description": "filter: MICRO|SMALL|MEDIUM|LARGE|ENTERPRISE",
+                      "disabled": true
+                    },
+                    {
+                      "key": "companyType",
+                      "value": "PRIVATE",
+                      "description": "filter: STARTUP|PRIVATE|PUBLIC_LISTED|GOVERNMENT|NON_PROFIT|EDUCATIONAL|SELF_EMPLOYED",
+                      "disabled": true
+                    }
+                  ]
+                },
+                "auth": {
+                  "type": "noauth"
+                },
+                "description": "Public, paged search of verified, active (non-deleted) companies.\n\n**Query params** — `name` (contains, case-insensitive), `industryType`, `location` (matches city/state/country of any office), `companySize`, `companyType`, `page` (0-based), `size` (default 20, capped at 100).\n\n**Responses**\n- `200` → Spring `Page<CompanySummaryResponse>`"
+              },
+              "response": []
+            },
+            {
+              "name": "Get Company By Id",
+              "request": {
+                "method": "GET",
+                "url": {
+                  "raw": "{{companyBaseUrl}}/api/companies/{{companyId}}",
+                  "host": [
+                    "{{companyBaseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "companies",
+                    "{{companyId}}"
+                  ]
+                },
+                "auth": {
+                  "type": "noauth"
+                },
+                "description": "Fetch one verified, active company by id.\n\n**Responses**\n- `200` → `CompanyResponse`\n- `400` → non-numeric id\n- `404` → no such (or non-active) company"
+              },
+              "response": []
+            },
+            {
+              "name": "Get Company By Slug",
+              "request": {
+                "method": "GET",
+                "url": {
+                  "raw": "{{companyBaseUrl}}/api/companies/slug/acme-labs",
+                  "host": [
+                    "{{companyBaseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "companies",
+                    "slug",
+                    "acme-labs"
+                  ]
+                },
+                "auth": {
+                  "type": "noauth"
+                },
+                "description": "Fetch one verified, active company by its URL slug (e.g. `acme-labs`, or `acme-labs-2` when earlier names collided).\n\n**Responses**\n- `200` → `CompanyResponse`\n- `404` → no such company"
+              },
+              "response": []
+            },
+            {
+              "name": "Create Company",
+              "request": {
+                "method": "POST",
+                "url": {
+                  "raw": "{{companyBaseUrl}}/api/companies/create",
+                  "host": [
+                    "{{companyBaseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "companies",
+                    "create"
+                  ]
+                },
+                "header": [
+                  {
+                    "key": "X-User-Id",
+                    "value": "{{userId}}",
+                    "description": "temporary auth: user-service id of the caller"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Acme Labs\",\n  \"tagline\": \"Software that ships\",\n  \"description\": \"A Dhaka-based technology company building developer tools.\",\n  \"logoUrl\": \"https://acme-labs.example.com/logo.png\",\n  \"coverImageUrl\": \"https://acme-labs.example.com/cover.jpg\",\n  \"website\": \"https://acme-labs.com\",\n  \"email\": \"contact@acme-labs.com\",\n  \"phone\": \"+8801712345678\",\n  \"foundingYear\": 2015,\n  \"companySize\": \"MEDIUM\",\n  \"companyType\": \"PRIVATE\",\n  \"industryType\": \"TECHNOLOGY\",\n  \"registrationNumber\": \"TRAD/DNCC/123456\",\n  \"socialLinks\": [\n    {\n      \"platform\": \"LINKEDIN\",\n      \"url\": \"https://www.linkedin.com/company/acme-labs\"\n    },\n    {\n      \"platform\": \"GITHUB\",\n      \"url\": \"https://github.com/acme-labs\"\n    }\n  ]\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "description": "Create your company profile. One account owns **at most one company**. The new company starts in `PENDING_VERIFICATION` and only appears in the public search after an admin approval. The slug is derived from `name` (e.g. `acme-labs`), suffixing `-2`, `-3`, ... on collision.\n\n**Body** — `CreateCompanyRequest`:\n- `name` (required, ≤150), `tagline` (≤255), `description` (≤5000)\n- `logoUrl` / `coverImageUrl` / `website` (http(s) URLs, ≤500)\n- `email` (optional, valid email, ≤255), `phone` (optional, ≤20, `+?[1-9][0-9]{1,14}`)\n- `foundingYear` (1800–2100), `companySize`, `companyType`, `industryType` (required)\n- `registrationNumber` (≤100, globally unique)\n- `socialLinks` (≤10; unique `platform` + http(s) `url` each)\n\nThe id and slug are saved into `{{companyId}}` / `{{companySlug}}`.\n\n**Responses**\n- `201` → `CompanyResponse` (with `companyStatus`)\n- `400` → validation failed\n- `401` → missing/invalid `X-User-Id`\n- `409` → account already owns a company, or registration number in use"
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('2xx', () => pm.expect(pm.response.code).to.be.below(300));",
+                      "const body = pm.response.json();",
+                      "if (body && body.id) {",
+                      "    pm.collectionVariables.set('companyId', String(body.id));",
+                      "    if (body.slug) pm.collectionVariables.set('companySlug', String(body.slug));",
+                      "}"
+                    ]
+                  }
+                }
+              ],
+              "response": []
+            },
+            {
+              "name": "Get My Company",
+              "request": {
+                "method": "GET",
+                "url": {
+                  "raw": "{{companyBaseUrl}}/api/companies/my-company",
+                  "host": [
+                    "{{companyBaseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "companies",
+                    "my-company"
+                  ]
+                },
+                "header": [
+                  {
+                    "key": "X-User-Id",
+                    "value": "{{userId}}",
+                    "description": "temporary auth: user-service id of the caller"
+                  }
+                ],
+                "description": "Fetch the company owned by the `X-User-Id` account, including offices and social links.\n\n**Responses**\n- `200` → detailed `CompanyResponse`\n- `401` → missing/invalid `X-User-Id`\n- `404` → no company profile for this account yet"
+              },
+              "response": []
+            },
+            {
+              "name": "Update Company",
+              "request": {
+                "method": "PUT",
+                "url": {
+                  "raw": "{{companyBaseUrl}}/api/companies/{{companyId}}",
+                  "host": [
+                    "{{companyBaseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "companies",
+                    "{{companyId}}"
+                  ]
+                },
+                "header": [
+                  {
+                    "key": "X-User-Id",
+                    "value": "{{userId}}",
+                    "description": "temporary auth: user-service id of the caller"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Acme Labs\",\n  \"tagline\": \"Software that ships\",\n  \"description\": \"A Dhaka-based technology company building developer tools.\",\n  \"logoUrl\": \"https://acme-labs.example.com/logo.png\",\n  \"coverImageUrl\": \"https://acme-labs.example.com/cover.jpg\",\n  \"website\": \"https://acme-labs.com\",\n  \"email\": \"contact@acme-labs.com\",\n  \"phone\": \"+8801712345678\",\n  \"foundingYear\": 2015,\n  \"companySize\": \"MEDIUM\",\n  \"companyType\": \"PRIVATE\",\n  \"industryType\": \"TECHNOLOGY\",\n  \"socialLinks\": [\n    {\n      \"platform\": \"LINKEDIN\",\n      \"url\": \"https://www.linkedin.com/company/acme-labs\"\n    },\n    {\n      \"platform\": \"GITHUB\",\n      \"url\": \"https://github.com/acme-labs\"\n    }\n  ]\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "description": "Replace the profile of your company (same fields as create, minus `registrationNumber` which is immutable). `socialLinks` are fully replaced by the list in the body. Renaming the company regenerates its slug when needed (the current slug stays if it still matches).\n\n**Responses**\n- `200` → detailed `CompanyResponse`\n- `400` → validation failed\n- `401` → missing/invalid `X-User-Id`\n- `403` → you are not the owner\n- `404` → no such company"
+              },
+              "response": []
+            },
+            {
+              "name": "Delete Company",
+              "request": {
+                "method": "DELETE",
+                "url": {
+                  "raw": "{{companyBaseUrl}}/api/companies/{{companyId}}",
+                  "host": [
+                    "{{companyBaseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "companies",
+                    "{{companyId}}"
+                  ]
+                },
+                "header": [
+                  {
+                    "key": "X-User-Id",
+                    "value": "{{userId}}",
+                    "description": "temporary auth: user-service id of the caller"
+                  }
+                ],
+                "description": "Soft-delete your company (sets `deletedAt`; it disappears from public views).\n\n**Responses**\n- `204` → deleted\n- `401` → missing/invalid `X-User-Id`\n- `403` → you are not the owner\n- `404` → no such company"
+              },
+              "response": []
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Locations",
+          "description": "Offices of a company (owner-managed, publicly readable).",
+          "item": [
+            {
+              "name": "List Locations",
+              "request": {
+                "method": "GET",
+                "url": {
+                  "raw": "{{companyBaseUrl}}/api/companies/{{companyId}}/locations",
+                  "host": [
+                    "{{companyBaseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "companies",
+                    "{{companyId}}",
+                    "locations"
+                  ]
+                },
+                "auth": {
+                  "type": "noauth"
+                },
+                "description": "All offices of a company, ordered by id.\n\n**Responses**\n- `200` → [`LocationResponse`]\n- `404` → no such company"
+              },
+              "response": []
+            },
+            {
+              "name": "Add Location",
+              "request": {
+                "method": "POST",
+                "url": {
+                  "raw": "{{companyBaseUrl}}/api/companies/{{companyId}}/locations",
+                  "host": [
+                    "{{companyBaseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "companies",
+                    "{{companyId}}",
+                    "locations"
+                  ]
+                },
+                "header": [
+                  {
+                    "key": "X-User-Id",
+                    "value": "{{userId}}",
+                    "description": "temporary auth: user-service id of the caller"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"label\": \"Head Office\",\n  \"addressLine\": \"House 10, Road 12, Banani\",\n  \"city\": \"Dhaka\",\n  \"state\": \"Dhaka\",\n  \"country\": \"Bangladesh\",\n  \"postalCode\": \"1213\",\n  \"headquarters\": true\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "description": "Add an office. Setting `headquarters: true` demotes any existing headquarters. The created location id is saved into `{{locationId}}`.\n\n**Body** — `LocationRequest`: `label` (≤100), `addressLine` (≤255), `city` (required, ≤100), `state` (≤100), `country` (required, ≤100), `postalCode` (≤20), `headquarters` (optional).\n\n**Responses**\n- `201` → `LocationResponse`\n- `400` → validation failed\n- `401` → missing/invalid `X-User-Id`\n- `403` → you are not the owner\n- `404` → no such company"
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('201 Created', () => pm.response.to.have.status(201));",
+                      "const body = pm.response.json();",
+                      "if (body && body.id) pm.collectionVariables.set('locationId', String(body.id));"
+                    ]
+                  }
+                }
+              ],
+              "response": []
+            },
+            {
+              "name": "Update Location",
+              "request": {
+                "method": "PUT",
+                "url": {
+                  "raw": "{{companyBaseUrl}}/api/companies/{{companyId}}/locations/{{locationId}}",
+                  "host": [
+                    "{{companyBaseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "companies",
+                    "{{companyId}}",
+                    "locations",
+                    "{{locationId}}"
+                  ]
+                },
+                "header": [
+                  {
+                    "key": "X-User-Id",
+                    "value": "{{userId}}",
+                    "description": "temporary auth: user-service id of the caller"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"label\": \"Head Office\",\n  \"addressLine\": \"House 10, Road 12, Banani\",\n  \"city\": \"Dhaka\",\n  \"state\": \"Dhaka\",\n  \"country\": \"Bangladesh\",\n  \"postalCode\": \"1213\",\n  \"headquarters\": true\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "description": "Replace one office location (same fields as add). As with add, setting `headquarters: true` demotes the previous headquarters.\n\n**Responses**\n- `200` → `LocationResponse`\n- `400` → validation failed\n- `401` → missing/invalid `X-User-Id`\n- `403` → you are not the owner\n- `404` → no such company or location"
+              },
+              "response": []
+            },
+            {
+              "name": "Delete Location",
+              "request": {
+                "method": "DELETE",
+                "url": {
+                  "raw": "{{companyBaseUrl}}/api/companies/{{companyId}}/locations/{{locationId}}",
+                  "host": [
+                    "{{companyBaseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "companies",
+                    "{{companyId}}",
+                    "locations",
+                    "{{locationId}}"
+                  ]
+                },
+                "header": [
+                  {
+                    "key": "X-User-Id",
+                    "value": "{{userId}}",
+                    "description": "temporary auth: user-service id of the caller"
+                  }
+                ],
+                "description": "Remove an office.\n\n**Responses**\n- `204` → deleted\n- `401` → missing/invalid `X-User-Id`\n- `403` → you are not the owner\n- `404` → no such company or location"
+              },
+              "response": []
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Company Admin",
+          "description": "Admin verification workflow for companies.\n\n**Auth note**: not enforced yet (JWT wiring pending) — will require an admin role once security lands.\n\nStatus lifecycle: `PENDING_VERIFICATION → ACTIVE` (approve), `PENDING_VERIFICATION → REJECTED` (reject), `ACTIVE → SUSPENDED`, `SUSPENDED → ACTIVE` (reactivate). Invalid transitions return `409`.",
+          "item": [
+            {
+              "name": "List Companies",
+              "request": {
+                "method": "GET",
+                "url": {
+                  "raw": "{{companyBaseUrl}}/api/admin/companies",
+                  "host": [
+                    "{{companyBaseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "admin",
+                    "companies"
+                  ],
+                  "query": [
+                    {
+                      "key": "page",
+                      "value": "0",
+                      "description": "0-based page index"
+                    },
+                    {
+                      "key": "size",
+                      "value": "20",
+                      "description": "page size (capped at 100)"
+                    },
+                    {
+                      "key": "status",
+                      "value": "PENDING_VERIFICATION",
+                      "description": "filter: status",
+                      "disabled": true
+                    },
+                    {
+                      "key": "name",
+                      "value": "acme",
+                      "description": "filter: name contains",
+                      "disabled": true
+                    }
+                  ]
+                },
+                "auth": {
+                  "type": "noauth"
+                },
+                "description": "Paged list of all companies (any status), newest first.\n\n**Query params** — `status` (`PENDING_VERIFICATION`|`ACTIVE`|`SUSPENDED`|`REJECTED`), `name` (contains, case-insensitive), `page`, `size` (default 20, capped at 100).\n\n**Responses**\n- `200` → Spring `Page<CompanyResponse>`"
+              },
+              "response": []
+            },
+            {
+              "name": "Get Company (Admin)",
+              "request": {
+                "method": "GET",
+                "url": {
+                  "raw": "{{companyBaseUrl}}/api/admin/companies/{{companyId}}",
+                  "host": [
+                    "{{companyBaseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "admin",
+                    "companies",
+                    "{{companyId}}"
+                  ]
+                },
+                "auth": {
+                  "type": "noauth"
+                },
+                "description": "Detailed view of one company in any status.\n\n**Responses**\n- `200` → detailed `CompanyResponse`\n- `400` → non-numeric id\n- `404` → no such company"
+              },
+              "response": []
+            },
+            {
+              "name": "Approve Company",
+              "request": {
+                "method": "POST",
+                "url": {
+                  "raw": "{{companyBaseUrl}}/api/admin/companies/{{companyId}}/approve",
+                  "host": [
+                    "{{companyBaseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "admin",
+                    "companies",
+                    "{{companyId}}",
+                    "approve"
+                  ]
+                },
+                "auth": {
+                  "type": "noauth"
+                },
+                "description": "`PENDING_VERIFICATION → ACTIVE` (sets `verifiedAt`; company joins the public search).\n\n**Responses**\n- `200` → updated detailed `CompanyResponse`\n- `404` → no such company\n- `409` → transition not allowed from the current status"
+              },
+              "response": []
+            },
+            {
+              "name": "Reject Company",
+              "request": {
+                "method": "POST",
+                "url": {
+                  "raw": "{{companyBaseUrl}}/api/admin/companies/{{companyId}}/reject",
+                  "host": [
+                    "{{companyBaseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "admin",
+                    "companies",
+                    "{{companyId}}",
+                    "reject"
+                  ],
+                  "query": [
+                    {
+                      "key": "reason",
+                      "value": "Details do not match",
+                      "description": "optional rejection reason",
+                      "disabled": true
+                    }
+                  ]
+                },
+                "auth": {
+                  "type": "noauth"
+                },
+                "description": "`PENDING_VERIFICATION → REJECTED`.\n\n**Query params** — `reason` (optional, logged)\n\n**Responses**\n- `200` → updated detailed `CompanyResponse`\n- `404` → no such company\n- `409` → transition not allowed from the current status"
+              },
+              "response": []
+            },
+            {
+              "name": "Suspend Company",
+              "request": {
+                "method": "POST",
+                "url": {
+                  "raw": "{{companyBaseUrl}}/api/admin/companies/{{companyId}}/suspend",
+                  "host": [
+                    "{{companyBaseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "admin",
+                    "companies",
+                    "{{companyId}}",
+                    "suspend"
+                  ],
+                  "query": [
+                    {
+                      "key": "reason",
+                      "value": "Policy violation",
+                      "description": "optional suspension reason",
+                      "disabled": true
+                    }
+                  ]
+                },
+                "auth": {
+                  "type": "noauth"
+                },
+                "description": "`ACTIVE → SUSPENDED` (company leaves the public search).\n\n**Query params** — `reason` (optional)\n\n**Responses**\n- `200` → updated detailed `CompanyResponse`\n- `404` → no such company\n- `409` → transition not allowed from the current status"
+              },
+              "response": []
+            },
+            {
+              "name": "Reactivate Company",
+              "request": {
+                "method": "POST",
+                "url": {
+                  "raw": "{{companyBaseUrl}}/api/admin/companies/{{companyId}}/reactivate",
+                  "host": [
+                    "{{companyBaseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "admin",
+                    "companies",
+                    "{{companyId}}",
+                    "reactivate"
+                  ]
+                },
+                "auth": {
+                  "type": "noauth"
+                },
+                "description": "`SUSPENDED → ACTIVE` (company returns to the public search).\n\n**Responses**\n- `200` → updated detailed `CompanyResponse`\n- `404` → no such company\n- `409` → transition not allowed from the current status"
+              },
+              "response": []
+            }
+          ],
+          "response": []
+        }
+      ],
+      "response": []
+    },
+    {
+      "name": "Job Service",
+      "description": "Job postings, taxonomy (categories/skills/tags), lifecycle and admin moderation.\n\n- Identity: temporary `X-User-Id` header ({{userId}}) until JWT is wired.\n- Lifecycle: jobs start **DRAFT**; owners publish (DRAFT->ACTIVE) or close (ACTIVE->CLOSED); admins suspend/reactivate.\n- Public reads only ever return **ACTIVE** postings; drafts/closed/deleted are hidden.\n- Set {{jobBaseUrl}}, {{jobId}}, {{jobCategoryId}}, {{jobSkillId}}, {{jobTagId}} in collection variables.\n- Seed helper: `backend/services/job-service/seed/seed.py`, API smoke suite: `seed/api-tests.sh`.",
+      "item": [
+        {
+          "name": "Jobs - Public",
+          "item": [
+            {
+              "name": "Search jobs",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{jobBaseUrl}}/api/jobs?keyword&categoryId&skillIds&tagIds&workMode&salaryPeriod&page&size",
+                  "host": [
+                    "{{jobBaseUrl}}"
+                  ],
+                  "path": [],
+                  "query": [
+                    {
+                      "key": "keyword",
+                      "value": "backend"
+                    },
+                    {
+                      "key": "categoryId",
+                      "value": "{{jobCategoryId}}"
+                    },
+                    {
+                      "key": "skillIds",
+                      "value": "{{jobSkillId}}"
+                    },
+                    {
+                      "key": "tagIds",
+                      "value": "{{jobTagId}}"
+                    },
+                    {
+                      "key": "workMode",
+                      "value": "HYBRID"
+                    },
+                    {
+                      "key": "salaryPeriod",
+                      "value": "MONTHLY"
+                    },
+                    {
+                      "key": "page",
+                      "value": "0"
+                    },
+                    {
+                      "key": "size",
+                      "value": "20"
+                    }
+                  ]
+                },
+                "description": "Public paged search; ALL filters optional (skip query keys you do not need). Only ACTIVE, not-deleted postings are returned. Filters: `keyword` (title like), `companyId`, `employmentType` (FULL_TIME|PART_TIME|CONTRACT|INTERNSHIP|TEMPORARY?), `experienceLevel`, `workMode` (ON_SITE|HYBRID|REMOTE), `location` (city/country like), `salaryPeriod` (HOURLY|WEEKLY|MONTHLY|YEARLY), `categoryId`, `skillIds`, `tagIds` (repeat or comma list)."
+              }
+            },
+            {
+              "name": "Get job by id",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{jobBaseUrl}}/api/jobs/{{jobId}}",
+                  "host": [
+                    "{{jobBaseUrl}}"
+                  ],
+                  "path": []
+                },
+                "description": "Public detail view. 404 unless the job is ACTIVE (drafts/closed/deleted are hidden). Each 200 bumps `viewCount` by 1 (atomic DB update)."
+              }
+            },
+            {
+              "name": "Jobs by company",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{jobBaseUrl}}/api/jobs/company/{{companyId}}",
+                  "host": [
+                    "{{jobBaseUrl}}"
+                  ],
+                  "path": []
+                },
+                "description": "Route based on the company service — active postings of one company, ordered by newest."
+              }
+            }
+          ]
+        },
+        {
+          "name": "Jobs - Employer",
+          "item": [
+            {
+              "name": "Create job (DRAFT)",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "X-User-Id",
+                    "value": "{{userId}}",
+                    "description": "Temporary identity header until JWT is wired"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{jobBaseUrl}}/api/jobs/create",
+                  "host": [
+                    "{{jobBaseUrl}}"
+                  ],
+                  "path": []
+                },
+                "description": "Create a draft posting owned by the requester (`X-User-Id`). 201 + DetailedJobResponse. Validations: salaryMin<=salaryMax, salaryPeriod required with any amount, ON_SITE requires city, category must exist+be active, all skill/tag ids must exist. The slug is generated server-side and unique (-2, -3 suffixes on collision).",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"companyId\": 1,\n  \"title\": \"Senior Backend Engineer (Spring Boot)\",\n  \"description\": \"Design and operate high-traffic services on the Spring stack. In this role you will own a domain end to end and mentor two mid-level engineers.\",\n  \"responsibilities\": \"Own services end to end, write clean code, review PRs, ship weekly.\",\n  \"requirements\": \"5+ years Java, deep Spring Boot, PostgreSQL, Docker; Kafka is a plus.\",\n  \"benefits\": \"Health insurance, flexible hours, 20 paid days off.\",\n  \"address\": \"12 Gulshan Avenue\",\n  \"city\": \"Dhaka\",\n  \"state\": null,\n  \"country\": \"Bangladesh\",\n  \"zipCode\": \"1212\",\n  \"employmentType\": \"FULL_TIME\",\n  \"experienceLevel\": \"SENIOR_LEVEL\",\n  \"workMode\": \"HYBRID\",\n  \"salaryMin\": 150000,\n  \"salaryMax\": 250000,\n  \"salaryCurrency\": \"BDT\",\n  \"salaryPeriod\": \"MONTHLY\",\n  \"categoryId\": 1,\n  \"skillIds\": [\n    1,\n    4,\n    6,\n    8\n  ],\n  \"tagIds\": [\n    2,\n    4\n  ],\n  \"vacancies\": 3,\n  \"applicationDeadline\": \"2026-12-15\",\n  \"expiresAt\": \"2027-01-31\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "name": "My jobs",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "X-User-Id",
+                    "value": "{{userId}}",
+                    "description": "Temporary identity header until JWT is wired"
+                  }
+                ],
+                "url": {
+                  "raw": "{{jobBaseUrl}}/api/jobs/my-jobs?page&size",
+                  "host": [
+                    "{{jobBaseUrl}}"
+                  ],
+                  "path": [],
+                  "query": [
+                    {
+                      "key": "page",
+                      "value": "0"
+                    },
+                    {
+                      "key": "size",
+                      "value": "20"
+                    }
+                  ]
+                },
+                "description": "Paged list of the requester's own jobs in EVERY status (detailed bodies with viewCount/applicationCount)."
+              }
+            },
+            {
+              "name": "Update job (full replace)",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "X-User-Id",
+                    "value": "{{userId}}",
+                    "description": "Temporary identity header until JWT is wired"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{jobBaseUrl}}/api/jobs/{{jobId}}",
+                  "host": [
+                    "{{jobBaseUrl}}"
+                  ],
+                  "path": []
+                },
+                "description": "Full-replace update by the owner. Regenerates the slug on title changes; a REJECTED job returns to DRAFT for re-publishing. The company cannot be changed; the application deadline may already be elapsed.",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"title\": \"Senior Backend Engineer II\",\n  \"description\": \"Design and operate high-traffic services on the Spring stack. In this role you will own a domain end to end and mentor two mid-level engineers.\",\n  \"responsibilities\": \"Own services end to end, write clean code, review PRs, ship weekly.\",\n  \"requirements\": \"5+ years Java, deep Spring Boot, PostgreSQL, Docker; Kafka is a plus.\",\n  \"benefits\": \"Health insurance, flexible hours, 20 paid days off.\",\n  \"address\": \"12 Gulshan Avenue\",\n  \"city\": \"Dhaka\",\n  \"state\": null,\n  \"country\": \"Bangladesh\",\n  \"zipCode\": \"1212\",\n  \"employmentType\": \"FULL_TIME\",\n  \"experienceLevel\": \"SENIOR_LEVEL\",\n  \"workMode\": \"HYBRID\",\n  \"salaryMin\": 150000,\n  \"salaryMax\": 250000,\n  \"salaryCurrency\": \"BDT\",\n  \"salaryPeriod\": \"MONTHLY\",\n  \"categoryId\": 1,\n  \"skillIds\": [\n    1,\n    4,\n    6,\n    8\n  ],\n  \"tagIds\": [\n    2,\n    4\n  ],\n  \"vacancies\": 3,\n  \"applicationDeadline\": \"2026-12-15\",\n  \"expiresAt\": \"2027-01-31\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "name": "Publish job  (DRAFT -> ACTIVE)",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "X-User-Id",
+                    "value": "{{userId}}",
+                    "description": "Temporary identity header until JWT is wired"
+                  }
+                ],
+                "url": {
+                  "raw": "{{jobBaseUrl}}/api/jobs/{{jobId}}/publish",
+                  "host": [
+                    "{{jobBaseUrl}}"
+                  ],
+                  "path": []
+                },
+                "description": "Owner only. Only DRAFT jobs can be published; otherwise 400."
+              }
+            },
+            {
+              "name": "Close job  (ACTIVE -> CLOSED)",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "X-User-Id",
+                    "value": "{{userId}}",
+                    "description": "Temporary identity header until JWT is wired"
+                  }
+                ],
+                "url": {
+                  "raw": "{{jobBaseUrl}}/api/jobs/{{jobId}}/close",
+                  "host": [
+                    "{{jobBaseUrl}}"
+                  ],
+                  "path": []
+                },
+                "description": "Owner only. Only ACTIVE jobs can be closed; otherwise 400."
+              }
+            },
+            {
+              "name": "Delete job (soft)",
+              "request": {
+                "method": "DELETE",
+                "header": [
+                  {
+                    "key": "X-User-Id",
+                    "value": "{{userId}}",
+                    "description": "Temporary identity header until JWT is wired"
+                  }
+                ],
+                "url": {
+                  "raw": "{{jobBaseUrl}}/api/jobs/{{jobId}}",
+                  "host": [
+                    "{{jobBaseUrl}}"
+                  ],
+                  "path": []
+                },
+                "description": "Owner only. Sets deletedAt (public views then 404 afterwards). Slug is never recycled."
+              }
+            }
+          ]
+        },
+        {
+          "name": "Jobs - Admin",
+          "item": [
+            {
+              "name": "List all jobs",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "X-User-Id",
+                    "value": "{{userId}}",
+                    "description": "Temporary identity header until JWT is wired"
+                  }
+                ],
+                "url": {
+                  "raw": "{{jobBaseUrl}}/api/admin/jobs?status&companyId&title&page&size",
+                  "host": [
+                    "{{jobBaseUrl}}"
+                  ],
+                  "path": [],
+                  "query": [
+                    {
+                      "key": "status",
+                      "value": "ACTIVE"
+                    },
+                    {
+                      "key": "companyId",
+                      "value": "{{companyId}}"
+                    },
+                    {
+                      "key": "title",
+                      "value": ""
+                    },
+                    {
+                      "key": "page",
+                      "value": "0"
+                    },
+                    {
+                      "key": "size",
+                      "value": "20"
+                    }
+                  ]
+                },
+                "description": "Paged moderation list with optional `status` | `companyId` | `title` filters (all optional). Includes hidden statuses (DRAFT/CLOSED/...) — NOT filtered by deletedAt."
+              }
+            },
+            {
+              "name": "Get job detail",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "X-User-Id",
+                    "value": "{{userId}}",
+                    "description": "Temporary identity header until JWT is wired"
+                  }
+                ],
+                "url": {
+                  "raw": "{{jobBaseUrl}}/api/admin/jobs/{{jobId}}",
+                  "host": [
+                    "{{jobBaseUrl}}"
+                  ],
+                  "path": []
+                },
+                "description": "Any job regardless of status, with viewCount/applicationCount. No view bump."
+              }
+            },
+            {
+              "name": "Suspend job  (ACTIVE -> SUSPENDED)",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "X-User-Id",
+                    "value": "{{userId}}",
+                    "description": "Temporary identity header until JWT is wired"
+                  }
+                ],
+                "url": {
+                  "raw": "{{jobBaseUrl}}/api/admin/jobs/{{jobId}}/suspend?reason",
+                  "host": [
+                    "{{jobBaseUrl}}"
+                  ],
+                  "path": [],
+                  "query": [
+                    {
+                      "key": "reason",
+                      "value": ""
+                    }
+                  ]
+                },
+                "description": "ADMIN: hides an active posting from the public. Optional `reason` query param (stored in suspendedReason). 400 when the job is not ACTIVE."
+              }
+            },
+            {
+              "name": "Reactivate job  (SUSPENDED -> ACTIVE)",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "X-User-Id",
+                    "value": "{{userId}}",
+                    "description": "Temporary identity header until JWT is wired"
+                  }
+                ],
+                "url": {
+                  "raw": "{{jobBaseUrl}}/api/admin/jobs/{{jobId}}/reactivate",
+                  "host": [
+                    "{{jobBaseUrl}}"
+                  ],
+                  "path": []
+                },
+                "description": "ADMIN: flips a suspended posting back to ACTIVE."
+              }
+            }
+          ]
+        },
+        {
+          "name": "Job Categories",
+          "item": [
+            {
+              "name": "List category tree",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{jobBaseUrl}}/api/job-categories",
+                  "host": [
+                    "{{jobBaseUrl}}"
+                  ],
+                  "path": []
+                },
+                "description": "Public, active-only, assembled as a tree from parent/child links."
+              }
+            },
+            {
+              "name": "Get category",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{jobBaseUrl}}/api/job-categories/{{jobCategoryId}}",
+                  "host": [
+                    "{{jobBaseUrl}}"
+                  ],
+                  "path": []
+                },
+                "description": "Public detail of an active category."
+              }
+            },
+            {
+              "name": "All categories incl. inactive",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "X-User-Id",
+                    "value": "{{userId}}",
+                    "description": "Temporary identity header until JWT is wired"
+                  }
+                ],
+                "url": {
+                  "raw": "{{jobBaseUrl}}/api/job-categories/all",
+                  "host": [
+                    "{{jobBaseUrl}}"
+                  ],
+                  "path": []
+                },
+                "description": "Flat list including inactive categories; requires the identity header."
+              }
+            },
+            {
+              "name": "Create category",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "X-User-Id",
+                    "value": "{{userId}}",
+                    "description": "Temporary identity header until JWT is wired"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{jobBaseUrl}}/api/job-categories",
+                  "host": [
+                    "{{jobBaseUrl}}"
+                  ],
+                  "path": []
+                },
+                "description": "201. `parentId` optional (omit/null for roots); slug stays unique with `-2`, `-3`... suffixes.",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Data & AI\",\n  \"parentId\": 1\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "name": "Update category (rename/re-parent)",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "X-User-Id",
+                    "value": "{{userId}}",
+                    "description": "Temporary identity header until JWT is wired"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{jobBaseUrl}}/api/job-categories/{{jobCategoryId}}",
+                  "host": [
+                    "{{jobBaseUrl}}"
+                  ],
+                  "path": []
+                },
+                "description": "Full-replace: `name` + `parentId` (null = root). Cycle-checked: moving a category into one of its own descendants gives 400.",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Data & AI\",\n  \"parentId\": 0\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "name": "Delete category",
+              "request": {
+                "method": "DELETE",
+                "header": [
+                  {
+                    "key": "X-User-Id",
+                    "value": "{{userId}}",
+                    "description": "Temporary identity header until JWT is wired"
+                  }
+                ],
+                "url": {
+                  "raw": "{{jobBaseUrl}}/api/job-categories/{{jobCategoryId}}",
+                  "host": [
+                    "{{jobBaseUrl}}"
+                  ],
+                  "path": []
+                },
+                "description": "204; 409 when the category has children or is referenced by any posting (incl. soft-deleted ones - deactivate instead)."
+              }
+            }
+          ]
+        },
+        {
+          "name": "Job Skills",
+          "item": [
+            {
+              "name": "List skills",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{jobBaseUrl}}/api/job-skills",
+                  "host": [
+                    "{{jobBaseUrl}}"
+                  ],
+                  "path": []
+                },
+                "description": "Public, active only, ordered by name."
+              }
+            },
+            {
+              "name": "Get skill",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{jobBaseUrl}}/api/job-skills/{{jobSkillId}}",
+                  "host": [
+                    "{{jobBaseUrl}}"
+                  ],
+                  "path": []
+                },
+                "description": "Public detail of an active skill."
+              }
+            },
+            {
+              "name": "All skills incl. inactive",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "X-User-Id",
+                    "value": "{{userId}}",
+                    "description": "Temporary identity header until JWT is wired"
+                  }
+                ],
+                "url": {
+                  "raw": "{{jobBaseUrl}}/api/job-skills/all",
+                  "host": [
+                    "{{jobBaseUrl}}"
+                  ],
+                  "path": []
+                },
+                "description": "Flat list including inactive skills; requires the identity header."
+              }
+            },
+            {
+              "name": "Create skill",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "X-User-Id",
+                    "value": "{{userId}}",
+                    "description": "Temporary identity header until JWT is wired"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{jobBaseUrl}}/api/job-skills",
+                  "host": [
+                    "{{jobBaseUrl}}"
+                  ],
+                  "path": []
+                },
+                "description": "`category` enum: PROGRAMMING_LANGUAGE | FRAMEWORK | DATABASE | DEVOPS | CLOUD_PLATFORM | SOFT_SKILL | DESIGN | OTHER.",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"PostgreSQL\",\n  \"category\": \"DATABASE\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "name": "Update skill",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "X-User-Id",
+                    "value": "{{userId}}",
+                    "description": "Temporary identity header until JWT is wired"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{jobBaseUrl}}/api/job-skills/{{jobSkillId}}",
+                  "host": [
+                    "{{jobBaseUrl}}"
+                  ],
+                  "path": []
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"PostgreSQL\",\n  \"category\": \"DATABASE\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "description": "Full-replace; slug stays unique with `-2`, `-3`... suffixes."
+              }
+            },
+            {
+              "name": "Delete skill",
+              "request": {
+                "method": "DELETE",
+                "header": [
+                  {
+                    "key": "X-User-Id",
+                    "value": "{{userId}}",
+                    "description": "Temporary identity header until JWT is wired"
+                  }
+                ],
+                "url": {
+                  "raw": "{{jobBaseUrl}}/api/job-skills/{{jobSkillId}}",
+                  "host": [
+                    "{{jobBaseUrl}}"
+                  ],
+                  "path": []
+                },
+                "description": "204; 409 while referenced by any posting."
+              }
+            }
+          ]
+        },
+        {
+          "name": "Job Tags",
+          "item": [
+            {
+              "name": "List tags",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{jobBaseUrl}}/api/job-tags?page&size",
+                  "host": [
+                    "{{jobBaseUrl}}"
+                  ],
+                  "path": [],
+                  "query": [
+                    {
+                      "key": "page",
+                      "value": "0"
+                    },
+                    {
+                      "key": "size",
+                      "value": "20"
+                    }
+                  ]
+                },
+                "description": "Public, active only, paged."
+              }
+            },
+            {
+              "name": "Get tag",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{jobBaseUrl}}/api/job-tags/{{jobTagId}}",
+                  "host": [
+                    "{{jobBaseUrl}}"
+                  ],
+                  "path": []
+                },
+                "description": "Public detail of an active tag."
+              }
+            },
+            {
+              "name": "Create tag",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "X-User-Id",
+                    "value": "{{userId}}",
+                    "description": "Temporary identity header until JWT is wired"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{jobBaseUrl}}/api/job-tags",
+                  "host": [
+                    "{{jobBaseUrl}}"
+                  ],
+                  "path": []
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Remote Friendly\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "description": "201; slug stays unique with `-2`, `-3`... suffixes on collision."
+              }
+            },
+            {
+              "name": "Update tag",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "X-User-Id",
+                    "value": "{{userId}}",
+                    "description": "Temporary identity header until JWT is wired"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{jobBaseUrl}}/api/job-tags/{{jobTagId}}",
+                  "host": [
+                    "{{jobBaseUrl}}"
+                  ],
+                  "path": []
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Remote Friendly\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "description": "Full-replace rename; slug regenerated on name change."
+              }
+            },
+            {
+              "name": "Delete tag",
+              "request": {
+                "method": "DELETE",
+                "header": [
+                  {
+                    "key": "X-User-Id",
+                    "value": "{{userId}}",
+                    "description": "Temporary identity header until JWT is wired"
+                  }
+                ],
+                "url": {
+                  "raw": "{{jobBaseUrl}}/api/job-tags/{{jobTagId}}",
+                  "host": [
+                    "{{jobBaseUrl}}"
+                  ],
+                  "path": []
+                },
+                "description": "204; 409 while referenced by any posting."
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
 }

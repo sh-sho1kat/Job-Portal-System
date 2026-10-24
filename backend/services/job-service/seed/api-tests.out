@@ -1,0 +1,93 @@
+=== 0. home
+PASS  GET / (home) (HTTP 200)
+
+=== 1. taxonomy setup (categories, skills, tags)
+PASS  create root category (HTTP 201)
+PASS  create child category (HTTP 201)
+PASS  duplicate name -> slug -2 (HTTP 201)
+PASS  create skill (HTTP 201)
+PASS  create skill 2 (HTTP 201)
+PASS  create tag (HTTP 201)
+PASS  GET categories (public) (HTTP 200)
+PASS  GET skills (public) (HTTP 200)
+PASS  GET tags (public) (HTTP 200)
+PASS  GET skills /all without header -> 401 (HTTP 401)
+
+=== 2. job lifecycle (DRAFT -> publish -> close -> delete)
+PASS  create w/o header (valid body) -> 401 (HTTP 401)
+PASS  create job (DRAFT, 201) (HTTP 201)
+PASS  created status is DRAFT (HTTP DRAFT)
+PASS  created vacancies knock-on (HTTP 2)
+PASS  GET draft job -> hidden 404 (HTTP 404)
+PASS  publish DRAFT -> ACTIVE (HTTP 200)
+PASS  published status ACTIVE (HTTP ACTIVE)
+PASS  GET active job (view #1) (HTTP 200)
+PASS  GET active job (view #2) (HTTP 200)
+PASS  GET active job (view #3) (HTTP 200)
+
+=== 3. validations on create
+PASS  salaryMin > salaryMax -> 400 (HTTP 400)
+PASS  ON_SITE without city -> 400 (HTTP 400)
+PASS  salary without period -> 400 (HTTP 400)
+PASS  unknown categoryId -> 404 (HTTP 404)
+PASS  unknown skillId -> 400 (HTTP 400)
+PASS  nonexistent company (no FK yet) -> 201 (HTTP 201)
+
+=== 4. public search + filters + company listing
+PASS  search keyword=QA (HTTP 200)
+PASS  search finds our job(s) (2 >= 1)
+PASS  search categoryId (HTTP 200)
+PASS  search skillIds (HTTP 200)
+PASS  search tagIds (HTTP 200)
+PASS  search salaryPeriod (HTTP 200)
+PASS  search workMode (HTTP 200)
+PASS  hybrid filter finds job (2 >= 1)
+PASS  GET company 1 jobs (2 pages) (HTTP 200)
+PASS  re-publish active -> 400 (HTTP 400)
+
+=== 5. admin views + counters
+PASS  admin GET job (HTTP 200)
+PASS  viewCount=3 after 3 public GETs (HTTP 3)
+PASS  applicationCount starts 0 (HTTP 0)
+PASS  admin list filters (HTTP 200)
+PASS  admin list title filter (HTTP 200)
+PASS  my-jobs (owner) page (HTTP 200)
+PASS  suspend ACTIVE -> SUSPENDED (HTTP 200)
+PASS  status now SUSPENDED (HTTP SUSPENDED)
+PASS  GET suspended -> hidden 404 (HTTP 404)
+PASS  reactivate -> ACTIVE (HTTP 200)
+PASS  admin GET missing -> 404 (HTTP 404)
+PASS  reject endpoint removed -> 404 (HTTP 404)
+
+=== 6. slug regeneration + rename
+PASS  update job (rename) (HTTP 200)
+PASS  title updated (HTTP API QA Engineer II)
+PASS  slug regenerated for rename (api-qa-engineer-ii-4, suffix allowed: dead slugs are never recycled)
+
+=== 7. close + soft delete
+PASS  update ACTIVE job ok (HTTP 200)
+PASS  close ACTIVE -> CLOSED (HTTP 200)
+PASS  status now CLOSED (HTTP CLOSED)
+PASS  GET closed -> hidden 404 (HTTP 404)
+PASS  publish closed -> 400 (HTTP 400)
+PASS  delete job (soft, 204) (HTTP 204)
+PASS  GET deleted -> 404 (HTTP 404)
+PASS  re-delete -> 404 (HTTP 404)
+
+=== 8. taxonomy guards (delete protection)
+PASS  create reference job (HTTP 201)
+PASS  delete skill with DRAFT ref -> 409 (HTTP 409)
+PASS  publish ref job (HTTP 200)
+PASS  delete skill with ACTIVE ref -> 409 (HTTP 409)
+PASS  delete tag (even deleted-posting ref) -> 409 (HTTP 409)
+PASS  delete category with ref -> 409 (HTTP 409)
+PASS  create unlinked skill (HTTP 201)
+PASS  delete unused skill -> 204 (HTTP 204)
+PASS  cycle re-parent -> 400 (HTTP 400)
+PASS  un-nest leaf -> 200 (HTTP 200)
+PASS  delete unused category -> 204 (HTTP 204)
+
+PASS  admin list all jobs (HTTP 200)
+PASS  admin list has rows (14 >= 1)
+
+ALL CHECKS PASSED

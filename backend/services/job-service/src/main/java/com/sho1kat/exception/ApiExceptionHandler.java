@@ -1,6 +1,7 @@
 package com.sho1kat.exception;
 
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -62,6 +63,12 @@ public class ApiExceptionHandler {
     @ExceptionHandler(NoResourceFoundException.class)
     public ResponseEntity<ErrorResponse> handleNoResource(NoResourceFoundException ex) {
         return build(HttpStatus.NOT_FOUND, "No such endpoint", null);
+    }
+
+    /** FK/referential violations (e.g. a taxonomy row a (soft-)deleted job still points at). */
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<ErrorResponse> handleIntegrity(DataIntegrityViolationException ex) {
+        return build(HttpStatus.CONFLICT, "Record is referenced by other data; it cannot be deleted or linked", null);
     }
 
     @ExceptionHandler(HttpMediaTypeNotSupportedException.class)

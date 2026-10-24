@@ -78,7 +78,7 @@ public class JobSkillServiceImpl implements JobSkillService {
 
         JobSkill skill = requireSkill(id);
         if (jobRepository.existsActiveJobForSkill(id)) {
-            throw ApiException.conflict("Skill is still referenced by active jobs; deactivate it instead");
+            throw ApiException.conflict("Skill is still referenced by job postings; deactivate it instead");
         }
         jobSkillRepository.delete(skill);
     }

@@ -77,7 +77,7 @@ public class JobCategoryServiceImpl implements JobCategoryService {
             throw ApiException.conflict("Category has sub-categories; delete or move them first");
         }
         if (jobRepository.existsActiveJobForCategory(id)) {
-            throw ApiException.conflict("Category is still referenced by active jobs; deactivate it instead");
+            throw ApiException.conflict("Category is still referenced by job postings; deactivate it instead");
         }
         jobCategoryRepository.delete(category);
     }
