@@ -54,13 +54,16 @@ public class ProjectMapper {
         );
     }
 
+    /** Mutable on purpose: Hibernate clears and refills @ElementCollection on merged updates. */
     private List<String> cleanTechnologies(List<String> technologies) {
-        if (technologies == null) {
-            return new ArrayList<>();
+        List<String> cleaned = new ArrayList<>();
+        if (technologies != null) {
+            for (String technology : technologies) {
+                if (technology != null && !technology.isBlank()) {
+                    cleaned.add(technology.trim());
+                }
+            }
         }
-        return technologies.stream()
-                .filter(value -> value != null && !value.isBlank())
-                .map(String::trim)
-                .toList();
+        return cleaned;
     }
 }
