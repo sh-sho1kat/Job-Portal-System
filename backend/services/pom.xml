@@ -23,7 +23,7 @@
         <module>company-service</module>
         <module>job-service</module>
         <module>resume-service</module>
-<!--        <module>application-service</module>-->
+        <module>application-service</module>
     </modules>
 
 </project>
