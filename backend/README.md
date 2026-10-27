@@ -409,14 +409,18 @@ every sub-section, default flip + delete-promotion flow), one minimal shell
 and one medium resume:
 
 ```bash
-python3 seed/seed.py [base_url] [main_candidate]   # defaults: localhost:5004, 3001
+python3 seed/seed.py [base_url] [main_candidate] [random_seed]
+# defaults: localhost:5004, 3001, 2026 — the other candidates are main+1 / main+2
 ```
 
 Re-runs remain idempotent: the per-candidate duplicate-title guards are
 treated as "already exists" and the ids are recovered from the list
 endpoint; the ids summary at the end plugs straight into the Postman
-variables (`resumeId`, section ids). All data goes through the real API
-surface and lands in `resume_db`.
+variables (`resumeId`, section ids). To grow more distinct data run new
+batches with fresh candidates/seeds, e.g. `seed.py localhost:5004 4001 42`
+— each batch adds a power user, a minimal shell and a medium resume per
+candidate. All data goes through the real API surface and lands in
+`resume_db`.
 
 ## API — resume-service
 
