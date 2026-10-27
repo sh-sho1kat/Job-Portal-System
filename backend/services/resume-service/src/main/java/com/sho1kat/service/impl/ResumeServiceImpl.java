@@ -129,22 +129,7 @@ public class ResumeServiceImpl implements ResumeService {
     public ResumeResponse updatePersonalInfo(Long resumeId, Long candidateId, PersonalInfoRequest request) {
         Resume resume = requireOwnedResume(resumeId, candidateId);
 
-        PersonalInfo info = resume.getPersonalInfo() != null
-                ? resume.getPersonalInfo()
-                : PersonalInfo.builder().build();
-        if (request.firstName() != null) info.setFirstName(request.firstName().trim());
-        if (request.lastName() != null) info.setLastName(request.lastName().trim());
-        if (request.headline() != null) info.setHeadline(request.headline().trim());
-        if (request.email() != null) info.setEmail(request.email().trim());
-        if (request.phone() != null) info.setPhone(request.phone().trim());
-        if (request.city() != null) info.setCity(request.city().trim());
-        if (request.country() != null) info.setCountry(request.country().trim());
-        if (request.linkedInUrl() != null) info.setLinkedInUrl(request.linkedInUrl().trim());
-        if (request.githubUrl() != null) info.setGithubUrl(request.githubUrl().trim());
-        if (request.portfolioUrl() != null) info.setPortfolioUrl(request.portfolioUrl().trim());
-        if (request.websiteUrl() != null) info.setWebsiteUrl(request.websiteUrl().trim());
-        resume.setPersonalInfo(info);
-
+        updatePersonalInfoEntity(resume, request);
         refreshCompletionScore(resume);
         return toDetailResponse(resume);
     }
@@ -225,6 +210,24 @@ public class ResumeServiceImpl implements ResumeService {
     /**
      * Detailed view with all sections freshly loaded.
      */
+    private void updatePersonalInfoEntity(Resume resume, PersonalInfoRequest request) {
+        PersonalInfo info = resume.getPersonalInfo() != null
+                ? resume.getPersonalInfo()
+                : PersonalInfo.builder().build();
+        if (request.firstName() != null) info.setFirstName(request.firstName().trim());
+        if (request.lastName() != null) info.setLastName(request.lastName().trim());
+        if (request.headline() != null) info.setHeadline(request.headline().trim());
+        if (request.email() != null) info.setEmail(request.email().trim());
+        if (request.phone() != null) info.setPhone(request.phone().trim());
+        if (request.city() != null) info.setCity(request.city().trim());
+        if (request.country() != null) info.setCountry(request.country().trim());
+        if (request.linkedInUrl() != null) info.setLinkedInUrl(request.linkedInUrl().trim());
+        if (request.githubUrl() != null) info.setGithubUrl(request.githubUrl().trim());
+        if (request.portfolioUrl() != null) info.setPortfolioUrl(request.portfolioUrl().trim());
+        if (request.websiteUrl() != null) info.setWebsiteUrl(request.websiteUrl().trim());
+        resume.setPersonalInfo(info);
+    }
+
     private ResumeResponse toDetailResponse(Resume resume) {
         return resumeMapper.toDetailResponse(
                 resume,
