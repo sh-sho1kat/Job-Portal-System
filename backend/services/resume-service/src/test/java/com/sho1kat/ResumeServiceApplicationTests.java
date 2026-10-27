@@ -5,6 +5,7 @@ import com.sho1kat.dto.ResumeServiceDto.request.ResumeRequest;
 import com.sho1kat.dto.ResumeServiceDto.request.EducationRequest;
 import com.sho1kat.dto.ResumeServiceDto.request.LanguageProficiencyRequest;
 import com.sho1kat.dto.ResumeServiceDto.request.PersonalInfoRequest;
+import com.sho1kat.dto.ResumeServiceDto.request.ProjectRequest;
 import com.sho1kat.dto.ResumeServiceDto.request.ResumeSkillRequest;
 import com.sho1kat.dto.ResumeServiceDto.request.UpdateSummaryRequest;
 import com.sho1kat.dto.ResumeServiceDto.request.WorkExperienceRequest;
@@ -17,6 +18,7 @@ import com.sho1kat.exception.ApiException;
 import com.sho1kat.service.AwardService;
 import com.sho1kat.service.EducationService;
 import com.sho1kat.service.LanguageService;
+import com.sho1kat.service.ProjectService;
 import com.sho1kat.service.ResumeService;
 import com.sho1kat.service.ResumeSkillService;
 import com.sho1kat.service.WorkExperienceService;
@@ -53,6 +55,8 @@ class ResumeServiceApplicationTests {
     private LanguageService languageService;
     @Autowired
     private AwardService awardService;
+    @Autowired
+    private ProjectService projectService;
 
     @Test
     void contextLoads() {
@@ -165,6 +169,39 @@ class ResumeServiceApplicationTests {
         assertThat(detail.awards().get(0).title()).isEqualTo("Hackathon winner");
         assertThat(detail.projects()).isEmpty();
         assertThat(detail.certifications()).isEmpty();
+    }
+
+    @Test
+    void updatingSectionsWithTechnologiesSucceeds() {
+        Long resumeId = resumeService.createResume(CANDIDATE,
+                new ResumeRequest("Core CV", null, null, null)).id();
+
+        // regresses the merge-time UnsupportedOperationException when an
+        // immutable technologies list was set on an already-managed entity
+        var experience = workExperienceService.createWorkExperience(resumeId, CANDIDATE,
+                new WorkExperienceRequest("Nimbus Software", null, "Backend Lead", null,
+                        null, "Berlin", null, "Germany", null,
+                        LocalDate.of(2020, 3, 1), null, true, null,
+                        java.util.List.of("Kotlin", "Kafka"), 0));
+        var updatedExperience = workExperienceService.updateWorkExperience(
+                experience.id(), resumeId, CANDIDATE,
+                new WorkExperienceRequest("Nimbus Software", null, "Principal Engineer", null,
+                        null, "Berlin", null, "Germany", null,
+                        LocalDate.of(2020, 3, 1), null, true, null,
+                        java.util.List.of("Java", "Spring Boot"), 0));
+        assertThat(updatedExperience.position()).isEqualTo("Principal Engineer");
+        assertThat(updatedExperience.technologies()).containsExactly("Java", "Spring Boot");
+
+        var project = projectService.addProject(resumeId, CANDIDATE,
+                new ProjectRequest("Job Tracker", null, java.util.List.of("Kotlin"),
+                        "https://example.com/tracker", null,
+                        LocalDate.of(2024, 1, 1), null, 0));
+        var updatedProject = projectService.updateProject(project.id(), resumeId, CANDIDATE,
+                new ProjectRequest("Job Tracker", "Morning rebuild", java.util.List.of("Java", "PostgreSQL"),
+                        "https://example.com/tracker", null,
+                        LocalDate.of(2024, 1, 1), LocalDate.of(2024, 12, 31), 0));
+        assertThat(updatedProject.technologies()).containsExactly("Java", "PostgreSQL");
+        assertThat(updatedProject.isOngoing()).isFalse();
     }
 
     @Test
