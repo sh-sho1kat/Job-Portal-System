@@ -80,6 +80,51 @@
       "key": "jobTagId",
       "value": "1",
       "type": "string"
+    },
+    {
+      "key": "resumeBaseUrl",
+      "value": "http://localhost:5004",
+      "type": "string"
+    },
+    {
+      "key": "resumeId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "workExperienceId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "educationId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "resumeSkillId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "languageId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "projectId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "certificationId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "awardId",
+      "value": "",
+      "type": "string"
     }
   ],
   "item": [
@@ -1995,6 +2040,1721 @@
                 },
                 "description": "204; 409 while referenced by any posting."
               }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Resume Service",
+      "item": [
+        {
+          "name": "Resumes",
+          "item": [
+            {
+              "name": "Create resume",
+              "request": {
+                "method": "POST",
+                "url": {
+                  "raw": "{{resumeBaseUrl}}/api/resumes/create",
+                  "host": [
+                    "{{resumeBaseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "resumes",
+                    "create"
+                  ]
+                },
+                "header": [
+                  {
+                    "key": "X-User-Id",
+                    "value": "{{userId}}",
+                    "description": "temporary auth: user-service id of the caller"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\"title\": \"Backend Engineer CV\", \"template\": \"MODERN\", \"visibility\": \"PRIVATE\", \"isDefault\": null}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "description": "Create a resume shell. The candidate's first resume automatically becomes the apply-with default.\n\n**Body** - `CreateResumeRequest`: `title` (required, <=150, unique per candidate), `template` (`DEFAULT`/`MODERN`/`CLASSIC`/`PROFESSIONAL`), `visibility` (`PUBLIC`/`PRIVATE`/`LINK_ONLY`), `isDefault`. The created id is saved into `{{resumeId}}`.\n\n**Responses**\n- `201` -> resume shell\n- `400` -> validation failed\n- `401` -> missing/invalid `X-User-Id`\n- `409` -> a resume with this title already exists"
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP 201', () => pm.response.to.have.status(201));",
+                      "const body = pm.response.json();",
+                      "if (body && body.id) pm.collectionVariables.set('resumeId', String(body.id));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "My resumes (list)",
+              "request": {
+                "method": "GET",
+                "url": {
+                  "raw": "{{resumeBaseUrl}}/api/resumes/my-resumes",
+                  "host": [
+                    "{{resumeBaseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "resumes",
+                    "my-resumes"
+                  ]
+                },
+                "header": [
+                  {
+                    "key": "X-User-Id",
+                    "value": "{{userId}}",
+                    "description": "temporary auth: user-service id of the caller"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "description": "List all of your resumes, default first (list view - the section lists are empty)."
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP 200', () => pm.response.to.have.status(200));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Get resume detail",
+              "request": {
+                "method": "GET",
+                "url": {
+                  "raw": "{{resumeBaseUrl}}/api/resumes/{{resumeId}}",
+                  "host": [
+                    "{{resumeBaseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "resumes",
+                    "{{resumeId}}"
+                  ]
+                },
+                "header": [
+                  {
+                    "key": "X-User-Id",
+                    "value": "{{userId}}",
+                    "description": "temporary auth: user-service id of the caller"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "description": "Detailed resume incl. all sub-sections; bumps `lastViewedAt` each call."
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                      "const body = pm.response.json();",
+                      "if (body && body.id) pm.collectionVariables.set('resumeId', String(body.id));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Update resume (title/template/visibility)",
+              "request": {
+                "method": "PUT",
+                "url": {
+                  "raw": "{{resumeBaseUrl}}/api/resumes/{{resumeId}}",
+                  "host": [
+                    "{{resumeBaseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "resumes",
+                    "{{resumeId}}"
+                  ]
+                },
+                "header": [
+                  {
+                    "key": "X-User-Id",
+                    "value": "{{userId}}",
+                    "description": "temporary auth: user-service id of the caller"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\"title\": \"Senior Backend Engineer CV\", \"template\": \"PROFESSIONAL\", \"visibility\": null}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "description": "Update title/template/visibility; `null` keeps the current value."
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP 200', () => pm.response.to.have.status(200));"
+                    ]
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Resume Operations",
+          "item": [
+            {
+              "name": "Update personal info (patch)",
+              "request": {
+                "method": "PATCH",
+                "url": {
+                  "raw": "{{resumeBaseUrl}}/api/resumes/{{resumeId}}/personal-info",
+                  "host": [
+                    "{{resumeBaseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "resumes",
+                    "{{resumeId}}",
+                    "personal-info"
+                  ]
+                },
+                "header": [
+                  {
+                    "key": "X-User-Id",
+                    "value": "{{userId}}",
+                    "description": "temporary auth: user-service id of the caller"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\"firstName\": \"Alex\", \"lastName\": \"Keller\", \"headline\": \"Backend engineer\", \"email\": \"alex@example.com\"}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "description": "Patch-style personal info: only supplied fields change, `null` keeps them. URLs must be http(s)."
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP 200', () => pm.response.to.have.status(200));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Update summary",
+              "request": {
+                "method": "PATCH",
+                "url": {
+                  "raw": "{{resumeBaseUrl}}/api/resumes/{{resumeId}}/summary",
+                  "host": [
+                    "{{resumeBaseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "resumes",
+                    "{{resumeId}}",
+                    "summary"
+                  ]
+                },
+                "header": [
+                  {
+                    "key": "X-User-Id",
+                    "value": "{{userId}}",
+                    "description": "temporary auth: user-service id of the caller"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\"summary\": \"Five years building Spring Boot platform services.\"}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "description": "Replace the professional summary; an explicit `null` clears it."
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP 200', () => pm.response.to.have.status(200));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Set default resume",
+              "request": {
+                "method": "POST",
+                "url": {
+                  "raw": "{{resumeBaseUrl}}/api/resumes/{{resumeId}}/set-default",
+                  "host": [
+                    "{{resumeBaseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "resumes",
+                    "{{resumeId}}",
+                    "set-default"
+                  ]
+                },
+                "header": [
+                  {
+                    "key": "X-User-Id",
+                    "value": "{{userId}}",
+                    "description": "temporary auth: user-service id of the caller"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "description": "Make this the apply-with default; demotes every other resume."
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP 200', () => pm.response.to.have.status(200));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Delete resume (soft)",
+              "request": {
+                "method": "DELETE",
+                "url": {
+                  "raw": "{{resumeBaseUrl}}/api/resumes/{{resumeId}}",
+                  "host": [
+                    "{{resumeBaseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "resumes",
+                    "{{resumeId}}"
+                  ]
+                },
+                "header": [
+                  {
+                    "key": "X-User-Id",
+                    "value": "{{userId}}",
+                    "description": "temporary auth: user-service id of the caller"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "description": "Soft delete. The newest surviving resume is promoted to default."
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP 204', () => pm.response.to.have.status(204));"
+                    ]
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Work Experiences",
+          "item": [
+            {
+              "name": "List work experience",
+              "request": {
+                "method": "GET",
+                "url": {
+                  "raw": "{{resumeBaseUrl}}/api/resumes/{{resumeId}}/work-experiences",
+                  "host": [
+                    "{{resumeBaseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "resumes",
+                    "{{resumeId}}",
+                    "work-experiences"
+                  ]
+                },
+                "header": [
+                  {
+                    "key": "X-User-Id",
+                    "value": "{{userId}}",
+                    "description": "temporary auth: user-service id of the caller"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "description": "List work experience of the resume (display order, then id)."
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP 200', () => pm.response.to.have.status(200));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Add work experience",
+              "request": {
+                "method": "POST",
+                "url": {
+                  "raw": "{{resumeBaseUrl}}/api/resumes/{{resumeId}}/work-experiences",
+                  "host": [
+                    "{{resumeBaseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "resumes",
+                    "{{resumeId}}",
+                    "work-experiences"
+                  ]
+                },
+                "header": [
+                  {
+                    "key": "X-User-Id",
+                    "value": "{{userId}}",
+                    "description": "temporary auth: user-service id of the caller"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\"companyName\": \"Acme Corp\", \"companyLogoUrl\": null, \"position\": \"Backend Lead\", \"employmentType\": \"FULL_TIME\", \"address\": null, \"city\": \"Berlin\", \"state\": null, \"country\": \"Germany\", \"zipCode\": null, \"startDate\": \"2020-03-01\", \"endDate\": null, \"isCurrentJob\": true, \"description\": \"Leading the platform team.\", \"technologies\": [\"Kotlin\", \"Kafka\"], \"displayOrder\": 0}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "description": "Add work experience. The created id is saved into `{{workExperienceId}}`."
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP 201', () => pm.response.to.have.status(201));",
+                      "const body = pm.response.json();",
+                      "if (body && body.id) pm.collectionVariables.set('workExperienceId', String(body.id));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Update work experience",
+              "request": {
+                "method": "PUT",
+                "url": {
+                  "raw": "{{resumeBaseUrl}}/api/resumes/{{resumeId}}/work-experiences/{{workExperienceId}}",
+                  "host": [
+                    "{{resumeBaseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "resumes",
+                    "{{resumeId}}",
+                    "work-experiences",
+                    "{{workExperienceId}}"
+                  ]
+                },
+                "header": [
+                  {
+                    "key": "X-User-Id",
+                    "value": "{{userId}}",
+                    "description": "temporary auth: user-service id of the caller"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\"companyName\": \"Acme Corp\", \"companyLogoUrl\": null, \"position\": \"Senior Backend Engineer\", \"employmentType\": \"FULL_TIME\", \"address\": null, \"city\": \"Berlin\", \"state\": null, \"country\": \"Germany\", \"zipCode\": null, \"startDate\": \"2017-01-01\", \"endDate\": \"2020-02-28\", \"isCurrentJob\": false, \"description\": \"Payments platform services.\", \"technologies\": [\"Java\", \"Spring Boot\"], \"displayOrder\": 1}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "description": "Full replace of one work experience entry."
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP 200', () => pm.response.to.have.status(200));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Delete work experience",
+              "request": {
+                "method": "DELETE",
+                "url": {
+                  "raw": "{{resumeBaseUrl}}/api/resumes/{{resumeId}}/work-experiences/{{workExperienceId}}",
+                  "host": [
+                    "{{resumeBaseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "resumes",
+                    "{{resumeId}}",
+                    "work-experiences",
+                    "{{workExperienceId}}"
+                  ]
+                },
+                "header": [
+                  {
+                    "key": "X-User-Id",
+                    "value": "{{userId}}",
+                    "description": "temporary auth: user-service id of the caller"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "description": "Delete one work experience entry."
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP 204', () => pm.response.to.have.status(204));"
+                    ]
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Educations",
+          "item": [
+            {
+              "name": "List education entry",
+              "request": {
+                "method": "GET",
+                "url": {
+                  "raw": "{{resumeBaseUrl}}/api/resumes/{{resumeId}}/educations",
+                  "host": [
+                    "{{resumeBaseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "resumes",
+                    "{{resumeId}}",
+                    "educations"
+                  ]
+                },
+                "header": [
+                  {
+                    "key": "X-User-Id",
+                    "value": "{{userId}}",
+                    "description": "temporary auth: user-service id of the caller"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "description": "List education entry of the resume (display order, then id)."
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP 200', () => pm.response.to.have.status(200));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Add education entry",
+              "request": {
+                "method": "POST",
+                "url": {
+                  "raw": "{{resumeBaseUrl}}/api/resumes/{{resumeId}}/educations",
+                  "host": [
+                    "{{resumeBaseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "resumes",
+                    "{{resumeId}}",
+                    "educations"
+                  ]
+                },
+                "header": [
+                  {
+                    "key": "X-User-Id",
+                    "value": "{{userId}}",
+                    "description": "temporary auth: user-service id of the caller"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\"institutionName\": \"TU Hamburg\", \"degree\": \"B.Sc. Computer Science\", \"fieldOfStudy\": \"Software Systems\", \"grade\": \"1.3\", \"startDate\": \"2014-10-01\", \"endDate\": null, \"isCurrentlyStudying\": false, \"description\": null, \"displayOrder\": 0}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "description": "Add education entry. The created id is saved into `{{educationId}}`."
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP 201', () => pm.response.to.have.status(201));",
+                      "const body = pm.response.json();",
+                      "if (body && body.id) pm.collectionVariables.set('educationId', String(body.id));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Update education entry",
+              "request": {
+                "method": "PUT",
+                "url": {
+                  "raw": "{{resumeBaseUrl}}/api/resumes/{{resumeId}}/educations/{{educationId}}",
+                  "host": [
+                    "{{resumeBaseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "resumes",
+                    "{{resumeId}}",
+                    "educations",
+                    "{{educationId}}"
+                  ]
+                },
+                "header": [
+                  {
+                    "key": "X-User-Id",
+                    "value": "{{userId}}",
+                    "description": "temporary auth: user-service id of the caller"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\"institutionName\": \"TU Hamburg\", \"degree\": \"M.Sc. Information Systems\", \"fieldOfStudy\": \"Data Management\", \"grade\": \"1.7\", \"startDate\": \"2018-04-01\", \"endDate\": \"2020-09-30\", \"isCurrentlyStudying\": false, \"description\": \"Thesis on distributed query processing.\", \"displayOrder\": 1}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "description": "Full replace of one education entry entry."
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP 200', () => pm.response.to.have.status(200));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Delete education entry",
+              "request": {
+                "method": "DELETE",
+                "url": {
+                  "raw": "{{resumeBaseUrl}}/api/resumes/{{resumeId}}/educations/{{educationId}}",
+                  "host": [
+                    "{{resumeBaseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "resumes",
+                    "{{resumeId}}",
+                    "educations",
+                    "{{educationId}}"
+                  ]
+                },
+                "header": [
+                  {
+                    "key": "X-User-Id",
+                    "value": "{{userId}}",
+                    "description": "temporary auth: user-service id of the caller"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "description": "Delete one education entry entry."
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP 204', () => pm.response.to.have.status(204));"
+                    ]
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Skills",
+          "item": [
+            {
+              "name": "List skill",
+              "request": {
+                "method": "GET",
+                "url": {
+                  "raw": "{{resumeBaseUrl}}/api/resumes/{{resumeId}}/skills",
+                  "host": [
+                    "{{resumeBaseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "resumes",
+                    "{{resumeId}}",
+                    "skills"
+                  ]
+                },
+                "header": [
+                  {
+                    "key": "X-User-Id",
+                    "value": "{{userId}}",
+                    "description": "temporary auth: user-service id of the caller"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "description": "List skill of the resume (display order, then id)."
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP 200', () => pm.response.to.have.status(200));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Add skill",
+              "request": {
+                "method": "POST",
+                "url": {
+                  "raw": "{{resumeBaseUrl}}/api/resumes/{{resumeId}}/skills",
+                  "host": [
+                    "{{resumeBaseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "resumes",
+                    "{{resumeId}}",
+                    "skills"
+                  ]
+                },
+                "header": [
+                  {
+                    "key": "X-User-Id",
+                    "value": "{{userId}}",
+                    "description": "temporary auth: user-service id of the caller"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\"skillName\": \"Spring Boot\", \"proficiencyLevel\": \"ADVANCED\", \"yearsOfExperience\": 6, \"displayOrder\": 0}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "description": "Add skill. The created id is saved into `{{resumeSkillId}}`."
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP 201', () => pm.response.to.have.status(201));",
+                      "const body = pm.response.json();",
+                      "if (body && body.id) pm.collectionVariables.set('resumeSkillId', String(body.id));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Update skill",
+              "request": {
+                "method": "PUT",
+                "url": {
+                  "raw": "{{resumeBaseUrl}}/api/resumes/{{resumeId}}/skills/{{resumeSkillId}}",
+                  "host": [
+                    "{{resumeBaseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "resumes",
+                    "{{resumeId}}",
+                    "skills",
+                    "{{resumeSkillId}}"
+                  ]
+                },
+                "header": [
+                  {
+                    "key": "X-User-Id",
+                    "value": "{{userId}}",
+                    "description": "temporary auth: user-service id of the caller"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\"skillName\": \"Apache Kafka\", \"proficiencyLevel\": \"INTERMEDIATE\", \"yearsOfExperience\": 3, \"displayOrder\": 1}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "description": "Full replace of one skill entry."
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP 200', () => pm.response.to.have.status(200));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Delete skill",
+              "request": {
+                "method": "DELETE",
+                "url": {
+                  "raw": "{{resumeBaseUrl}}/api/resumes/{{resumeId}}/skills/{{resumeSkillId}}",
+                  "host": [
+                    "{{resumeBaseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "resumes",
+                    "{{resumeId}}",
+                    "skills",
+                    "{{resumeSkillId}}"
+                  ]
+                },
+                "header": [
+                  {
+                    "key": "X-User-Id",
+                    "value": "{{userId}}",
+                    "description": "temporary auth: user-service id of the caller"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "description": "Delete one skill entry."
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP 204', () => pm.response.to.have.status(204));"
+                    ]
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Languages",
+          "item": [
+            {
+              "name": "List language",
+              "request": {
+                "method": "GET",
+                "url": {
+                  "raw": "{{resumeBaseUrl}}/api/resumes/{{resumeId}}/languages",
+                  "host": [
+                    "{{resumeBaseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "resumes",
+                    "{{resumeId}}",
+                    "languages"
+                  ]
+                },
+                "header": [
+                  {
+                    "key": "X-User-Id",
+                    "value": "{{userId}}",
+                    "description": "temporary auth: user-service id of the caller"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "description": "List language of the resume (display order, then id)."
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP 200', () => pm.response.to.have.status(200));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Add language",
+              "request": {
+                "method": "POST",
+                "url": {
+                  "raw": "{{resumeBaseUrl}}/api/resumes/{{resumeId}}/languages",
+                  "host": [
+                    "{{resumeBaseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "resumes",
+                    "{{resumeId}}",
+                    "languages"
+                  ]
+                },
+                "header": [
+                  {
+                    "key": "X-User-Id",
+                    "value": "{{userId}}",
+                    "description": "temporary auth: user-service id of the caller"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\"languageName\": \"English\", \"proficiency\": \"FLUENT\", \"displayOrder\": 0}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "description": "Add language. The created id is saved into `{{languageId}}`."
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP 201', () => pm.response.to.have.status(201));",
+                      "const body = pm.response.json();",
+                      "if (body && body.id) pm.collectionVariables.set('languageId', String(body.id));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Update language",
+              "request": {
+                "method": "PUT",
+                "url": {
+                  "raw": "{{resumeBaseUrl}}/api/resumes/{{resumeId}}/languages/{{languageId}}",
+                  "host": [
+                    "{{resumeBaseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "resumes",
+                    "{{resumeId}}",
+                    "languages",
+                    "{{languageId}}"
+                  ]
+                },
+                "header": [
+                  {
+                    "key": "X-User-Id",
+                    "value": "{{userId}}",
+                    "description": "temporary auth: user-service id of the caller"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\"languageName\": \"German\", \"proficiency\": \"NATIVE\", \"displayOrder\": 1}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "description": "Full replace of one language entry."
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP 200', () => pm.response.to.have.status(200));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Delete language",
+              "request": {
+                "method": "DELETE",
+                "url": {
+                  "raw": "{{resumeBaseUrl}}/api/resumes/{{resumeId}}/languages/{{languageId}}",
+                  "host": [
+                    "{{resumeBaseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "resumes",
+                    "{{resumeId}}",
+                    "languages",
+                    "{{languageId}}"
+                  ]
+                },
+                "header": [
+                  {
+                    "key": "X-User-Id",
+                    "value": "{{userId}}",
+                    "description": "temporary auth: user-service id of the caller"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "description": "Delete one language entry."
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP 204', () => pm.response.to.have.status(204));"
+                    ]
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Projects",
+          "item": [
+            {
+              "name": "List project",
+              "request": {
+                "method": "GET",
+                "url": {
+                  "raw": "{{resumeBaseUrl}}/api/resumes/{{resumeId}}/projects",
+                  "host": [
+                    "{{resumeBaseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "resumes",
+                    "{{resumeId}}",
+                    "projects"
+                  ]
+                },
+                "header": [
+                  {
+                    "key": "X-User-Id",
+                    "value": "{{userId}}",
+                    "description": "temporary auth: user-service id of the caller"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "description": "List project of the resume (display order, then id)."
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP 200', () => pm.response.to.have.status(200));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Add project",
+              "request": {
+                "method": "POST",
+                "url": {
+                  "raw": "{{resumeBaseUrl}}/api/resumes/{{resumeId}}/projects",
+                  "host": [
+                    "{{resumeBaseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "resumes",
+                    "{{resumeId}}",
+                    "projects"
+                  ]
+                },
+                "header": [
+                  {
+                    "key": "X-User-Id",
+                    "value": "{{userId}}",
+                    "description": "temporary auth: user-service id of the caller"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\"title\": \"Job Portal AI Matcher\", \"description\": \"Prototype matching engine for jobs and resumes.\", \"technologies\": [\"Spring Boot\", \"PostgreSQL\"], \"projectUrl\": \"https://example.com/matcher\", \"sourceCodeUrl\": \"https://github.com/example/matcher\", \"startDate\": \"2024-02-01\", \"endDate\": null, \"displayOrder\": 0}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "description": "Add project. The created id is saved into `{{projectId}}`."
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP 201', () => pm.response.to.have.status(201));",
+                      "const body = pm.response.json();",
+                      "if (body && body.id) pm.collectionVariables.set('projectId', String(body.id));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Update project",
+              "request": {
+                "method": "PUT",
+                "url": {
+                  "raw": "{{resumeBaseUrl}}/api/resumes/{{resumeId}}/projects/{{projectId}}",
+                  "host": [
+                    "{{resumeBaseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "resumes",
+                    "{{resumeId}}",
+                    "projects",
+                    "{{projectId}}"
+                  ]
+                },
+                "header": [
+                  {
+                    "key": "X-User-Id",
+                    "value": "{{userId}}",
+                    "description": "temporary auth: user-service id of the caller"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\"title\": \"CLI Todo\", \"description\": \"Tiny terminal todo app.\", \"technologies\": [\"Go\"], \"projectUrl\": null, \"sourceCodeUrl\": \"https://github.com/example/cli-todo\", \"startDate\": \"2022-05-01\", \"endDate\": \"2022-07-31\", \"displayOrder\": 1}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "description": "Full replace of one project entry."
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP 200', () => pm.response.to.have.status(200));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Delete project",
+              "request": {
+                "method": "DELETE",
+                "url": {
+                  "raw": "{{resumeBaseUrl}}/api/resumes/{{resumeId}}/projects/{{projectId}}",
+                  "host": [
+                    "{{resumeBaseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "resumes",
+                    "{{resumeId}}",
+                    "projects",
+                    "{{projectId}}"
+                  ]
+                },
+                "header": [
+                  {
+                    "key": "X-User-Id",
+                    "value": "{{userId}}",
+                    "description": "temporary auth: user-service id of the caller"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "description": "Delete one project entry."
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP 204', () => pm.response.to.have.status(204));"
+                    ]
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Certifications",
+          "item": [
+            {
+              "name": "List certification",
+              "request": {
+                "method": "GET",
+                "url": {
+                  "raw": "{{resumeBaseUrl}}/api/resumes/{{resumeId}}/certifications",
+                  "host": [
+                    "{{resumeBaseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "resumes",
+                    "{{resumeId}}",
+                    "certifications"
+                  ]
+                },
+                "header": [
+                  {
+                    "key": "X-User-Id",
+                    "value": "{{userId}}",
+                    "description": "temporary auth: user-service id of the caller"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "description": "List certification of the resume (display order, then id)."
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP 200', () => pm.response.to.have.status(200));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Add certification",
+              "request": {
+                "method": "POST",
+                "url": {
+                  "raw": "{{resumeBaseUrl}}/api/resumes/{{resumeId}}/certifications",
+                  "host": [
+                    "{{resumeBaseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "resumes",
+                    "{{resumeId}}",
+                    "certifications"
+                  ]
+                },
+                "header": [
+                  {
+                    "key": "X-User-Id",
+                    "value": "{{userId}}",
+                    "description": "temporary auth: user-service id of the caller"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\"name\": \"AWS Certified Solutions Architect\", \"issuingOrganization\": \"Amazon Web Services\", \"issueDate\": \"2023-03-15\", \"expirationDate\": \"2026-03-15\", \"credentialId\": \"AWS-SA-123\", \"credentialUrl\": \"https://credential.example.com/123\", \"displayOrder\": 0}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "description": "Add certification. The created id is saved into `{{certificationId}}`."
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP 201', () => pm.response.to.have.status(201));",
+                      "const body = pm.response.json();",
+                      "if (body && body.id) pm.collectionVariables.set('certificationId', String(body.id));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Update certification",
+              "request": {
+                "method": "PUT",
+                "url": {
+                  "raw": "{{resumeBaseUrl}}/api/resumes/{{resumeId}}/certifications/{{certificationId}}",
+                  "host": [
+                    "{{resumeBaseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "resumes",
+                    "{{resumeId}}",
+                    "certifications",
+                    "{{certificationId}}"
+                  ]
+                },
+                "header": [
+                  {
+                    "key": "X-User-Id",
+                    "value": "{{userId}}",
+                    "description": "temporary auth: user-service id of the caller"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\"name\": \"Kubernetes Fundamentals\", \"issuingOrganization\": \"CNCF\", \"issueDate\": \"2022-08-01\", \"expirationDate\": null, \"credentialId\": null, \"credentialUrl\": null, \"displayOrder\": 1}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "description": "Full replace of one certification entry."
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP 200', () => pm.response.to.have.status(200));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Delete certification",
+              "request": {
+                "method": "DELETE",
+                "url": {
+                  "raw": "{{resumeBaseUrl}}/api/resumes/{{resumeId}}/certifications/{{certificationId}}",
+                  "host": [
+                    "{{resumeBaseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "resumes",
+                    "{{resumeId}}",
+                    "certifications",
+                    "{{certificationId}}"
+                  ]
+                },
+                "header": [
+                  {
+                    "key": "X-User-Id",
+                    "value": "{{userId}}",
+                    "description": "temporary auth: user-service id of the caller"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "description": "Delete one certification entry."
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP 204', () => pm.response.to.have.status(204));"
+                    ]
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Awards",
+          "item": [
+            {
+              "name": "List award",
+              "request": {
+                "method": "GET",
+                "url": {
+                  "raw": "{{resumeBaseUrl}}/api/resumes/{{resumeId}}/awards",
+                  "host": [
+                    "{{resumeBaseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "resumes",
+                    "{{resumeId}}",
+                    "awards"
+                  ]
+                },
+                "header": [
+                  {
+                    "key": "X-User-Id",
+                    "value": "{{userId}}",
+                    "description": "temporary auth: user-service id of the caller"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "description": "List award of the resume (display order, then id)."
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP 200', () => pm.response.to.have.status(200));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Add award",
+              "request": {
+                "method": "POST",
+                "url": {
+                  "raw": "{{resumeBaseUrl}}/api/resumes/{{resumeId}}/awards",
+                  "host": [
+                    "{{resumeBaseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "resumes",
+                    "{{resumeId}}",
+                    "awards"
+                  ]
+                },
+                "header": [
+                  {
+                    "key": "X-User-Id",
+                    "value": "{{userId}}",
+                    "description": "temporary auth: user-service id of the caller"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\"title\": \"Hackathon winner\", \"issuer\": \"DemoDay\", \"dateAwarded\": \"2023-06-10\", \"description\": \"First place out of 40 teams.\", \"displayOrder\": 0}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "description": "Add award. The created id is saved into `{{awardId}}`."
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP 201', () => pm.response.to.have.status(201));",
+                      "const body = pm.response.json();",
+                      "if (body && body.id) pm.collectionVariables.set('awardId', String(body.id));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Update award",
+              "request": {
+                "method": "PUT",
+                "url": {
+                  "raw": "{{resumeBaseUrl}}/api/resumes/{{resumeId}}/awards/{{awardId}}",
+                  "host": [
+                    "{{resumeBaseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "resumes",
+                    "{{resumeId}}",
+                    "awards",
+                    "{{awardId}}"
+                  ]
+                },
+                "header": [
+                  {
+                    "key": "X-User-Id",
+                    "value": "{{userId}}",
+                    "description": "temporary auth: user-service id of the caller"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\"title\": \"Employee of the quarter\", \"issuer\": \"Acme Corp\", \"dateAwarded\": \"2021-10-01\", \"description\": null, \"displayOrder\": 1}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "description": "Full replace of one award entry."
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP 200', () => pm.response.to.have.status(200));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Delete award",
+              "request": {
+                "method": "DELETE",
+                "url": {
+                  "raw": "{{resumeBaseUrl}}/api/resumes/{{resumeId}}/awards/{{awardId}}",
+                  "host": [
+                    "{{resumeBaseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "resumes",
+                    "{{resumeId}}",
+                    "awards",
+                    "{{awardId}}"
+                  ]
+                },
+                "header": [
+                  {
+                    "key": "X-User-Id",
+                    "value": "{{userId}}",
+                    "description": "temporary auth: user-service id of the caller"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "description": "Delete one award entry."
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP 204', () => pm.response.to.have.status(204));"
+                    ]
+                  }
+                }
+              ]
             }
           ]
         }

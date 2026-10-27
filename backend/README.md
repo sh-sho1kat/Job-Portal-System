@@ -27,7 +27,8 @@ backend/
 └── services/            # job-portal-services — business microservices
     ├── user-service/    # authentication & user management (port 5001)
     ├── company-service/ # company profiles & admin verification (port 5002)
-    └── job-service/     # job postings & admin review (port 5003)
+    ├── job-service/     # job postings & admin review (port 5003)
+    └── resume-service/  # candidate resume builder (port 5004)
 ```
 
 | Module | Artifact | Description |
@@ -37,12 +38,13 @@ backend/
 | `services/user-service` | `user-service` | User authentication (JWT access + refresh tokens) and user/role management |
 | `services/company-service` | `company-service` | Company profiles, offices, and admin verification workflow |
 | `services/job-service` | `job-service` | Job postings (search, employer CRUD, admin review) |
+| `services/resume-service` | `resume-service` | Candidate resumes (sections, skills, languages, completion score) |
 
 ## Requirements
 
 - **JDK 25**
 - **Maven 3.8+**
-- **PostgreSQL** (user-service database: `user_db`; company-service database: `company_db`; job-service database: `job_db`)
+- **PostgreSQL** (user-service database: `user_db`; company-service database: `company_db`; job-service database: `job_db`; resume-service database: `resume_db`)
 
 ## Build & Test
 
@@ -341,11 +343,146 @@ Employment types: `FULL_TIME`, `PART_TIME`, `CONTRACT`, `INTERNSHIP`, `TEMPORARY
   count is an integration point for the application flow (`incrementApplicationCount`,
   active postings only).
 
+## Running the Resume Service
+
+`resume-service` listens on **port 5004** (`application.yaml`).
+
+```bash
+cd services/resume-service
+mvn spring-boot:run
+```
+
+### Environment variables
+
+| Variable | Required | Description |
+|---|---|---|
+| `DB_USERNAME` | yes | PostgreSQL user |
+| `DB_PASSWORD` | yes | PostgreSQL password |
+| `DDL_AUTO` | no | Hibernate DDL mode (default `update`; use `validate`/`none` for production) |
+| `SHOW_SQL` | no | Log SQL statements (default `true`) |
+
+### Authentication note
+
+Same stand-in as company-service/job-service: JWT validation is not wired
+into `resume-service` yet. Every endpoint — reads included, because resume
+data is personal — requires the temporary `X-User-Id` header holding the
+caller's user-service id
+(`com.sho1kat.controller.RequesterId` documents this). The candidate id
+carried by that header must own the resume addressed in the path, otherwise
+the service answers `404`/`403` exactly as it will once real identity
+forwarding exists.
+
+### Data model
+
+A candidate owns any number of resumes; `resumes` carries the shell (title,
+`ResumeTemplateType template`, `ResumeVisibility visibility`, apply-with
+`is_default` flag, embedded `personal_info`, `summary`,
+`completion_score`, soft-delete `deleted_at`). Sub-sections are separate
+tables keyed by `resume_id`: `work_experiences` (embedded `JobLocation`,
+`EmploymentType`, technologies), `educations`, `resume_skills`
+(`ProficiencyLevel`, years of experience), `resume_languages`
+(`LanguageProficiency`), `projects` (technologies), `certifications` and
+`awards`. Every sub-section row has `display_order` plus create/update
+timestamps. Deletes of the resume root are soft; the newest surviving
+resume is promoted to default.
+
+- **Completion score** — 10 checklist parts, 10 points each:
+  personal name present, email present, summary present, and at least one
+  each of work experience, education, skill, project, certification, award
+  and language. Recalculated on every section change.
+- **Default handling** — the first resume of a candidate automatically
+  becomes the apply-with default; creating one with `isDefault: true`
+  (or `set-default`) demotes every other; after a delete promotion falls to
+  the newest survivor.
+- **Duplicate guards** — resume titles are unique per candidate
+  (case-insensitive); likewise skill and language names within one resume.
+- **Date rules** — work experience / education require `endDate` unless
+  marked current (then a supplied end date is cleared); certificate
+  `expirationDate` must not precede `issueDate`; `dateAwarded` cannot lie
+  in the future; end dates must not precede start dates.
+
+## API — resume-service
+
+### Resumes (`/api/resumes`)
+
+All endpoints are owner-scoped via `X-User-Id` (see authentication note).
+
+| Method | Path | Purpose |
+|---|---|---|
+| `POST` | `/api/resumes/create` | create shell (`201`; first resume auto-default) |
+| `GET` | `/api/resumes/my-resumes` | list view, default first (sections empty) |
+| `GET` | `/api/resumes/{resumeId}` | detailed view incl. all sections; touches `lastViewedAt` |
+| `PUT` | `/api/resumes/{resumeId}` | update title/template/visibility (`null` keeps current) |
+| `PATCH` | `/api/resumes/{resumeId}/personal-info` | patch-style personal info (only supplied fields change) |
+| `PATCH` | `/api/resumes/{resumeId}/summary` | replace summary (`null` clears) |
+| `POST` | `/api/resumes/{resumeId}/set-default` | make this the apply-with default |
+| `DELETE` | `/api/resumes/{resumeId}` | soft delete, promotes newest survivor |
+
+### Sub-sections (`/api/resumes/{resumeId}/…`)
+
+Every group exposes `GET` (list, `display_order` then id ascending),
+`POST` (add, `201`), `PUT /{id}` (full replace of that entry) and
+`DELETE /{id}` (`204`), all owner-scoped:
+
+| Path segment | Section |
+|---|---|
+| `/work-experiences` | employment history (`WorkExperienceRequest`) |
+| `/educations` | education |
+| `/skills` | `ResumeSkillRequest` |
+| `/languages` | `LanguageProficiencyRequest` |
+| `/projects` | `ProjectRequest` |
+| `/certifications` | `CertificationRequest` |
+| `/awards` | `AwardRequest` |
+
+### Request DTOs
+
+Template: `DEFAULT`, `MODERN`, `CLASSIC`, `PROFESSIONAL`. Visibility:
+`PUBLIC`, `PRIVATE`, `LINK_ONLY`. Skill proficiency: `BEGINNER`,
+`INTERMEDIATE`, `ADVANCED`, `EXPERT`. Language proficiency: `BASIC`,
+`CONVERSATIONAL`, `FLUENT`, `NATIVE`. Employment type re-uses the common
+`EmploymentType` enum; experience locations use the shared `JobLocation`
+fields (`address`, `city`, `state`, `country`, `zipCode`).
+
+- **Create resume**: `title` (required, ≤150, unique per candidate),
+  `template`/`visibility` (optional, defaulted), `isDefault` (optional).
+- **Personal info** (all optional, patch semantics): `firstName`/`lastName`
+  (≤100), `headline` (≤150), `email` (validated), `phone` (validated, ≤20),
+  `city`/`country` (≤100), `linkedInUrl`/`githubUrl`/`portfolioUrl`/
+  `websiteUrl` (http(s) URLs ≤500). Supplying a field replaces it; `null`
+  keeps it.
+- **Work experience**: `companyName` (≤150), `companyLogoUrl` (http(s)
+  ≤500), `position` (≤150), `employmentType`, location fields, `startDate`
+  (required), `endDate` (required unless `isCurrentJob`), `description`
+  (≤10000), `technologies` (≤30 × ≤100), `displayOrder`.
+- **Education**: `institutionName` (≤150), `degree` (≤100),
+  `fieldOfStudy`/`grade` (≤100), `startDate` (required), `endDate`
+  (required unless `isCurrentlyStudying`), `description` (≤5000),
+  `displayOrder`.
+- **Skill**: `skillName` (≤100, unique per resume),
+  `proficiencyLevel` (`ProficiencyLevel`), `yearsOfExperience` (0–50),
+  `displayOrder`.
+- **Language**: `languageName` (≤100, unique per resume), `proficiency`
+  (`LanguageProficiency`), `displayOrder`.
+- **Project**: `title` (≤150), `description` (≤10000), `technologies`
+  (≤30), `projectUrl`/`sourceCodeUrl` (http(s) ≤500), `startDate`,
+  `endDate` (absent ⇒ `isOngoing`), `displayOrder`.
+- **Certification**: `name` (≤200), `issuingOrganization` (≤150),
+  `issueDate` (required), `expirationDate` (absent ⇒ never expires,
+  must not precede `issueDate`), `credentialId` (≤255),
+  `credentialUrl` (http(s) ≤500), `displayOrder`.
+- **Award**: `title` (≤200), `issuer` (≤150), `dateAwarded` (not in the
+  future), `description` (≤5000), `displayOrder`.
+
+Responses mirror these exactly (`ResumeResponse` nests
+`PersonalInfoResponse` plus one list per section; the detailed
+`GET /{resumeId}` also returns `lastViewedAt` and `completionScore`).
+
 ## Roadmap
 
 - [x] User service (auth, user management)
 - [x] Company service (profiles, locations, admin verification)
 - [x] Job service (postings, taxonomy categories/skills/tags, employer publishing)
+- [x] Resume service (resume builder, sections, skills/languages, completion score)
 - [ ] Spring Cloud infrastructure in `cloud/` (service discovery, config server, API gateway)
 - [ ] JWT enforcement in company-service / job-service / gateway identity forwarding
 - [ ] Additional business services (applications, notifications)
