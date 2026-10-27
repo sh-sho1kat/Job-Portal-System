@@ -2,7 +2,7 @@
   "info": {
     "_postman_id": "b1e2c3d4-5a6b-4c8d-9e0f-1a2b3c4d5e6f",
     "name": "Job Portal System API",
-    "description": "Postman collection for all Job Portal System backend services.\n\n## Conventions\n- **One top-level folder per microservice** (e.g. `User Service`, `Job Service`, ...), one subfolder per controller.\n- **Collection variables** (see `Variables` tab):\n  - `baseUrl` — target host, defaults to `http://localhost:5001`\n  - `accessToken` / `refreshToken` — auto-saved by the `Login` and `Refresh` test scripts\n  - `userId` — the record used by `GET/PUT/PATCH/DELETE /api/users/{id}` requests\n  - `companyBaseUrl` — company-service host, defaults to `http://localhost:5002`\n  - `companyId` / `locationId` — ids used by the Company Service requests\n- **Auth**: collection-level Bearer auth using `{{accessToken}}`; public requests override it with `No Auth`.\n- **Error shape**: every non-2xx response (except empty-body 401s from the security layer) is\n  `{\"status\":int,\"error\":str,\"message\":str,\"details\":array|null,\"timestamp\":str}`.\n\n## Extending\nWhen a new service/API is added, add a new top-level folder and follow the same conventions.\nSee `postman/README.md` in `common-lib`.",
+    "description": "Postman collection for all Job Portal System backend services.\n\n## Conventions\n- **One top-level folder per microservice** (e.g. `User Service`, `Job Service`, ...), one subfolder per controller.\n- **Collection variables** (see `Variables` tab):\n  - `baseUrl` — target host, defaults to `http://localhost:5001`\n  - `accessToken` / `refreshToken` — auto-saved by the `Login` and `Refresh` test scripts\n  - `userId` — the record used by `GET/PUT/PATCH/DELETE /api/users/{id}` requests\n  - `companyBaseUrl` — company-service host, defaults to `http://localhost:5002`\n  - `companyId` / `locationId` — ids used by the Company Service requests\n  - `resumeBaseUrl` — resume-service host, defaults to `http://localhost:5004`\n  - `resumeId` / section ids — resumes + their sub-sections (`workExperienceId`, `educationId`, `resumeSkillId`, `languageId`, `projectId`, `certificationId`, `awardId`)\n- **Auth**: collection-level Bearer auth using `{{accessToken}}`; public requests override it with `No Auth`.\n- **Error shape**: every non-2xx response (except empty-body 401s from the security layer) is\n  `{\"status\":int,\"error\":str,\"message\":str,\"details\":array|null,\"timestamp\":str}`.\n\n## Extending\nWhen a new service/API is added, add a new top-level folder and follow the same conventions.\nSee `postman/README.md` in `common-lib`.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "auth": {
@@ -2086,7 +2086,7 @@
                     }
                   }
                 },
-                "description": "Create a resume shell. The candidate's first resume automatically becomes the apply-with default.\n\n**Body** - `CreateResumeRequest`: `title` (required, <=150, unique per candidate), `template` (`DEFAULT`/`MODERN`/`CLASSIC`/`PROFESSIONAL`), `visibility` (`PUBLIC`/`PRIVATE`/`LINK_ONLY`), `isDefault`. The created id is saved into `{{resumeId}}`.\n\n**Responses**\n- `201` -> resume shell\n- `400` -> validation failed\n- `401` -> missing/invalid `X-User-Id`\n- `409` -> a resume with this title already exists"
+                "description": "Create a resume shell. The candidate's first resume automatically becomes the apply-with default.\n\n**Body** - `ResumeRequest`: `title` (required, <=150, unique per candidate), `template` (`DEFAULT`/`MODERN`/`CLASSIC`/`PROFESSIONAL`), `visibility` (`PUBLIC`/`PRIVATE`/`LINK_ONLY`), `isDefault`. The created id is saved into `{{resumeId}}`.\n\n**Responses**\n- `201` -> resume shell\n- `400` -> validation failed\n- `401` -> missing/invalid `X-User-Id`\n- `409` -> a resume with this title already exists"
               },
               "event": [
                 {
@@ -2233,7 +2233,8 @@
                 }
               ]
             }
-          ]
+          ],
+          "description": "Resume shells, base fields, personal info (patch), summary and default handling.\n\n**Body** - `ResumeRequest` (create): `title` (required, <=150, unique per candidate), `template`, `visibility`, `isDefault`. The created id is saved into `{{resumeId}}`."
         },
         {
           "name": "Resume Operations",
@@ -2419,7 +2420,8 @@
                 }
               ]
             }
-          ]
+          ],
+          "description": "Personal info patch, summary replace and soft delete with automatic default promotion (DELETE) plus set-default."
         },
         {
           "name": "Work Experiences",
@@ -2610,7 +2612,8 @@
                 }
               ]
             }
-          ]
+          ],
+          "description": "Employment history with embedded location (`JobLocation` fields) and technologies. `endDate` required unless `isCurrentJob`; ids saved to `{{workExperienceId}}`."
         },
         {
           "name": "Educations",
@@ -2801,7 +2804,8 @@
                 }
               ]
             }
-          ]
+          ],
+          "description": "Education entries; `endDate` required unless `isCurrentlyStudying`. Ids saved to `{{educationId}}`."
         },
         {
           "name": "Skills",
@@ -2992,7 +2996,8 @@
                 }
               ]
             }
-          ]
+          ],
+          "description": "Candidate-authored skills with `ProficiencyLevel` and years of experience; unique per resume. Ids saved to `{{resumeSkillId}}`."
         },
         {
           "name": "Languages",
@@ -3183,7 +3188,8 @@
                 }
               ]
             }
-          ]
+          ],
+          "description": "Spoken languages with `LanguageProficiency`; unique per resume. Ids saved to `{{languageId}}`."
         },
         {
           "name": "Projects",
@@ -3374,7 +3380,8 @@
                 }
               ]
             }
-          ]
+          ],
+          "description": "Personal projects; absent `endDate` -> `isOngoing`. Ids saved to `{{projectId}}`."
         },
         {
           "name": "Certifications",
@@ -3565,7 +3572,8 @@
                 }
               ]
             }
-          ]
+          ],
+          "description": "Certifications; absent `expirationDate` never expires and it must not precede `issueDate`. Ids saved to `{{certificationId}}`."
         },
         {
           "name": "Awards",
@@ -3756,9 +3764,11 @@
                 }
               ]
             }
-          ]
+          ],
+          "description": "Awards/honours; `dateAwarded` cannot be in the future. Ids saved to `{{awardId}}`."
         }
-      ]
+      ],
+      "description": "Candidate resume builder: resume shells, personal info, summary, default handling and seven sub-section collections.\n\n- Identity: every request — lists included — is owner-scoped via the temporary `X-User-Id` header ({{userId}}); the candidate in the header must own the addressed resume.\n- Defaults: the first resume becomes the apply-with default; `set-default` demotes the rest; deleting the default promotes the newest survivor.\n- `completionScore` is a 0-100 checklist (personal name/email, summary, and >=1 of each section), recalculated on every change; `lastViewedAt` bumps on each detail GET.\n- Set {{resumeBaseUrl}}, {{resumeId}} and the section id variables in collection variables.\n- Seed helper: `backend/services/resume-service/seed/seed.py`."
     }
   ]
 }

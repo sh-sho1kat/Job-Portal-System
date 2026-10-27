@@ -401,6 +401,23 @@ resume is promoted to default.
   `expirationDate` must not precede `issueDate`; `dateAwarded` cannot lie
   in the future; end dates must not precede start dates.
 
+### Seeding sample data
+
+`services/resume-service/seed/seed.py` fills a running service (port 5004)
+with three candidates' resume sets — a power user (personal info, summary,
+every sub-section, default flip + delete-promotion flow), one minimal shell
+and one medium resume:
+
+```bash
+python3 seed/seed.py [base_url] [main_candidate]   # defaults: localhost:5004, 3001
+```
+
+Re-runs remain idempotent: the per-candidate duplicate-title guards are
+treated as "already exists" and the ids are recovered from the list
+endpoint; the ids summary at the end plugs straight into the Postman
+variables (`resumeId`, section ids). All data goes through the real API
+surface and lands in `resume_db`.
+
 ## API — resume-service
 
 ### Resumes (`/api/resumes`)
