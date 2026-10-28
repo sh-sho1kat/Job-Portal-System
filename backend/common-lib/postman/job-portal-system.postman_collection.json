@@ -3830,9 +3830,17 @@
                 }
               },
               "event": [
-                "pm.test('HTTP 201', () => pm.response.to.have.status(201));",
-                "const body = pm.response.json();",
-                "if (body && body.id) pm.collectionVariables.set('applicationId', String(body.id));"
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP 201', () => pm.response.to.have.status(201));",
+                      "const body = pm.response.json();",
+                      "if (body && body.id) pm.collectionVariables.set('applicationId', String(body.id));"
+                    ]
+                  }
+                }
               ]
             },
             {
@@ -4175,9 +4183,17 @@
                 }
               },
               "event": [
-                "pm.test('HTTP 201', () => pm.response.to.have.status(201));",
-                "const body = pm.response.json();",
-                "if (body && body.id) pm.collectionVariables.set('noteId', String(body.id));"
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP 201', () => pm.response.to.have.status(201));",
+                      "const body = pm.response.json();",
+                      "if (body && body.id) pm.collectionVariables.set('noteId', String(body.id));"
+                    ]
+                  }
+                }
               ]
             },
             {
