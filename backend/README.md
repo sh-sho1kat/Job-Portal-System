@@ -498,6 +498,100 @@ Responses mirror these exactly (`ResumeResponse` nests
 `PersonalInfoResponse` plus one list per section; the detailed
 `GET /{resumeId}` also returns `lastViewedAt` and `completionScore`).
 
+## Running the Application Service
+
+`application-service` listens on **port 5005** (`application.yaml`).
+
+```bash
+cd services/application-service
+mvn spring-boot:run
+```
+
+### Environment variables
+
+| Variable | Required | Description |
+|---|---|---|
+| `DB_USERNAME` | yes | PostgreSQL user (`application_db`) |
+| `DB_PASSWORD` | yes | PostgreSQL password |
+| `DDL_AUTO` | no | Hibernate DDL mode (default `update`) |
+| `SHOW_SQL` | no | Log SQL statements (default `true`) |
+
+### Authentication note
+
+Same stand-in as the other services: JWT validation is not wired into
+`application-service` yet. Candidates act only on their own applications via
+the temporary `X-User-Id` header; company endpoints are addressed by
+`{companyId}` in the path (same unverified-stand-in as job-service postings).
+Note writes identify the author through `X-User-Id` and only the author may
+delete their own note. `JobSummaryResponse` / `candidate` / `company` /
+`employerId` payloads carry ids only until cross-service lookup exists.
+
+## API — application-service
+
+### Applications (`/api/applications`) — candidate
+
+| Method | Path | Access |
+|---|---|---|
+| `POST` | `/api/applications/create` | candidate via `X-User-Id` (`201`; PENDING) |
+| `GET` | `/api/applications/my-applications` | candidate via `X-User-Id`; `page`, `size` |
+| `GET` | `/api/applications/{applicationId}` | candidate via `X-User-Id` (404 otherwise) |
+| `POST` | `/api/applications/{applicationId}/withdraw` | candidate via `X-User-Id` (empty body = no reason) |
+
+Candidate views never carry the internal notes, and the list view is the
+lightweight shape.
+
+### Company inbox (`/api/companies/{companyId}/applications`) — employer
+
+| Method | Path | Availability |
+|---|---|---|
+| `GET` | `/api/companies/{companyId}/applications` | paged list; filters `job`, `status`, `isStarred`, `aiShortListStatus`, `minAiScore`; `sortBy` = `appliedAt` (default) / `starred` / `aiScore` (unscreened last); `page`, `size` (max 100) |
+| `GET` | `/api/companies/{companyId}/applications/{applicationId}` | detail view incl. notes |
+| `POST` | `/api/companies/{companyId}/applications/{applicationId}/star` | bookmark |
+| `POST` | `/api/companies/{companyId}/applications/{applicationId}/unstar` | remove bookmark |
+| `POST` | `/api/companies/{companyId}/applications/{applicationId}/status?status=…` | employer status move |
+
+Statuses: `PENDING`, `REVIEWING`, `SHORTLISTED`, `INTERVIEW_SCHEDULED`,
+`REJECTED`, `HIRED`, `WITHDRAWN`. Allowed employer moves — `REJECTED`,
+`HIRED` and `WITHDRAWN` are terminal, illegal jumps answer `409`:
+
+| From | May move to |
+|---|---|
+| `PENDING` | `REVIEWING`, `SHORTLISTED`, `INTERVIEW_SCHEDULED`, `REJECTED` |
+| `REVIEWING` | `SHORTLISTED`, `INTERVIEW_SCHEDULED`, `REJECTED` |
+| `SHORTLISTED` | `INTERVIEW_SCHEDULED`, `HIRED`, `REJECTED` |
+| `INTERVIEW_SCHEDULED` | `HIRED`, `REJECTED` |
+
+Candidates withdraw (`WITHDRAWN`) from any reviewing status themselves;
+withdrawn/rejected applications stay in the inbox history.
+
+### Notes (`/api/applications/{applicationId}/notes`) — employer
+
+| Method | Path | Availability |
+|---|---|---|
+| `GET` | `/api/applications/{applicationId}/notes` | all notes, oldest first |
+| `POST` | `/api/applications/{applicationId}/notes` | `201`; author = `X-User-Id` |
+| `GET` | `/api/applications/{applicationId}/notes/{noteId}` | single note |
+| `DELETE` | `/api/applications/{applicationId}/notes/{noteId}` | `204`; author-only (`403` otherwise) |
+
+### Request DTOs
+
+- **Apply** — `jobId`/`companyId` (required, copied from the job card),
+  `resumeId` (required), `coverLetter` (optional, ≤5000), `expectedSalary`
+  (decimal ≥0, ≤2 fraction digits), `availableFrom` (today or later).
+  One live application per candidate and job (`409`); only withdrawn
+  applications may be re-applied for (history rows are kept).
+- **Filter** (`CompanyApplicationFilterRequest`) — `job`, `status`,
+  `isStarred`, `aiShortListStatus` (`NOT_SCREENED`, `AUTO_SHORTLISTED`,
+  `REVIEW_RECOMMENDED`, `PENDING_REVIEW`, `LOW_MATCH`), `minAiScore`
+  (0–100, excludes unscreened rows), `sortBy` (see above).
+- **Withdraw** — `withdrawnReason` (optional, blank clears).
+- **Note** — `content` (required, ≤2000).
+
+Screening (`aiShortListStatus`, `aiScore`) is read-only plumbing until any
+scoring service exists (every application starts `NOT_SCREENED`/unrated), and
+the job-service `applicationCount` increment is a pending cross-service
+integration point (TODO: service discovery).
+
 ## Roadmap
 
 - [x] User service (auth, user management)
