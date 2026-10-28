@@ -1,41 +1,6 @@
-server:
-  port: 5001
-
 spring:
   application:
     name: user-service
 
-  datasource:
-    url: jdbc:postgresql://localhost:5432/user_db
-    username: ${DB_USERNAME}
-    password: ${DB_PASSWORD}
-    driver-class-name: org.postgresql.Driver
-  jpa:
-    hibernate:
-      ddl-auto: ${DDL_AUTO:update}
-    show-sql: ${SHOW_SQL:true}
-    properties:
-      hibernate:
-        format_sql: true
-        use_sql_comments: true
-
-app:
-  jwt:
-    secret: ${JWT_SECRET}
-    issuer: job-portal-user-service
-    access-token-expiration-minutes: 15
-    refresh-token-expiration-days: 7
-    refresh-token-cleanup-cron: ${REFRESH_TOKEN_CLEANUP_CRON:0 0 3 * * *}
-
-  rate-limit:
-    auth-max-requests: ${AUTH_RATE_LIMIT_MAX:30}       # max requests per client
-    auth-window-seconds: ${AUTH_RATE_LIMIT_WINDOW:60}  # per this many seconds
-
-eureka:
-  client:
-    fetch-registry: true
-    register-with-eureka: true
-    service-url:
-      defaultZone: http://localhost:8761/eureka/
-  instance:
-    prefer-ip-address: true
+  config:
+    import: configserver:http://localhost:8888
