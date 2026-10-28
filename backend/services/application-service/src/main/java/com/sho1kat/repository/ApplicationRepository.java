@@ -18,10 +18,6 @@ public interface ApplicationRepository
 
     Optional<Application> findByIdAndCandidateId(Long id, Long candidateId);
 
-    /**
-     * One live application per candidate and job; a WITHDRAWN application does
-     * not block re-applying (the history row stays).
-     */
     boolean existsByCandidateIdAndJobIdAndStatusNot(Long candidateId, Long jobId, ApplicationStatus status);
 
     Optional<Application> findByIdAndCompanyId(Long id, Long companyId);

@@ -17,6 +17,9 @@ Import file: [`job-portal-system.postman_collection.json`](job-portal-system.pos
 4. For the **Company Service** folder, log in as a `ROLE_EMPLOYER` account first —
    owner requests carry the temporary `X-User-Id: {{userId}}` header and
    **Company → Create Company** saves `companyId` / `companySlug`.
+5. For the **Application Service** folder, run **Apply For Job** once — it
+   reuses `{{jobId}}` + `{{companyId}}` from the Job/Company Service
+   variables, saves `applicationId`, and the note requests save `noteId`.
 
 ## Collection variables
 
@@ -31,6 +34,10 @@ Import file: [`job-portal-system.postman_collection.json`](job-portal-system.pos
 | `companyId`         | Create Company script  | `{companyId}` used by the Company Service requests |
 | `companySlug`       | Create Company script  | `{slug}` used by *Get Company By Slug*         |
 | `locationId`        | Add Location script    | `{locationId}` used by the Locations requests  |
+| `jobBaseUrl`        | you                    | job-service host (default `http://localhost:5003`) |
+| `applicationBaseUrl` | you                   | application-service host (default `http://localhost:5005`) |
+| `applicationId`     | Apply For Job script   | `{applicationId}` used by the Application Service requests |
+| `noteId`            | Add Application Note script | `{noteId}` used by the notes requests     |
 
 ## Demo data currently in the local DB (`user_db`)
 

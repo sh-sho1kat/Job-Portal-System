@@ -3,10 +3,8 @@ package com.sho1kat.service.impl;
 import com.sho1kat.dto.applicationServiceDto.request.ApplicationRequest;
 import com.sho1kat.dto.applicationServiceDto.request.CompanyApplicationFilterRequest;
 import com.sho1kat.dto.applicationServiceDto.request.WithdrawApplicationRequest;
-import com.sho1kat.dto.applicationServiceDto.response.ApplicationNoteResponse;
 import com.sho1kat.dto.applicationServiceDto.response.ApplicationResponse;
 import com.sho1kat.entity.Application;
-import com.sho1kat.entity.ApplicationNote;
 import com.sho1kat.enums.ApplicationStatus;
 import com.sho1kat.exception.ApiException;
 import com.sho1kat.mapper.ApplicationMapper;
@@ -32,11 +30,7 @@ import java.util.Set;
 @RequiredArgsConstructor
 public class ApplicationServiceImpl implements ApplicationService {
 
-    /**
-     * Statuses an employer may move an application into, keyed by its current
-     * status. From the employer's side REJECTED, HIRED and WITHDRAWN are
-     * terminal; WITHDRAWN itself is a candidate-only move.
-     */
+
     private static final Map<ApplicationStatus, Set<ApplicationStatus>> ALLOWED_TRANSITIONS = Map.of(
             ApplicationStatus.PENDING,
             Set.of(ApplicationStatus.REVIEWING, ApplicationStatus.SHORTLISTED,
@@ -84,9 +78,14 @@ public class ApplicationServiceImpl implements ApplicationService {
     @Override
     @Transactional(readOnly = true)
     public Page<ApplicationResponse> getMyApplications(Long candidateId, int page, int size) {
-        Pageable pageable = PageRequest.of(Math.max(page, 0), Math.clamp(size, 1, 100),
-                Sort.by(Sort.Order.desc("createdAt"), Sort.Order.desc("id")));
-        // list view leaves the notes empty (candidate detail withholds them too)
+        Pageable pageable = PageRequest.of(
+                Math.max(page, 0),
+                Math.clamp(size, 1, 100),
+                Sort.by(
+                        Sort.Order.desc("createdAt"),
+                        Sort.Order.desc("id")
+                ));
+
         return applicationRepository.findByCandidateId(candidateId, pageable)
                 .map(application -> applicationMapper.toDetail(application, List.of()));
     }
@@ -95,7 +94,6 @@ public class ApplicationServiceImpl implements ApplicationService {
     @Transactional(readOnly = true)
     public ApplicationResponse getCandidateApplication(Long applicationId, Long candidateId) {
         Application application = requireOwnedApplication(applicationId, candidateId);
-        // internal notes are private to the hiring team
         return applicationMapper.toDetail(application, List.of());
     }
 
@@ -122,18 +120,20 @@ public class ApplicationServiceImpl implements ApplicationService {
     @Override
     @Transactional(readOnly = true)
     public Page<ApplicationResponse> getCompanyApplications(
-            Long companyId, CompanyApplicationFilterRequest criteria, int page, int size) {
+            Long companyId,
+            CompanyApplicationFilterRequest criteria,
+            int page,
+            int size) {
+        // default sort is appliedAt (stored as createdAt) descending, then id descending
         String sortBy = criteria.sortBy() == null ? "appliedAt" : criteria.sortBy().trim();
-        if (!sortBy.matches("appliedAt|starred|aiScore")) {
-            throw ApiException.badRequest("sortBy must be one of: appliedAt, starred, aiScore");
-        }
+
         if (criteria.minAiScore() != null && (criteria.minAiScore() < 0 || criteria.minAiScore() > 100)) {
             throw ApiException.badRequest("minAiScore must be between 0 and 100");
         }
         Sort sort = switch (sortBy) {
-            case "starred" -> Sort.by(Sort.Order.desc("starred"),
-                    Sort.Order.desc("createdAt"), Sort.Order.desc("id"));
-            case "aiScore" -> Sort.unsorted(); // Specification attaches the nulls-last ordering
+            // aiScore / starred orderings are attached by the Specification — the
+            // coalesce keeps unscreened (null score) rows at the bottom portably
+            case "aiScore", "aiScoreAsc", "aiScoreDesc", "starred" -> Sort.unsorted();
             default -> Sort.by(Sort.Order.desc("createdAt"), Sort.Order.desc("id"));
         };
         Pageable pageable = PageRequest.of(Math.max(page, 0), Math.clamp(size, 1, 100), sort);
@@ -188,11 +188,6 @@ public class ApplicationServiceImpl implements ApplicationService {
                 .orElseThrow(() -> ApiException.notFound("Application not found with id: " + applicationId));
     }
 
-    /**
-     * Company-side detail view = application plus its notes in chronological
-     * order. Candidate-side views deliberately pass an empty list (internal
-     * notes stay private to the hiring team).
-     */
     private ApplicationResponse toDetail(Application application) {
         return applicationMapper.toDetail(application, applicationNoteRepository
                 .findByApplicationIdOrderByCreatedAtAscIdAsc(application.getId())

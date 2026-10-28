@@ -2,7 +2,7 @@
   "info": {
     "_postman_id": "b1e2c3d4-5a6b-4c8d-9e0f-1a2b3c4d5e6f",
     "name": "Job Portal System API",
-    "description": "Postman collection for all Job Portal System backend services.\n\n## Conventions\n- **One top-level folder per microservice** (e.g. `User Service`, `Job Service`, ...), one subfolder per controller.\n- **Collection variables** (see `Variables` tab):\n  - `baseUrl` — target host, defaults to `http://localhost:5001`\n  - `accessToken` / `refreshToken` — auto-saved by the `Login` and `Refresh` test scripts\n  - `userId` — the record used by `GET/PUT/PATCH/DELETE /api/users/{id}` requests\n  - `companyBaseUrl` — company-service host, defaults to `http://localhost:5002`\n  - `companyId` / `locationId` — ids used by the Company Service requests\n  - `resumeBaseUrl` — resume-service host, defaults to `http://localhost:5004`\n  - `resumeId` / section ids — resumes + their sub-sections (`workExperienceId`, `educationId`, `resumeSkillId`, `languageId`, `projectId`, `certificationId`, `awardId`)\n- **Auth**: collection-level Bearer auth using `{{accessToken}}`; public requests override it with `No Auth`.\n- **Error shape**: every non-2xx response (except empty-body 401s from the security layer) is\n  `{\"status\":int,\"error\":str,\"message\":str,\"details\":array|null,\"timestamp\":str}`.\n\n## Extending\nWhen a new service/API is added, add a new top-level folder and follow the same conventions.\nSee `postman/README.md` in `common-lib`.",
+    "description": "Postman collection for all Job Portal System backend services.\n\n## Conventions\n- **One top-level folder per microservice** (e.g. `User Service`, `Job Service`, ...), one subfolder per controller.\n- **Collection variables** (see `Variables` tab):\n  - `baseUrl` — target host, defaults to `http://localhost:5001`\n  - `accessToken` / `refreshToken` — auto-saved by the `Login` and `Refresh` test scripts\n  - `userId` — the record used by `GET/PUT/PATCH/DELETE /api/users/{id}` requests\n  - `companyBaseUrl` — company-service host, defaults to `http://localhost:5002`\n  - `companyId` / `locationId` — ids used by the Company Service requests\n  - `resumeBaseUrl` — resume-service host, defaults to `http://localhost:5004`\n  - `resumeId` / section ids — resumes + their sub-sections (`workExperienceId`, `educationId`, `resumeSkillId`, `languageId`, `projectId`, `certificationId`, `awardId`)\n- **Auth**: collection-level Bearer auth using `{{accessToken}}`; public requests override it with `No Auth`.\n- **Error shape**: every non-2xx response (except empty-body 401s from the security layer) is\n  `{\"status\":int,\"error\":str,\"message\":str,\"details\":array|null,\"timestamp\":str}`.\n\n  - `applicationBaseUrl` - application-service host, defaults to `http://localhost:5005`\n  - `applicationId` / `noteId` - ids used by the Application Service requests\n\n## Extending\nWhen a new service/API is added, add a new top-level folder and follow the same conventions.\nSee `postman/README.md` in `common-lib`.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "auth": {
@@ -123,6 +123,21 @@
     },
     {
       "key": "awardId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "applicationBaseUrl",
+      "value": "http://localhost:5005",
+      "type": "string"
+    },
+    {
+      "key": "applicationId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "noteId",
       "value": "",
       "type": "string"
     }
@@ -3769,6 +3784,463 @@
         }
       ],
       "description": "Candidate resume builder: resume shells, personal info, summary, default handling and seven sub-section collections.\n\n- Identity: every request — lists included — is owner-scoped via the temporary `X-User-Id` header ({{userId}}); the candidate in the header must own the addressed resume.\n- Defaults: the first resume becomes the apply-with default; `set-default` demotes the rest; deleting the default promotes the newest survivor.\n- `completionScore` is a 0-100 checklist (personal name/email, summary, and >=1 of each section), recalculated on every change; `lastViewedAt` bumps on each detail GET.\n- Set {{resumeBaseUrl}}, {{resumeId}} and the section id variables in collection variables.\n- Seed helper: `backend/services/resume-service/seed/seed.py`."
+    },
+    {
+      "name": "Application Service",
+      "item": [
+        {
+          "name": "Applications",
+          "item": [
+            {
+              "name": "Apply For Job",
+              "request": {
+                "method": "POST",
+                "url": {
+                  "raw": "{{applicationBaseUrl}}/api/applications/create",
+                  "host": [
+                    "{{applicationBaseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "applications",
+                    "create"
+                  ],
+                  "query": []
+                },
+                "header": [
+                  {
+                    "key": "X-User-Id",
+                    "value": "{{userId}}",
+                    "description": "temporary auth: user-service id of the caller (candidate or employer)"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "description": "Candidate applies with the resume they want to send. The company id is copied off the job card so employer inboxes can scope by company; ids are unverified stand-ins until cross-service validation lands.\n\n**Body** - `ApplicationRequest`: `jobId` (required), `companyId` (required), `resumeId` (required), `coverLetter` (optional, <=5000), `expectedSalary` (decimal >=0, <=2 fraction digits), `availableFrom` (today or later). The created id is saved into `{{applicationId}}`.\n\n**Responses**\n- `201` -> application in `PENDING`\n- `400` -> validation failed\n- `401` -> missing/invalid `X-User-Id`\n- `409` -> a live application for this candidate + job already exists (only withdrawn ones may be re-applied for)",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\"jobId\": \"{{jobId}}\", \"companyId\": \"{{companyId}}\", \"resumeId\": 1, \"coverLetter\": \"I have shipped similar services with Spring Boot and PostgreSQL.\", \"expectedSalary\": 90000, \"availableFrom\": \"2026-12-01\"}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "event": [
+                "pm.test('HTTP 201', () => pm.response.to.have.status(201));",
+                "const body = pm.response.json();",
+                "if (body && body.id) pm.collectionVariables.set('applicationId', String(body.id));"
+              ]
+            },
+            {
+              "name": "Get My Applications",
+              "request": {
+                "method": "GET",
+                "url": {
+                  "raw": "{{applicationBaseUrl}}/api/applications/my-applications?page=0&size=20",
+                  "host": [
+                    "{{applicationBaseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "applications",
+                    "my-applications"
+                  ],
+                  "query": [
+                    {
+                      "key": "page",
+                      "value": "0"
+                    },
+                    {
+                      "key": "size",
+                      "value": "20"
+                    }
+                  ]
+                },
+                "header": [
+                  {
+                    "key": "X-User-Id",
+                    "value": "{{userId}}",
+                    "description": "temporary auth: user-service id of the caller (candidate or employer)"
+                  }
+                ],
+                "description": "Paged list view (lightweight; notes never appear here).\n\n**Responses**\n- `200` -> `Page<ApplicationResponse>`\n- `401` -> missing/invalid `X-User-Id`"
+              }
+            },
+            {
+              "name": "Get Application By Id",
+              "request": {
+                "method": "GET",
+                "url": {
+                  "raw": "{{applicationBaseUrl}}/api/applications/{{applicationId}}",
+                  "host": [
+                    "{{applicationBaseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "applications",
+                    "{{applicationId}}"
+                  ],
+                  "query": []
+                },
+                "header": [
+                  {
+                    "key": "X-User-Id",
+                    "value": "{{userId}}",
+                    "description": "temporary auth: user-service id of the caller (candidate or employer)"
+                  }
+                ],
+                "description": "Candidate detail view. Internal employer notes are withheld from candidate views.\n\n**Responses**\n- `200` -> `ApplicationResponse`\n- `401` -> missing/invalid `X-User-Id`\n- `404` -> not the caller's application"
+              }
+            },
+            {
+              "name": "Withdraw Application",
+              "request": {
+                "method": "POST",
+                "url": {
+                  "raw": "{{applicationBaseUrl}}/api/applications/{{applicationId}}/withdraw",
+                  "host": [
+                    "{{applicationBaseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "applications",
+                    "{{applicationId}}",
+                    "withdraw"
+                  ],
+                  "query": []
+                },
+                "header": [
+                  {
+                    "key": "X-User-Id",
+                    "value": "{{userId}}",
+                    "description": "temporary auth: user-service id of the caller (candidate or employer)"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "description": "Candidate withdrawal from a reviewing status (`PENDING`, `REVIEWING`, `SHORTLISTED`, `INTERVIEW_SCHEDULED`). The reason is optional - an empty body works.\n\n**Body** - `WithdrawApplicationRequest`: `withdrawnReason` (optional).\n\n**Responses**\n- `200` -> application now `WITHDRAWN` with `withdrawal` details\n- `401` -> missing/invalid `X-User-Id`\n- `404` -> not the caller's application\n- `409` -> terminal status (`REJECTED`/`HIRED`) or already withdrawn",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\"withdrawnReason\": \"Accepted another offer\"}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              }
+            }
+          ],
+          "description": "Candidate-side application flows; every request is owner-scoped via the temporary `X-User-Id` header (a candidate only sees their own rows)."
+        },
+        {
+          "name": "Company Applications",
+          "item": [
+            {
+              "name": "List Company Applications",
+              "request": {
+                "method": "GET",
+                "url": {
+                  "raw": "{{applicationBaseUrl}}/api/companies/{{companyId}}/applications?sortBy=appliedAt&page=0&size=20",
+                  "host": [
+                    "{{applicationBaseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "companies",
+                    "{{companyId}}",
+                    "applications"
+                  ],
+                  "query": [
+                    {
+                      "key": "sortBy",
+                      "value": "appliedAt"
+                    },
+                    {
+                      "key": "page",
+                      "value": "0"
+                    },
+                    {
+                      "key": "size",
+                      "value": "20"
+                    }
+                  ]
+                },
+                "header": [
+                  {
+                    "key": "X-User-Id",
+                    "value": "{{userId}}",
+                    "description": "temporary auth: user-service id of the caller (candidate or employer)"
+                  }
+                ],
+                "description": "Paged inbox. Optional filters based on `CompanyApplicationFilterRequest`: `job` (job-service id), `status`, `isStarred`, `aiShortListStatus` (`NOT_SCREENED`/`AUTO_SHORTLISTED`/`REVIEW_RECOMMENDED`/`PENDING_REVIEW`/`LOW_MATCH`), `minAiScore` (0-100, excludes unscreened rows), `sortBy` (`appliedAt` default/`starred` — starred first, best score/`aiScore` or `aiScoreDesc` — strongest first, unscreened last/`aiScoreAsc` — weakest first, unscreened last); `page`, `size` (max 100)\n\n**Responses**\n- `200` -> `Page<ApplicationResponse>` (detail shape, notes embedded)\n- `400` -> bad `sortBy`/`minAiScore`/invalid enum value"
+              }
+            },
+            {
+              "name": "Get Application (Company Inbox)",
+              "request": {
+                "method": "GET",
+                "url": {
+                  "raw": "{{applicationBaseUrl}}/api/companies/{{companyId}}/applications/{{applicationId}}",
+                  "host": [
+                    "{{applicationBaseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "companies",
+                    "{{companyId}}",
+                    "applications",
+                    "{{applicationId}}"
+                  ],
+                  "query": []
+                },
+                "header": [
+                  {
+                    "key": "X-User-Id",
+                    "value": "{{userId}}",
+                    "description": "temporary auth: user-service id of the caller (candidate or employer)"
+                  }
+                ],
+                "description": "Company detail view including the internal notes.\n\n**Responses**\n- `200` -> `ApplicationResponse`\n- `404` -> row is not in this company's inbox"
+              }
+            },
+            {
+              "name": "Star Application",
+              "request": {
+                "method": "POST",
+                "url": {
+                  "raw": "{{applicationBaseUrl}}/api/companies/{{companyId}}/applications/{{applicationId}}/star",
+                  "host": [
+                    "{{applicationBaseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "companies",
+                    "{{companyId}}",
+                    "applications",
+                    "{{applicationId}}",
+                    "star"
+                  ],
+                  "query": []
+                },
+                "header": [
+                  {
+                    "key": "X-User-Id",
+                    "value": "{{userId}}",
+                    "description": "temporary auth: user-service id of the caller (candidate or employer)"
+                  }
+                ],
+                "description": "Bookmark the application for the reviewing employer.\n\n**Responses**\n- `200` -> `isStarred = true`\n- `404` -> row not in this company's inbox"
+              }
+            },
+            {
+              "name": "Unstar Application",
+              "request": {
+                "method": "POST",
+                "url": {
+                  "raw": "{{applicationBaseUrl}}/api/companies/{{companyId}}/applications/{{applicationId}}/unstar",
+                  "host": [
+                    "{{applicationBaseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "companies",
+                    "{{companyId}}",
+                    "applications",
+                    "{{applicationId}}",
+                    "unstar"
+                  ],
+                  "query": []
+                },
+                "header": [
+                  {
+                    "key": "X-User-Id",
+                    "value": "{{userId}}",
+                    "description": "temporary auth: user-service id of the caller (candidate or employer)"
+                  }
+                ],
+                "description": "Remove the bookmark.\n\n**Responses**\n- `200` -> `isStarred = false`"
+              }
+            },
+            {
+              "name": "Move Application Status",
+              "request": {
+                "method": "POST",
+                "url": {
+                  "raw": "{{applicationBaseUrl}}/api/companies/{{companyId}}/applications/{{applicationId}}/status?status=REVIEWING",
+                  "host": [
+                    "{{applicationBaseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "companies",
+                    "{{companyId}}",
+                    "applications",
+                    "{{applicationId}}",
+                    "status"
+                  ],
+                  "query": [
+                    {
+                      "key": "status",
+                      "value": "REVIEWING"
+                    }
+                  ]
+                },
+                "header": [
+                  {
+                    "key": "X-User-Id",
+                    "value": "{{userId}}",
+                    "description": "temporary auth: user-service id of the caller (candidate or employer)"
+                  }
+                ],
+                "description": "Employer status move. Allowed steps: `PENDING` -> `REVIEWING` / `SHORTLISTED` / `INTERVIEW_SCHEDULED` / `REJECTED`; `REVIEWING` -> `SHORTLISTED` / `INTERVIEW_SCHEDULED` / `REJECTED`; `SHORTLISTED` -> `INTERVIEW_SCHEDULED` / `HIRED` / `REJECTED`; `INTERVIEW_SCHEDULED` -> `HIRED` / `REJECTED`. `REJECTED`, `HIRED` and `WITHDRAWN` are terminal; `WITHDRAWN` is candidate-only.\n\n**Responses**\n- `200` -> updated application\n- `400` -> no-op or `WITHDRAWN` target\n- `404` -> row not in this company's inbox\n- `409` -> illegal transition"
+              }
+            }
+          ],
+          "description": "Employer inbox scoped by `{{companyId}}` in the path (same unverified stand-in as job-service postings)."
+        },
+        {
+          "name": "Application Notes",
+          "item": [
+            {
+              "name": "List Application Notes",
+              "request": {
+                "method": "GET",
+                "url": {
+                  "raw": "{{applicationBaseUrl}}/api/applications/{{applicationId}}/notes",
+                  "host": [
+                    "{{applicationBaseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "applications",
+                    "{{applicationId}}",
+                    "notes"
+                  ],
+                  "query": []
+                },
+                "header": [
+                  {
+                    "key": "X-User-Id",
+                    "value": "{{userId}}",
+                    "description": "temporary auth: user-service id of the caller (candidate or employer)"
+                  }
+                ],
+                "description": "All notes of the application, oldest first.\n\n**Responses**\n- `200` -> list of `ApplicationNoteResponse`\n- `401` -> missing/invalid `X-User-Id`\n- `404` -> unknown application"
+              }
+            },
+            {
+              "name": "Add Application Note",
+              "request": {
+                "method": "POST",
+                "url": {
+                  "raw": "{{applicationBaseUrl}}/api/applications/{{applicationId}}/notes",
+                  "host": [
+                    "{{applicationBaseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "applications",
+                    "{{applicationId}}",
+                    "notes"
+                  ],
+                  "query": []
+                },
+                "header": [
+                  {
+                    "key": "X-User-Id",
+                    "value": "{{userId}}",
+                    "description": "temporary auth: user-service id of the caller (candidate or employer)"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "description": "201 created; the note records its author (`X-User-Id`). The created id is saved into `{{noteId}}`.\n\n**Body** - `ApplicationNoteRequest`: `content` (required, <=2000).\n\n**Responses**\n- `201` -> note\n- `400` -> validation failed\n- `404` -> unknown application",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\"content\": \"Strong Spring Boot match, wants a platform role.\"}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "event": [
+                "pm.test('HTTP 201', () => pm.response.to.have.status(201));",
+                "const body = pm.response.json();",
+                "if (body && body.id) pm.collectionVariables.set('noteId', String(body.id));"
+              ]
+            },
+            {
+              "name": "Get Application Note",
+              "request": {
+                "method": "GET",
+                "url": {
+                  "raw": "{{applicationBaseUrl}}/api/applications/{{applicationId}}/notes/{{noteId}}",
+                  "host": [
+                    "{{applicationBaseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "applications",
+                    "{{applicationId}}",
+                    "notes",
+                    "{{noteId}}"
+                  ],
+                  "query": []
+                },
+                "header": [
+                  {
+                    "key": "X-User-Id",
+                    "value": "{{userId}}",
+                    "description": "temporary auth: user-service id of the caller (candidate or employer)"
+                  }
+                ],
+                "description": "Single note by id.\n\n**Responses**\n- `200` -> note\n- `404` -> unknown note on this application"
+              }
+            },
+            {
+              "name": "Delete Application Note",
+              "request": {
+                "method": "DELETE",
+                "url": {
+                  "raw": "{{applicationBaseUrl}}/api/applications/{{applicationId}}/notes/{{noteId}}",
+                  "host": [
+                    "{{applicationBaseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "applications",
+                    "{{applicationId}}",
+                    "notes",
+                    "{{noteId}}"
+                  ],
+                  "query": []
+                },
+                "header": [
+                  {
+                    "key": "X-User-Id",
+                    "value": "{{userId}}",
+                    "description": "temporary auth: user-service id of the caller (candidate or employer)"
+                  }
+                ],
+                "description": "Only the note author may delete their own note.\n\n**Responses**\n- `204` -> deleted\n- `403` -> not the author\n- `404` -> unknown note or application"
+              }
+            }
+          ],
+          "description": "Internal hiring-team notes on one application; written by the employer identified via `X-User-Id` and kept private from candidates."
+        }
+      ],
+      "description": "Candidate applications, the company review inbox and internal notes (PORT 5005). All ids are temporary stand-ins until the API gateway forwards identity; every request carries `X-User-Id: {{userId}}`."
     }
   ]
 }

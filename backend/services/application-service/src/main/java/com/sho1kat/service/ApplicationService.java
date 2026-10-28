@@ -7,10 +7,7 @@ import com.sho1kat.dto.applicationServiceDto.response.ApplicationResponse;
 import com.sho1kat.enums.ApplicationStatus;
 import org.springframework.data.domain.Page;
 
-/**
- * Candidate applies, employers review — the two sides of the application inbox.
- * Internal notes are managed by the separate {@link ApplicationNoteService}.
- */
+
 public interface ApplicationService {
 
     // ---- candidate ----

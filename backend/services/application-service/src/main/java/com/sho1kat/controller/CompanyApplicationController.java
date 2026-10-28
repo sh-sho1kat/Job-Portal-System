@@ -22,12 +22,6 @@ public class CompanyApplicationController {
 
     private final ApplicationService applicationService;
 
-    /**
-     * Paged inbox. Optional filters via query params matching
-     * CompanyApplicationFilterRequest: {@code job}, {@code status},
-     * {@code isStarred}, {@code aiShortListStatus}, {@code minAiScore},
-     * {@code sortBy} (appliedAt | starred | aiScore); plus {@code page}, {@code size}.
-     */
     @GetMapping
     public ResponseEntity<Page<ApplicationResponse>> listApplications(
             @PathVariable Long companyId,
@@ -62,11 +56,10 @@ public class CompanyApplicationController {
     }
 
     /**
-     * Employer status move. Allowed steps: PENDING -> REVIEWING / SHORTLISTED /
-     * INTERVIEW_SCHEDULED / REJECTED; REVIEWING -> SHORTLISTED /
-     * INTERVIEW_SCHEDULED / REJECTED; SHORTLISTED -> INTERVIEW_SCHEDULED / HIRED
-     * / REJECTED; INTERVIEW_SCHEDULED -> HIRED / REJECTED. REJECTED, HIRED and
-     * WITHDRAWN are terminal; illegal jumps answer 409.
+     * PENDING -> REVIEWING / SHORTLISTED / INTERVIEW_SCHEDULED / REJECTED;
+     * REVIEWING -> SHORTLISTED / INTERVIEW_SCHEDULED / REJECTED;
+     * SHORTLISTED -> INTERVIEW_SCHEDULED / HIRED / REJECTED;
+     * INTERVIEW_SCHEDULED -> HIRED / REJECTED. REJECTED, HIRED
      */
     @PostMapping("/{applicationId}/status")
     public ResponseEntity<ApplicationResponse> updateStatus(

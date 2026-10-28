@@ -11,12 +11,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-/**
- * Candidate-side application flows. Every endpoint is owner-scoped via the
- * temporary {@code X-User-Id} stand-in (documents the same gateway-identity
- * plan as the other services): a candidate can only see and withdraw their
- * own applications.
- */
 @RestController
 @RequestMapping("/api/applications")
 @RequiredArgsConstructor
@@ -24,7 +18,6 @@ public class ApplicationController {
 
     private final ApplicationService applicationService;
 
-    /** 201 created; one live application per candidate and job (409 otherwise). */
     @PostMapping("/create")
     public ResponseEntity<ApplicationResponse> createApplication(
             @RequestHeader(name = RequesterId.HEADER, required = false) String candidateId,
@@ -33,7 +26,6 @@ public class ApplicationController {
                 .body(applicationService.createApplication(RequesterId.from(candidateId), request));
     }
 
-    /** Paged list view; notes are left empty (the detail view carries them). */
     @GetMapping("/my-applications")
     public ResponseEntity<Page<ApplicationResponse>> getMyApplications(
             @RequestHeader(name = RequesterId.HEADER, required = false) String candidateId,
@@ -43,7 +35,6 @@ public class ApplicationController {
                 RequesterId.from(candidateId), page, size));
     }
 
-    /** Detail view including the employer notes. */
     @GetMapping("/{applicationId}")
     public ResponseEntity<ApplicationResponse> getApplication(
             @PathVariable Long applicationId,

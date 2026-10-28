@@ -1,27 +1,17 @@
 package com.sho1kat.repository;
 
 import com.sho1kat.dto.applicationServiceDto.request.CompanyApplicationFilterRequest;
-import com.sho1kat.dto.applicationServiceDto.response.ApplicationNoteResponse;
-import com.sho1kat.dto.applicationServiceDto.response.ApplicationResponse;
 import com.sho1kat.entity.Application;
 import org.springframework.data.jpa.domain.Specification;
 
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Reusable JPA Specification for the company application inbox, extracted from
- * the service implementation (same pattern as job-service's JobSpecification).
- */
 public final class ApplicationSpecification {
 
     private ApplicationSpecification() {
     }
-    /**
-     * Everything the given company can see, narrowed by the optional filter
-     * fields. {@code sortBy = "aiScore"} attaches its ordering here so the
-     * unscreened (null score) rows sink to the bottom portably.
-     */
+
     public static Specification<Application> companyFilter(
             Long companyId, CompanyApplicationFilterRequest criteria) {
         List<Specification<Application>> parts = new ArrayList<>();
@@ -43,10 +33,32 @@ public final class ApplicationSpecification {
                     cb.isNotNull(root.<Integer>get("aiScore")),
                     cb.ge(root.<Integer>get("aiScore"), criteria.minAiScore())));
         }
-        if ("aiScore".equals(criteria.sortBy())) {
+        String sortBy = criteria.sortBy();
+        if ("starred".equals(sortBy)) {
+            // starred first, best AI score among them, newest first
+            parts.add((root, query, cb) -> {
+                query.orderBy(
+                        cb.desc(root.get("starred")),
+                        cb.desc(cb.coalesce(root.<Integer>get("aiScore"), -1)),
+                        cb.desc(root.get("createdAt")),
+                        cb.desc(root.get("id")));
+                return cb.conjunction();
+            });
+        } else if ("aiScoreAsc".equals(sortBy)) {
+            // weakest first; unscreened rows (null) sink to the bottom
+            parts.add((root, query, cb) -> {
+                query.orderBy(
+                        cb.asc(cb.coalesce(root.<Integer>get("aiScore"), 101)),
+                        cb.desc(root.get("createdAt")),
+                        cb.desc(root.get("id")));
+                return cb.conjunction();
+            });
+        } else if ("aiScore".equals(sortBy) || "aiScoreDesc".equals(sortBy)) {
+            // strongest first; unscreened rows sink to the bottom
             parts.add((root, query, cb) -> {
                 query.orderBy(
                         cb.desc(cb.coalesce(root.<Integer>get("aiScore"), -1)),
+                        cb.desc(root.get("createdAt")),
                         cb.desc(root.get("id")));
                 return cb.conjunction();
             });

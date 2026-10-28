@@ -28,7 +28,8 @@ backend/
     ├── user-service/    # authentication & user management (port 5001)
     ├── company-service/ # company profiles & admin verification (port 5002)
     ├── job-service/     # job postings & admin review (port 5003)
-    └── resume-service/  # candidate resume builder (port 5004)
+    ├── resume-service/  # candidate resume builder (port 5004)
+    └── application-service/ # candidate applications & employer review inbox (port 5005)
 ```
 
 | Module | Artifact | Description |
@@ -39,12 +40,13 @@ backend/
 | `services/company-service` | `company-service` | Company profiles, offices, and admin verification workflow |
 | `services/job-service` | `job-service` | Job postings (search, employer CRUD, admin review) |
 | `services/resume-service` | `resume-service` | Candidate resumes (sections, skills, languages, completion score) |
+| `services/application-service` | `application-service` | Candidate applications, employer review inbox, internal notes |
 
 ## Requirements
 
 - **JDK 25**
 - **Maven 3.8+**
-- **PostgreSQL** (user-service database: `user_db`; company-service database: `company_db`; job-service database: `job_db`; resume-service database: `resume_db`)
+- **PostgreSQL** (user-service database: `user_db`; company-service database: `company_db`; job-service database: `job_db`; resume-service database: `resume_db`; application-service database: `application_db`)
 
 ## Build & Test
 
@@ -544,7 +546,7 @@ lightweight shape.
 
 | Method | Path | Availability |
 |---|---|---|
-| `GET` | `/api/companies/{companyId}/applications` | paged list; filters `job`, `status`, `isStarred`, `aiShortListStatus`, `minAiScore`; `sortBy` = `appliedAt` (default) / `starred` / `aiScore` (unscreened last); `page`, `size` (max 100) |
+| `GET` | `/api/companies/{companyId}/applications` | paged list; filters `job`, `status`, `isStarred`, `aiShortListStatus`, `minAiScore`; `sortBy` = `appliedAt` (default) / `starred` (starred first, best score) / `aiScore` = `aiScoreDesc` (strongest first, unscreened last) / `aiScoreAsc` (weakest first, unscreened last); unknown keys fall back to the default; `page`, `size` (max 100) |
 | `GET` | `/api/companies/{companyId}/applications/{applicationId}` | detail view incl. notes |
 | `POST` | `/api/companies/{companyId}/applications/{applicationId}/star` | bookmark |
 | `POST` | `/api/companies/{companyId}/applications/{applicationId}/unstar` | remove bookmark |
@@ -591,6 +593,22 @@ Screening (`aiShortListStatus`, `aiScore`) is read-only plumbing until any
 scoring service exists (every application starts `NOT_SCREENED`/unrated), and
 the job-service `applicationCount` increment is a pending cross-service
 integration point (TODO: service discovery).
+
+### Seeding sample data
+
+`services/application-service/seed/seed.py` fills a running service (port
+5005) with 26 applications across 8 candidates, 3 companies and 6 jobs — a
+mixed status ledger (reviews, shortlists, an interview ladder, hires,
+rejections, three withdrawals), stars and hiring-team notes:
+
+```bash
+python3 seed/seed.py [base_url] [first_candidate] [random_seed]
+# defaults: localhost:5005, 3001, 2026 — candidates main..main+7 are used
+```
+
+All data goes through the real API surface and lands in `application_db`;
+re-runs stay idempotent (duplicate 409s recover ids from the inbox, existing
+statuses are tolerated, fresh candidate/job pairs add rows).
 
 ## Roadmap
 

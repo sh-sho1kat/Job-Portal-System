@@ -178,6 +178,13 @@ class ApplicationServiceLifecycleTest {
         assertThat(byAiScore).extracting(ApplicationResponse::id).containsExactly(second.id(), first.id());
         assertThat(byAiScore.getFirst().screening().aiScore()).isEqualTo(92);
 
+        // aiScoreAsc: weakest first (the only scored row), unscreened sink to the bottom
+        List<ApplicationResponse> byAiScoreAsc = applicationService
+                .getCompanyApplications(COMPANY,
+                        new CompanyApplicationFilterRequest(null, null, null, null, null, "aiScoreAsc"), 0, 50)
+                .getContent();
+        assertThat(byAiScoreAsc).extracting(ApplicationResponse::id).containsExactly(second.id(), first.id());
+
         // score filter drops the unscreened row
         List<ApplicationResponse> highScoreOnly = applicationService
                 .getCompanyApplications(COMPANY,
@@ -185,10 +192,10 @@ class ApplicationServiceLifecycleTest {
                 .getContent();
         assertThat(highScoreOnly).extracting(ApplicationResponse::id).containsExactly(second.id());
 
-        // bad sort key and out-of-range score answer 400
-        withStatus(() -> applicationService.getCompanyApplications(COMPANY,
-                new CompanyApplicationFilterRequest(null, null, null, null, null, "bogus"), 0, 20),
-                ApiException.BAD_REQUEST);
+        // unknown sort keys fall back to the newest-first default; scores stay 0-100
+        assertThat(applicationService.getCompanyApplications(COMPANY,
+                new CompanyApplicationFilterRequest(null, null, null, null, null, "bogus"), 0, 20)
+                .getContent()).hasSize(2);
         withStatus(() -> applicationService.getCompanyApplications(COMPANY,
                 new CompanyApplicationFilterRequest(null, null, null, null, 150, null), 0, 20),
                 ApiException.BAD_REQUEST);

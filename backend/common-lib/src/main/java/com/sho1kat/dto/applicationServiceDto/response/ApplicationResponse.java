@@ -10,14 +10,6 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
 
-/**
- * One job application, from the candidate's or the company's point of view.
- *
- * Cross-service payloads ({@code candidate}, {@code company}, {@code job}) are
- * application-service "denormalised" stand-ins: only the ids are known locally,
- * the display fields stay null until service integration lands (TODO same as
- * CompanySummaryResponse on job cards).
- */
 public record ApplicationResponse(
         Long id,
 

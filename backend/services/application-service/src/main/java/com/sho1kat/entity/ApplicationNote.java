@@ -44,7 +44,6 @@ public class ApplicationNote {
     @JoinColumn(name = "application_id", nullable = false)
     private Application application;
 
-    /** user-service id of the author. */
     @Column(nullable = false)
     private Long addedByUserId;
 

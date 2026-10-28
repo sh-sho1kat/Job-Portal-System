@@ -23,13 +23,6 @@ import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
 
-/**
- * One candidate's application for one job.
- *
- * Like every service in this system there are no cross-service FKs: candidate,
- * job, company and employer references are loose user/job/company-service ids
- * (TODO: verified once the gateway/service discovery can prove them).
- */
 @Entity
 @Table(name = "applications", indexes = {
         @Index(name = "idx_application_candidate", columnList = "candidateId"),
@@ -48,23 +41,18 @@ public class Application {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    /** user-service id of the candidate. */
     @Column(nullable = false)
     private Long candidateId;
 
-    /** job-service id; applications are accepted for active postings only. */
     @Column(nullable = false)
     private Long jobId;
 
-    /** company-service id, copied from the job card the candidate applied from. */
     @Column(nullable = false)
     private Long companyId;
 
-    /** resume-service id of the submitted resume (resume-service owns it). */
     @Column(nullable = false)
     private Long resumeId;
 
-    /** Owning employer user id, denormalised from job-service; null until integration. */
     private Long employerId;
 
     @Column(columnDefinition = "TEXT")
@@ -79,7 +67,6 @@ public class Application {
     @Builder.Default
     private ApplicationStatus status = ApplicationStatus.PENDING;
 
-    /** Bookmark of the reviewing employer. */
     @Column(name = "is_starred", nullable = false)
     @Builder.Default
     private boolean starred = false;
@@ -89,7 +76,6 @@ public class Application {
     @Builder.Default
     private AiShortListStatus aiShortListStatus = AiShortListStatus.NOT_SCREENED;
 
-    /** 0-100 AI match score; null while unscreened. */
     private Integer aiScore;
 
     @Column(columnDefinition = "TEXT")
