@@ -18,6 +18,13 @@
     <name>Job Portal Services</name>
     <description>Business microservices for the Job Portal System</description>
 
+    <dependencies>
+        <dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-starter-netflix-eureka-client</artifactId>
+        </dependency>
+    </dependencies>
+
     <modules>
         <module>user-service</module>
         <module>company-service</module>

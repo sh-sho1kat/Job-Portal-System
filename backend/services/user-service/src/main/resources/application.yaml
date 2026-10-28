@@ -30,3 +30,12 @@ app:
   rate-limit:
     auth-max-requests: ${AUTH_RATE_LIMIT_MAX:30}       # max requests per client
     auth-window-seconds: ${AUTH_RATE_LIMIT_WINDOW:60}  # per this many seconds
+
+eureka:
+  client:
+    fetch-registry: true
+    register-with-eureka: true
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
+  instance:
+    prefer-ip-address: true
