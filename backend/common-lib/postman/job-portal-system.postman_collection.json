@@ -2,7 +2,7 @@
   "info": {
     "_postman_id": "b1e2c3d4-5a6b-4c8d-9e0f-1a2b3c4d5e6f",
     "name": "Job Portal System API",
-    "description": "Postman collection for all Job Portal System backend services.\n\n## Conventions\n- **One top-level folder per microservice** (e.g. `User Service`, `Job Service`, ...), one subfolder per controller.\n- **Collection variables** (see `Variables` tab):\n  - `baseUrl` — target host, defaults to `http://localhost:5001`\n  - `accessToken` / `refreshToken` — auto-saved by the `Login` and `Refresh` test scripts\n  - `userId` — the record used by `GET/PUT/PATCH/DELETE /api/users/{id}` requests\n  - `companyBaseUrl` — company-service host, defaults to `http://localhost:5002`\n  - `companyId` / `locationId` — ids used by the Company Service requests\n  - `resumeBaseUrl` — resume-service host, defaults to `http://localhost:5004`\n  - `resumeId` / section ids — resumes + their sub-sections (`workExperienceId`, `educationId`, `resumeSkillId`, `languageId`, `projectId`, `certificationId`, `awardId`)\n- **Auth**: collection-level Bearer auth using `{{accessToken}}`; public requests override it with `No Auth`.\n- **Error shape**: every non-2xx response (except empty-body 401s from the security layer) is\n  `{\"status\":int,\"error\":str,\"message\":str,\"details\":array|null,\"timestamp\":str}`.\n\n  - `applicationBaseUrl` - application-service host, defaults to `http://localhost:5005`\n  - `applicationId` / `noteId` - ids used by the Application Service requests\n\n## Extending\nWhen a new service/API is added, add a new top-level folder and follow the same conventions.\nSee `postman/README.md` in `common-lib`.",
+    "description": "Postman collection for all Job Portal System backend services.\n\n## Conventions\n- **One top-level folder per microservice** (e.g. `User Service`, `Job Service`, ...), one subfolder per controller.\n- **Collection variables** (see `Variables` tab):\n  - `baseUrl` — target host, defaults to `http://localhost:5001`\n  - `accessToken` / `refreshToken` — auto-saved by the `Login` and `Refresh` test scripts\n  - `userId` — the record used by `GET/PUT/PATCH/DELETE /api/users/{id}` requests\n  - `companyBaseUrl` — company-service host, defaults to `http://localhost:5002`\n  - `companyId` / `locationId` — ids used by the Company Service requests\n  - `resumeBaseUrl` — resume-service host, defaults to `http://localhost:5004`\n  - `resumeId` / section ids — resumes + their sub-sections (`workExperienceId`, `educationId`, `resumeSkillId`, `languageId`, `projectId`, `certificationId`, `awardId`)\n- **Auth**: collection-level Bearer auth using `{{accessToken}}`; public requests override it with `No Auth`.\n- **Error shape**: every non-2xx response (except empty-body 401s from the security layer) is\n  `{\"status\":int,\"error\":str,\"message\":str,\"details\":array|null,\"timestamp\":str}`.\n\n  - `applicationBaseUrl` - application-service host, defaults to `http://localhost:5005`\n  - `applicationId` / `noteId` - ids used by the Application Service requests\n  - `preferenceBaseUrl` - job-preference-service host, defaults to `http://localhost:5006`\n  - `savedJobId` - id used by the Saved Jobs requests\n\n## Extending\nWhen a new service/API is added, add a new top-level folder and follow the same conventions.\nSee `postman/README.md` in `common-lib`.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "auth": {
@@ -138,6 +138,16 @@
     },
     {
       "key": "noteId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "preferenceBaseUrl",
+      "value": "http://localhost:5006",
+      "type": "string"
+    },
+    {
+      "key": "savedJobId",
       "value": "",
       "type": "string"
     }
@@ -4257,6 +4267,153 @@
         }
       ],
       "description": "Candidate applications, the company review inbox and internal notes (PORT 5005). All ids are temporary stand-ins until the API gateway forwards identity; every request carries `X-User-Id: {{userId}}`."
+    },
+    {
+      "name": "Job Preference Service",
+      "item": [
+        {
+          "name": "Saved Jobs",
+          "item": [
+            {
+              "name": "Save Job",
+              "request": {
+                "method": "POST",
+                "url": {
+                  "raw": "{{preferenceBaseUrl}}/api/preferences/saved-jobs",
+                  "host": [
+                    "{{preferenceBaseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "preferences",
+                    "saved-jobs"
+                  ],
+                  "query": []
+                },
+                "header": [
+                  {
+                    "key": "X-User-Id",
+                    "value": "{{userId}}",
+                    "description": "temporary auth: user-service id of the caller (candidate)"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\"jobId\": \"{{jobId}}\", \"companyId\": \"{{companyId}}\", \"notes\": \"Great engineering culture, follow up after the January roadmap.\"}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "description": "Bookmarks a job for the candidate. The company id is copied off the job card; ids are unverified stand-ins until cross-service validation lands.\n\n**Body** - `SavedJobRequest`: `jobId` (required), `companyId` (required), `notes` (optional, <=2000). The created id is saved into `{{savedJobId}}`.\n\n**Responses**\n- `201` -> bookmark created\n- `400` -> validation failed\n- `401` -> missing/invalid `X-User-Id`\n- `409` -> this job is already saved by the candidate"
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP 201', () => pm.response.to.have.status(201));",
+                      "const body = pm.response.json();",
+                      "if (body && body.id) pm.collectionVariables.set('savedJobId', String(body.id));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Check If Saved",
+              "request": {
+                "method": "GET",
+                "url": {
+                  "raw": "{{preferenceBaseUrl}}/api/preferences/saved-jobs/check?jobId={{jobId}}",
+                  "host": [
+                    "{{preferenceBaseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "preferences",
+                    "saved-jobs",
+                    "check"
+                  ],
+                  "query": [
+                    {
+                      "key": "jobId",
+                      "value": "{{jobId}}"
+                    }
+                  ]
+                },
+                "header": [
+                  {
+                    "key": "X-User-Id",
+                    "value": "{{userId}}",
+                    "description": "temporary auth: user-service id of the caller (candidate)"
+                  }
+                ],
+                "description": "Bookmark probe for the job-list UI checkbox.\n\n**Responses**\n- `200` -> `true` when the candidate's bookmark on the job exists, `false` otherwise\n- `401` -> missing/invalid `X-User-Id`"
+              }
+            },
+            {
+              "name": "Get My Saved Jobs",
+              "request": {
+                "method": "GET",
+                "url": {
+                  "raw": "{{preferenceBaseUrl}}/api/preferences/saved-jobs",
+                  "host": [
+                    "{{preferenceBaseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "preferences",
+                    "saved-jobs"
+                  ],
+                  "query": []
+                },
+                "header": [
+                  {
+                    "key": "X-User-Id",
+                    "value": "{{userId}}",
+                    "description": "temporary auth: user-service id of the caller (candidate)"
+                  }
+                ],
+                "description": "All of the caller's bookmarks, newest first.\n\n**Responses**\n- `200` -> list of `SavedJobResponse` (`id`, `candidateId`, `jobId`, `companyId`, `notes`, `savedAt`)\n- `401` -> missing/invalid `X-User-Id`"
+              }
+            },
+            {
+              "name": "Unsave Job",
+              "request": {
+                "method": "DELETE",
+                "url": {
+                  "raw": "{{preferenceBaseUrl}}/api/preferences/saved-jobs/{{savedJobId}}",
+                  "host": [
+                    "{{preferenceBaseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "preferences",
+                    "saved-jobs",
+                    "{{savedJobId}}"
+                  ],
+                  "query": []
+                },
+                "header": [
+                  {
+                    "key": "X-User-Id",
+                    "value": "{{userId}}",
+                    "description": "temporary auth: user-service id of the caller (candidate)"
+                  }
+                ],
+                "description": "Removes the bookmark (calls out the created id from Save Job).\n\n**Responses**\n- `204` -> bookmark removed\n- `401` -> missing/invalid `X-User-Id`\n- `404` -> no such bookmark for this candidate"
+              }
+            }
+          ]
+        }
+      ]
     }
   ]
 }

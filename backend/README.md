@@ -29,7 +29,8 @@ backend/
     ├── company-service/ # company profiles & admin verification (port 5002)
     ├── job-service/     # job postings & admin review (port 5003)
     ├── resume-service/  # candidate resume builder (port 5004)
-    └── application-service/ # candidate applications & employer review inbox (port 5005)
+    ├── application-service/ # candidate applications & employer review inbox (port 5005)
+    └── job-preference-service/ # candidate saved jobs / bookmarks (port 5006)
 ```
 
 | Module | Artifact | Description |
@@ -41,12 +42,13 @@ backend/
 | `services/job-service` | `job-service` | Job postings (search, employer CRUD, admin review) |
 | `services/resume-service` | `resume-service` | Candidate resumes (sections, skills, languages, completion score) |
 | `services/application-service` | `application-service` | Candidate applications, employer review inbox, internal notes |
+| `services/job-preference-service` | `job-preference-service` | Candidate saved jobs (bookmarks) with personal notes |
 
 ## Requirements
 
 - **JDK 25**
 - **Maven 3.8+**
-- **PostgreSQL** (user-service database: `user_db`; company-service database: `company_db`; job-service database: `job_db`; resume-service database: `resume_db`; application-service database: `application_db`)
+- **PostgreSQL** (user-service database: `user_db`; company-service database: `company_db`; job-service database: `job_db`; resume-service database: `resume_db`; application-service database: `application_db`; job-preference-service database: `job_preference_db`)
 
 ## Build & Test
 
@@ -609,6 +611,70 @@ python3 seed/seed.py [base_url] [first_candidate] [random_seed]
 All data goes through the real API surface and lands in `application_db`;
 re-runs stay idempotent (duplicate 409s recover ids from the inbox, existing
 statuses are tolerated, fresh candidate/job pairs add rows).
+
+## Running the Job Preference Service
+
+`job-preference-service` listens on **port 5006** (`application.yaml`).
+
+```bash
+cd services/job-preference-service
+mvn spring-boot:run
+```
+
+### Environment variables
+
+| Variable | Required | Description |
+|---|---|---|
+| `DB_USERNAME` | yes | PostgreSQL user (`job_preference_db`) |
+| `DB_PASSWORD` | yes | PostgreSQL password |
+| `DDL_AUTO` | no | Hibernate DDL mode (default `update`) |
+| `SHOW_SQL` | no | Log SQL statements (default `true`) |
+
+### Authentication note
+
+Same stand-in as the other services: JWT validation is not wired into
+`job-preference-service` yet. Every endpoint requires the temporary
+`X-User-Id` header holding the caller's user-service id (candidate scope).
+Unsave is addressed by the saved row's id — other candidates' rows answer
+`404` (`com.sho1kat.controller.RequesterId` documents the stand-in).
+
+## API — job-preference-service
+
+### Saved jobs (`/api/preferences/saved-jobs`) — candidate
+
+| Method | Path | Access |
+|---|---|---|
+| `GET` | `/api/preferences/saved-jobs` | candidate via `X-User-Id` — own bookmarks, newest first |
+| `POST` | `/api/preferences/saved-jobs` | candidate via `X-User-Id` (`201`; duplicates answer `409`) |
+| `GET` | `/api/preferences/saved-jobs/check?jobId=…` | candidate via `X-User-Id` — bookmark probe for the job-list UI |
+| `DELETE` | `/api/preferences/saved-jobs/{savedJobId}` | candidate via `X-User-Id` (`204`; other candidates' rows `404`) |
+
+### Request DTOs
+
+- **Save job** — `jobId`/`companyId` (required, copied off the job card),
+  `notes` (optional, ≤2000). One bookmark per candidate and job (unique in
+  the database, `409` on retries; concurrent races surface as `409` via the
+  integrity handler). Responses carry the denormalized `companyId`, the
+  personal `notes` and the `savedAt` timestamp.
+- `jobId`/`companyId` are never verified against job-service/company-service
+  yet — listings are owner-scoped snapshot rows until cross-service lookup
+  lands (TODO: gateway/service discovery pending).
+
+### Seeding sample data
+
+`services/job-preference-service/seed/seed.py` fills a running service (port
+5006) with 35 bookmarks across 8 candidates and the stand-in jobs 1-6 /
+companies 1-3 — most with a personal note, a couple as plain saves:
+
+```bash
+python3 seed/seed.py [base_url] [first_candidate] [random_seed]
+# defaults: localhost:5006, 4001, 2026 — candidates main..main+7 are used
+```
+
+All data goes through the real API surface and lands in `job_preference_db`;
+re-runs stay idempotent (duplicate-save 409s recover ids from the shelf, a
+fresh candidate/job pair adds rows) and smoke checks report PASS/FAIL per the
+sibling seed convention.
 
 ## Roadmap
 
