@@ -1,5 +1,8 @@
 # Test-only configuration: H2 in memory, no env vars or external database required.
 spring:
+  cloud:
+    config:
+      enabled: false   # shadowed-by-test main yaml loses spring.config.import; config server is not needed in tests
   application:
     name: user-service-test
 
@@ -24,3 +27,6 @@ app:
   rate-limit:
     auth-max-requests: 1000
     auth-window-seconds: 60
+eureka:
+  client:
+    enabled: false     # no discovery server is running during tests

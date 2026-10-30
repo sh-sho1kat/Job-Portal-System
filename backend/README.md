@@ -22,8 +22,10 @@ backend/
 ├── pom.xml              # parent POM (dependency & plugin management)
 ├── common-lib/          # job-portal-common — shared DTOs, enums, exceptions
 │   └── postman/         # Postman collection for the API
-├── cloud/               # job-portal-cloud — Spring Cloud infra
-│                       #   (service discovery, config server, API gateway) — scaffolded
+├── cloud/               # job-portal-cloud — Spring Cloud infrastructure
+│   ├── eureka-server/   # service discovery (port 8761)
+│   ├── config-server/   # externalized config (port 8888, serves config-repo/ from GitHub)
+│   └── api-gateway/     # the public front door: JWT validation, role gates, identity forwarding (port 5000)
 └── services/            # job-portal-services — business microservices
     ├── user-service/    # authentication & user management (port 5001)
     ├── company-service/ # company profiles & admin verification (port 5002)
@@ -36,7 +38,9 @@ backend/
 | Module | Artifact | Description |
 |---|---|---|
 | `common-lib` | `job-portal-common` | Shared library: request/response DTOs, `UserRole`/`UserStatus`/`Company*` enums, `ApiException` base |
-| `cloud` | `job-portal-cloud` | Spring Cloud infrastructure services (discovery, config server, API gateway) |
+| `cloud/eureka-server` | `eureka-server` | Service discovery registry (dashboard: `http://localhost:8761`) |
+| `cloud/config-server` | `config-server` | Central configuration, backed by the repo's `config-repo/` folder on GitHub |
+| `cloud/api-gateway` | `api-gateway` | Single entry point for all clients: verifies JWTs, enforces the role-based access matrix, forwards the verified identity downstream |
 | `services/user-service` | `user-service` | User authentication (JWT access + refresh tokens) and user/role management |
 | `services/company-service` | `company-service` | Company profiles, offices, and admin verification workflow |
 | `services/job-service` | `job-service` | Job postings (search, employer CRUD, admin review) |
@@ -49,6 +53,21 @@ backend/
 - **JDK 25**
 - **Maven 3.8+**
 - **PostgreSQL** (user-service database: `user_db`; company-service database: `company_db`; job-service database: `job_db`; resume-service database: `resume_db`; application-service database: `application_db`; job-preference-service database: `job_preference_db`)
+- **One shared `JWT_SECRET`** (`openssl rand -base64 32`) — must be given to `user-service` *and* `api-gateway`, since the gateway verifies the tokens user-service signs
+
+### Ports
+
+| Service | Port |
+|---|---|
+| eureka-server | 8761 |
+| config-server | 8888 |
+| **api-gateway (public entry point)** | **5000** |
+| user-service | 5001 |
+| company-service | 5002 |
+| job-service | 5003 |
+| resume-service | 5004 |
+| application-service | 5005 |
+| job-preference-service | 5006 |
 
 ## Build & Test
 
@@ -65,8 +84,132 @@ mvn -B package
 mvn -B -pl services/user-service -am package
 ```
 
-Tests run against an in-memory H2 database (`user_service_test`), so no external
-services are needed for the build.
+Tests run against an in-memory H2 database (`*_test`), so no external services
+are needed for the build. The test configs (`services/*/src/test/resources/application.yaml`)
+disable the config client and discovery — the Spring Cloud starters come in
+transitively and their import check would otherwise demand a config server.
+
+## Spring Cloud infrastructure
+
+Startup order (later steps look up earlier ones; each step is a separate terminal):
+
+```bash
+cd cloud/eureka-server && mvn spring-boot:run     # 1. discovery  → http://localhost:8761
+cd cloud/config-server && mvn spring-boot:run     # 2. config     → http://localhost:8888 (serves config-repo/)
+cd services/user-service && mvn spring-boot:run   # 3. services   (any subset; need DB_USERNAME/DB_PASSWORD/JWT_SECRET)
+cd cloud/api-gateway && mvn spring-boot:run       # 4. gateway    → http://localhost:5000 (needs JWT_SECRET)
+```
+
+Services take most of their settings from the config server, which serves the
+`config-repo/*.yaml` files at the root of this repository. `JWT_SECRET` is never
+stored there — it is referenced as `${JWT_SECRET}` and must be exported in the
+shell that runs each service.
+
+## Running the API Gateway
+
+`api-gateway` listens on **port 5000** (`config-repo/api-gateway.yaml`) and is
+**the only URL clients should use**:
+
+```bash
+cd cloud/api-gateway
+JWT_SECRET=$(openssl rand -base64 32) mvn spring-boot:run
+```
+
+Every HTTP request goes to the gateway (`http://localhost:5000/api/...`); it
+looks the destination up in Eureka by service name and proxies the response.
+The routing table (`com.sho1kat.config.RouteConfig`) covers all seven services'
+API prefixes.
+
+### Environment variables
+
+| Variable | Required | Description |
+|---|---|---|
+| `JWT_SECRET` | yes | Same base64 secret as user-service — the gateway verifies every access token against it |
+| `JWT_ISSUER` | no | Issuer claim to require (default `job-portal-user-service`) |
+| `EUREKA_URI` | no | Discovery server URL (default `http://localhost:8761/eureka/`) |
+| `SERVER_PORT` | no | Gateway port (default `5000`) |
+| `APP_CORS_ALLOWEDORIGINS` | no | Comma-separated origins the browser frontend may call from (default `http://localhost:5173,http://localhost:3000`) |
+
+The `config-server` import is `optional:` — when it is offline the gateway still
+boots with the fallbacks above (`config-repo/api-gateway.yaml` overrides them
+when the config server runs).
+
+### What the gateway does on every request
+
+1. **Verifies the token** (`com.sho1kat.security.JwtService`) — signature, issuer
+   `job-portal-user-service` and expiry. Invalid/missing tokens simply leave the
+   request unauthenticated.
+2. **Decides who may call it** (`com.sho1kat.config.SecurityConfig`) — the access
+   matrix below, checked **top to bottom, first match wins**.
+3. **Forwards verified identity** (`com.sho1kat.filter.UserHeaderFilter`) — any
+   `X-User-Id` / `X-User-Email` / `X-User-Role` headers the client sent are
+   **always removed first**, then re-set from the verified token claims (so they
+   can never be faked). The raw `Authorization` header is forwarded too.
+
+Downstream services read `X-User-Id` as the caller's id (the exact header the
+stand-in code already used) — **through the gateway Postman never has to send
+`X-User-*` manually**.
+
+### How authentication works (the big picture)
+
+```
+ 1. Client ──POST /api/auth/register | login──▶ gateway ──▶ user-service
+    Client ◀────── accessToken (JWT, 15 min) + refreshToken (7 days) ──────
+
+ 2. Every other call:
+    Client ──Authorization: Bearer <accessToken>──▶ gateway
+            │ verifies JWT signature → issuer → expiry
+            │ role claim → authority (e.g. "role": "ROLE_EMPLOYER")
+            │ access matrix → allow / 401 / 403
+            │ strips client X-User-*, sets X-User-Id|Email|Role
+            ▼
+       service ← Authorization + X-User-*   (does the fine-grained work:
+            │                                owns the record? status legal?
+            ▼                                method-level @PreAuthorize?)
+    Client ◀──────── service response
+```
+
+**Public vs protected — the rule of thumb:**
+reading the catalog is public; writing data or touching your own account needs a
+token; running the business workflows needs the matching *role*:
+
+| Roles (from `common-lib` `UserRole`) | Who | Named examples |
+|---|---|---|
+| `ROLE_JOB_SEEKER` | candidates | register + apply for jobs, resumes, bookmarks |
+| `ROLE_EMPLOYER` | companies | create company, publish jobs, review applications |
+| `ROLE_ADMIN` / `ROLE_SUPER_ADMIN` | platform staff | verification, suspensions, taxonomy CRUD, user management |
+
+### Access matrix (`SecurityConfig`, first match wins)
+
+| Request | Who may call it |
+|---|---|
+| `POST /api/auth/register` · `/api/auth/login` · `/api/auth/refresh` · `/api/auth/logout` | **public** (user-service rate-limits these) |
+| `GET /api/jobs/**`, `GET /api/companies/**`, `GET /api/job-categories/**`, `GET /api/job-skills/**`, `GET /api/job-tags/**` | **public** — catalog browsing |
+| `GET /api/job-categories/all`, `GET /api/job-skills/all`, `GET /api/job-tags/all` | any logged-in user (inactive entries included) |
+| `POST/PUT/DELETE /api/job-categories/**`, `/api/job-skills/**`, `/api/job-tags/**` | `ADMIN`, `SUPER_ADMIN` — taxonomy CRUD |
+| `/api/admin/**` | `ADMIN`, `SUPER_ADMIN` — verification & moderation |
+| any write on `/api/jobs/**` (create, publish, close, delete) | `EMPLOYER`, `ADMIN`, `SUPER_ADMIN` |
+| any write on `/api/companies/**` (create, update, locations, delete) | `EMPLOYER`, `ADMIN`, `SUPER_ADMIN` |
+| `/api/companies/{id}/applications/**` (employer inbox, notes, status moves) | `EMPLOYER`, `ADMIN`, `SUPER_ADMIN` |
+| `/api/resumes/**`, `/api/preferences/**` | `JOB_SEEKER`, `ADMIN`, `SUPER_ADMIN` — candidate-only features |
+| `PUT /api/auth/me/password`, `/api/users/**`, `/api/applications/**` | any logged-in user — the *service* then decides self vs admin (`@PreAuthorize`) or per-record ownership |
+| everything else | any logged-in user (fail closed) |
+
+Gate rejections answer JSON:
+
+- **401** — `{"success": false, "message": "Authentication required: missing, invalid or expired bearer token"}`
+- **403** — `{"success": false, "message": "Forbidden: your role cannot call this endpoint"}`
+
+Application errors coming from the services keep the documented
+`{ status, error, message, details, timestamp }` shape.
+
+### Production notice
+
+In production **only the gateway port is public** (firewall / Docker network /
+L7 load balancer in front). The service ports are internal, because they trust
+the gateway-injected `X-User-*` headers. Never expose 5001-5006 directly.
+A hardening follow-up is re-verifying the forwarded JWT inside each service;
+then the header trust becomes a secondary guard rather than the only one.
 
 ## Running the User Service
 
@@ -124,7 +267,8 @@ mvn spring-boot:run
 `GET /` on the service root serves as a lightweight welcome/health endpoint.
 
 A ready-made Postman collection is available at
-`common-lib/postman/job-portal-system.postman_collection.json`.
+`common-lib/postman/job-portal-system.postman_collection.json` — every request
+in it targets the gateway (`http://localhost:5000`) by default.
 
 ## Running the Company Service
 
@@ -146,11 +290,13 @@ mvn spring-boot:run
 
 ### Authentication note
 
-JWT validation is not wired into `company-service` yet (pending the API gateway).
-Until then, owner/employer endpoints read a temporary `X-User-Id` header
-holding the caller's user-service id; admin endpoints are unsecured for now
-(`com.sho1kat.controller.RequesterId` documents this stand-in). Public
-catalogue endpoints need no header.
+`company-service` trusts the `X-User-Id` header as the caller's identity. When
+requests come **through the API gateway** that header is set from the verified
+JWT (gateway strips anything the client sent), and the gateway additionally
+gates writes/admin areas to `EMPLOYER`/`ADMIN` roles. When you hit port 5002
+directly in **local development**, you supply the header yourself — exactly the
+stand-in behaviour (`com.sho1kat.controller.RequesterId` documents it). Public
+catalogue endpoints need no header either way.
 
 ## API — company-service
 
@@ -223,13 +369,15 @@ mvn spring-boot:run
 
 ### Authentication note
 
-Same stand-in as company-service: JWT validation is not wired into
-`job-service` yet. Employer endpoints read a temporary `X-User-Id` header
-holding the caller's user-service id; admin endpoints are unsecured for now
-(`com.sho1kat.controller.RequesterId` documents this). Public search
-endpoints need no header. `companyId` is also unverified for now — once the
-API gateway forwards identity, job-service will confirm the caller actually
-owns the company before accepting postings.
+Same pattern as company-service: `job-service` trusts the `X-User-Id` header as
+the caller's identity. Through the API gateway the header arrives verified (and
+the gateway only lets `EMPLOYER`/`ADMIN` calls reach the write endpoints),
+while direct local calls to port 5003 supply it manually
+(`com.sho1kat.controller.RequesterId` documents the stand-in). Public search
+endpoints need no header. `companyId` is still only supplied in the payload —
+cross-checking that the caller actually owns the company before accepting
+postings (by matching `X-User-Id` against company-service data) remains a
+pending integration.
 
 ## API — job-service
 
@@ -288,8 +436,9 @@ owns the company before accepting postings.
 | `PUT` | `/api/job-tags/{id}` | `X-User-Id` |
 | `DELETE` | `/api/job-tags/{id}` | `X-User-Id` (blocked while any posting references it; delete-protection counts soft-deleted postings too) |
 
-Taxonomy CRUD is open to employers/admins for now via the `X-User-Id`
-stand-in; once role enforcement lands, writes should tighten to admins only.
+Taxonomy CRUD now requires `ADMIN`/`SUPER_ADMIN` at the gateway; the service
+itself still trusts `X-User-Id` (as documented above) and can be hit directly in
+local development.
 
 ### Seeding sample data & final API smoke test
 
@@ -367,14 +516,14 @@ mvn spring-boot:run
 
 ### Authentication note
 
-Same stand-in as company-service/job-service: JWT validation is not wired
-into `resume-service` yet. Every endpoint — reads included, because resume
-data is personal — requires the temporary `X-User-Id` header holding the
-caller's user-service id
-(`com.sho1kat.controller.RequesterId` documents this). The candidate id
+Same pattern as the other services: `resume-service` trusts the `X-User-Id`
+header as the caller's identity. Every endpoint — reads included, because
+resume data is personal — requires it. Through the API gateway the header is
+set from the verified JWT (and the gateway only admits `JOB_SEEKER`/`ADMIN`
+calls here), while direct local calls to port 5004 supply it manually
+(`com.sho1kat.controller.RequesterId` documents the stand-in). The candidate id
 carried by that header must own the resume addressed in the path, otherwise
-the service answers `404`/`403` exactly as it will once real identity
-forwarding exists.
+the service answers `404`/`403`.
 
 ### Data model
 
@@ -522,13 +671,15 @@ mvn spring-boot:run
 
 ### Authentication note
 
-Same stand-in as the other services: JWT validation is not wired into
-`application-service` yet. Candidates act only on their own applications via
-the temporary `X-User-Id` header; company endpoints are addressed by
-`{companyId}` in the path (same unverified-stand-in as job-service postings).
-Note writes identify the author through `X-User-Id` and only the author may
-delete their own note. `JobSummaryResponse` / `candidate` / `company` /
-`employerId` payloads carry ids only until cross-service lookup exists.
+Same pattern as the other services: `application-service` trusts the
+`X-User-Id` header as the caller's identity. Through the API gateway the header
+comes from the verified JWT (candidate endpoints gated to any logged-in user,
+the company inbox to `EMPLOYER`/`ADMIN`); direct local calls to port 5005
+supply it manually. Candidates act only on their own applications; note writes
+identify the author through `X-User-Id` and only the author may delete their
+own note. Payloads carry the caller's identity, so per-record ownership checks
+stay the service's job. `JobSummaryResponse` / `candidate` / `company` /
+`employerId` payloads still carry ids only until cross-service lookup exists.
 
 ## API — application-service
 
@@ -632,9 +783,10 @@ mvn spring-boot:run
 
 ### Authentication note
 
-Same stand-in as the other services: JWT validation is not wired into
-`job-preference-service` yet. Every endpoint requires the temporary
-`X-User-Id` header holding the caller's user-service id (candidate scope).
+Same pattern as the other services: `job-preference-service` trusts the
+`X-User-Id` header as the caller's identity (candidate scope). Through the API
+gateway the header is set from the verified JWT (gated to
+`JOB_SEEKER`/`ADMIN`); direct local calls to port 5006 supply it manually.
 Unsave is addressed by the saved row's id — other candidates' rows answer
 `404` (`com.sho1kat.controller.RequesterId` documents the stand-in).
 
@@ -682,8 +834,12 @@ sibling seed convention.
 - [x] Company service (profiles, locations, admin verification)
 - [x] Job service (postings, taxonomy categories/skills/tags, employer publishing)
 - [x] Resume service (resume builder, sections, skills/languages, completion score)
-- [ ] Spring Cloud infrastructure in `cloud/` (service discovery, config server, API gateway)
-- [ ] JWT enforcement in company-service / job-service / gateway identity forwarding
-- [ ] Additional business services (applications, notifications)
+- [x] Application service (apply, employer inbox, notes, status pipeline)
+- [x] Job preference service (saved jobs / bookmarks)
+- [x] Spring Cloud infrastructure in `cloud/` — eureka-server, config-server, api-gateway (JWT validation, role matrix, identity forwarding)
+- [ ] Per-record role/ownership checks inside every service (`@PreAuthorize` + cross-service ownership, e.g. job-service verifying `companyId`) — coarse role gating runs at the gateway today
+- [ ] Per-service JWT re-verification for defense in depth (services currently trust gateway-injected `X-User-*` headers)
+- [ ] Cross-service data resolution (job cards showing real company summaries, application counts, AI screening states)
+- [ ] Additional business services (notifications)
 - [ ] AI-powered features (matching, recommendations)
 - [ ] Container images via Jib for each service

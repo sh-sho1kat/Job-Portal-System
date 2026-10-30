@@ -1,0 +1,17 @@
+# Test-only configuration: no config server, no discovery and no env vars required.
+spring:
+  application:
+    name: api-gateway-test
+
+  cloud:
+    config:
+      enabled: false
+
+eureka:
+  client:
+    enabled: false
+
+app:
+  jwt:
+    secret: ZawcpoKYwCB8nlZp2YXPH5iP42mOLoH0JCuqI8wqREs=   # test-only, decodes to 32 bytes
+    issuer: test-job-portal-user-service

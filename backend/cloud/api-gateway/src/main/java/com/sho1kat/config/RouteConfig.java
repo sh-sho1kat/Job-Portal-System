@@ -1,214 +1,137 @@
 package com.sho1kat.config;
 
+import com.sho1kat.filter.UserHeaderFilter;
 import org.springframework.cloud.gateway.server.mvc.filter.LoadBalancerFilterFunctions;
 import org.springframework.cloud.gateway.server.mvc.handler.GatewayRouterFunctions;
 import org.springframework.cloud.gateway.server.mvc.handler.HandlerFunctions;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
+import org.springframework.web.servlet.function.RequestPredicate;
 import org.springframework.web.servlet.function.RequestPredicates;
 import org.springframework.web.servlet.function.RouterFunction;
 import org.springframework.web.servlet.function.ServerResponse;
 
+/**
+ * ROUTING ONLY. Who may call what is decided in SecurityConfig.
+ *
+ * Every route has an explicit @Order. Lower number = checked first, so
+ * specific routes must have a lower number than broad ones
+ * (e.g. /api/companies/{id}/applications before /api/companies/**).
+ */
 @Configuration
 public class RouteConfig {
 
-    // ==========================================
-    // Application service — employer inbox
-    // Register before the general company routes.
-    // ==========================================
+    // ---------------------------------------------------------------- helpers
 
+    /** Matches any of the given path patterns. */
+    private static RequestPredicate paths(String first, String... others) {
+        RequestPredicate predicate = RequestPredicates.path(first);
+        for (String other : others) {
+            predicate = predicate.or(RequestPredicates.path(other));
+        }
+        return predicate;
+    }
+
+    /** Builds a route that proxies to a load balanced service and adds X-User-* headers. */
+    private static RouterFunction<ServerResponse> proxy(String routeId,
+                                                        String serviceName,
+                                                        RequestPredicate predicate) {
+        return GatewayRouterFunctions.route(routeId)
+                .route(predicate, HandlerFunctions.http())
+                .before(UserHeaderFilter::addUserHeaders)
+                .filter(LoadBalancerFilterFunctions.lb(serviceName))
+                .build();
+    }
+
+    // ----------------------------------------------------- specific routes first
+
+    /** /api/companies/{companyId}/applications  -> application-service */
     @Bean
     @Order(1)
     public RouterFunction<ServerResponse> applicationCompanyRoutes() {
-        return GatewayRouterFunctions.route("application-company-routes")
-                .route(
-                        RequestPredicates.path(
-                                "/api/companies/*/applications"
-                        ).or(RequestPredicates.path(
-                                "/api/companies/*/applications/**"
-                        )),
-                        HandlerFunctions.http()
-                )
-                .filter(LoadBalancerFilterFunctions.lb("application-service"))
-                .build();
+        return proxy("application-company-routes", "application-service",
+                paths("/api/companies/*/applications",
+                        "/api/companies/*/applications/**"));
     }
-
-    // ==========================================
-    // Public authentication endpoints
-    // ==========================================
 
     @Bean
     @Order(2)
-    public RouterFunction<ServerResponse> authRoutes() {
-        return GatewayRouterFunctions.route("auth-routes")
-                .route(
-                        RequestPredicates.path("/api/auth")
-                                .or(RequestPredicates.path("/api/auth/**")),
-                        HandlerFunctions.http()
-                )
-                .filter(LoadBalancerFilterFunctions.lb("user-service"))
-                .build();
+    public RouterFunction<ServerResponse> adminCompanyRoutes() {
+        return proxy("admin-company-routes", "company-service",
+                paths("/api/admin/companies",
+                        "/api/admin/companies/**"));
     }
-
-    // ==========================================
-    // User management
-    // ==========================================
 
     @Bean
     @Order(3)
-    public RouterFunction<ServerResponse> userRoutes() {
-        return GatewayRouterFunctions.route("user-routes")
-                .route(
-                        RequestPredicates.path("/api/users")
-                                .or(RequestPredicates.path("/api/users/**")),
-                        HandlerFunctions.http()
-                )
-                .filter(LoadBalancerFilterFunctions.lb("user-service"))
-                .build();
-    }
-
-    // ==========================================
-    // Company APIs
-    // ==========================================
-
-    @Bean
-    @Order(4)
-    public RouterFunction<ServerResponse> companyRoutes() {
-        return GatewayRouterFunctions.route("company-routes")
-                .route(
-                        RequestPredicates.path("/api/companies")
-                                .or(RequestPredicates.path("/api/companies/**")),
-                        HandlerFunctions.http()
-                )
-                .filter(LoadBalancerFilterFunctions.lb("company-service"))
-                .build();
-    }
-
-    // ==========================================
-    // Company administration
-    // ==========================================
-
-    @Bean
-    @Order(5)
-    public RouterFunction<ServerResponse> adminCompanyRoutes() {
-        return GatewayRouterFunctions.route("admin-company-routes")
-                .route(
-                        RequestPredicates.path("/api/admin/companies")
-                                .or(RequestPredicates.path(
-                                        "/api/admin/companies/**"
-                                )),
-                        HandlerFunctions.http()
-                )
-                .filter(LoadBalancerFilterFunctions.lb("company-service"))
-                .build();
-    }
-
-    // ==========================================
-    // Job administration
-    // ==========================================
-
-    @Bean
-    @Order(6)
     public RouterFunction<ServerResponse> adminJobRoutes() {
-        return GatewayRouterFunctions.route("admin-job-routes")
-                .route(
-                        RequestPredicates.path("/api/admin/jobs")
-                                .or(RequestPredicates.path(
-                                        "/api/admin/jobs/**"
-                                )),
-                        HandlerFunctions.http()
-                )
-                .filter(LoadBalancerFilterFunctions.lb("job-service"))
-                .build();
+        return proxy("admin-job-routes", "job-service",
+                paths("/api/admin/jobs",
+                        "/api/admin/jobs/**"));
     }
 
-    // ==========================================
-    // Jobs, categories, skills and tags
-    // ==========================================
+    // ------------------------------------------------------------ general routes
 
-    @Bean
-    @Order(7)
-    public RouterFunction<ServerResponse> jobRoutes() {
-        return GatewayRouterFunctions.route("job-routes")
-                .route(
-                        RequestPredicates.path("/api/jobs")
-                                .or(RequestPredicates.path("/api/jobs/**"))
-                                .or(RequestPredicates.path(
-                                        "/api/job-categories"
-                                ))
-                                .or(RequestPredicates.path(
-                                        "/api/job-categories/**"
-                                ))
-                                .or(RequestPredicates.path("/api/job-skills"))
-                                .or(RequestPredicates.path(
-                                        "/api/job-skills/**"
-                                ))
-                                .or(RequestPredicates.path("/api/job-tags"))
-                                .or(RequestPredicates.path("/api/job-tags/**")),
-                        HandlerFunctions.http()
-                )
-                .filter(LoadBalancerFilterFunctions.lb("job-service"))
-                .build();
-    }
-
-    // ==========================================
-    // Applications
-    // ==========================================
-
-    @Bean
-    @Order(8)
-    public RouterFunction<ServerResponse> applicationRoutes() {
-        return GatewayRouterFunctions.route("application-routes")
-                .route(
-                        RequestPredicates.path("/api/applications")
-                                .or(RequestPredicates.path(
-                                        "/api/applications/**"
-                                )),
-                        HandlerFunctions.http()
-                )
-                .filter(LoadBalancerFilterFunctions.lb("application-service"))
-                .build();
-    }
-
-    // ==========================================
-    // Saved jobs / bookmarks
-    // ==========================================
-
-    @Bean
-    @Order(9)
-    public RouterFunction<ServerResponse> jobPreferenceRoutes() {
-        return GatewayRouterFunctions.route("job-preference-routes")
-                .route(
-                        RequestPredicates.path(
-                                "/api/preferences/saved-jobs"
-                        ).or(RequestPredicates.path(
-                                "/api/preferences/saved-jobs/**"
-                        )),
-                        HandlerFunctions.http()
-                )
-                .filter(
-                        LoadBalancerFilterFunctions.lb(
-                                "job-preference-service"
-                        )
-                )
-                .build();
-    }
-
-    // ==========================================
-    // Resume builder and resume sections
-    // ==========================================
-
+    /** login, register, refresh, /me, /me/password ... all live in user-service. */
     @Bean
     @Order(10)
+    public RouterFunction<ServerResponse> authRoutes() {
+        return proxy("auth-routes", "user-service",
+                paths("/api/auth/**"));
+    }
+
+    @Bean
+    @Order(11)
+    public RouterFunction<ServerResponse> userRoutes() {
+        return proxy("user-routes", "user-service",
+                paths("/api/users",
+                        "/api/users/**"));
+    }
+
+    @Bean
+    @Order(12)
+    public RouterFunction<ServerResponse> jobRoutes() {
+        return proxy("job-routes", "job-service",
+                paths("/api/jobs",
+                        "/api/jobs/**",
+                        "/api/job-categories",
+                        "/api/job-categories/**",
+                        "/api/job-skills",
+                        "/api/job-skills/**",
+                        "/api/job-tags",
+                        "/api/job-tags/**"));
+    }
+
+    @Bean
+    @Order(13)
+    public RouterFunction<ServerResponse> companyRoutes() {
+        return proxy("company-routes", "company-service",
+                paths("/api/companies",
+                        "/api/companies/**"));
+    }
+
+    @Bean
+    @Order(14)
+    public RouterFunction<ServerResponse> applicationRoutes() {
+        return proxy("application-routes", "application-service",
+                paths("/api/applications",
+                        "/api/applications/**"));
+    }
+
+    @Bean
+    @Order(15)
+    public RouterFunction<ServerResponse> jobPreferenceRoutes() {
+        return proxy("job-preference-routes", "job-preference-service",
+                paths("/api/preferences/saved-jobs",
+                        "/api/preferences/saved-jobs/**"));
+    }
+
+    @Bean
+    @Order(16)
     public RouterFunction<ServerResponse> resumeRoutes() {
-        return GatewayRouterFunctions.route("resume-routes")
-                .route(
-                        RequestPredicates.path("/api/resumes")
-                                .or(RequestPredicates.path("/api/resumes/**")),
-                        HandlerFunctions.http()
-                )
-                .filter(LoadBalancerFilterFunctions.lb("resume-service"))
-                .build();
+        return proxy("resume-routes", "resume-service",
+                paths("/api/resumes",
+                        "/api/resumes/**"));
     }
 }
