@@ -178,6 +178,11 @@ public class SecurityConfig {
                                 "/api/applications/**"
                         ).authenticated()
 
+                        .requestMatchers(
+                                "/api/ai",
+                                "/api/ai/**"
+                        ).authenticated()
+
                         // Anything not listed above needs a valid token
 
                         .anyRequest().authenticated()

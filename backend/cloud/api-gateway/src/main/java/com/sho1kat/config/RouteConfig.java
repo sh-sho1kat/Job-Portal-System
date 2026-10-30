@@ -134,4 +134,12 @@ public class RouteConfig {
                 paths("/api/resumes",
                         "/api/resumes/**"));
     }
+
+    @Bean
+    @Order(17)
+    public RouterFunction<ServerResponse> aiRoutes() {
+        return proxy("ai-routes", "ai-service",
+                paths("/api/ai",
+                        "/api/ai/**"));
+    }
 }
