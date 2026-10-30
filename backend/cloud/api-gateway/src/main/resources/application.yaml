@@ -1,6 +1,27 @@
+server:
+  # Same value as config-repo/api-gateway.yaml; used directly when the config server is offline
+  port: ${SERVER_PORT:5000}
+
 spring:
   application:
     name: api-gateway
 
+  # optional: the gateway also boots when the config server is down (local fallbacks apply)
   config:
-    import: configserver:http://localhost:8888
+    import: optional:configserver:http://localhost:8888
+
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_URI:http://localhost:8761/eureka/}
+  instance:
+    prefer-ip-address: true
+
+app:
+  jwt:
+    # MUST match user-service — the same base64 secret signs and verifies all access tokens
+    secret: ${JWT_SECRET}
+    issuer: ${JWT_ISSUER:job-portal-user-service}
+  # Comma-separated list the browser frontend may call the gateway from
+  cors:
+    allowed-origins: ${APP_CORS_ALLOWEDORIGINS:http://localhost:5173,http://localhost:3000}

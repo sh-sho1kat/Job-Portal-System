@@ -5,9 +5,13 @@ import com.sho1kat.exception.ApiException;
 /**
  * Resolves the caller's user id from the {@link #HEADER} request header.
  *
- * Temporary stand-in for JWT authentication in job-service: until security is
- * wired up here (or the API gateway validates tokens and forwards identity),
- * authenticated clients pass their user-service id in {@code X-User-Id}.
+ * This is the identity transport for application-service: the API gateway verifies the JWT,
+ * strips any client-sent X-User-* headers and then forwards these headers from
+ * the token claims, so the value here is already the verified caller id. That
+ * trust holds because only the gateway port is reachable in production; when a
+ * developer hits this service directly (local debugging, Postman direct mode)
+ * the header may be set manually. Ownership and role decisions taken on this
+ * value are this service's own responsibility (the gateway does coarse rules).
  */
 final class RequesterId {
 

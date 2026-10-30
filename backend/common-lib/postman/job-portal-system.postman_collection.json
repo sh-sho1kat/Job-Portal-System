@@ -2,7 +2,7 @@
   "info": {
     "_postman_id": "b1e2c3d4-5a6b-4c8d-9e0f-1a2b3c4d5e6f",
     "name": "Job Portal System API",
-    "description": "Postman collection for all Job Portal System backend services.\n\n## Conventions\n- **One top-level folder per microservice** (e.g. `User Service`, `Job Service`, ...), one subfolder per controller.\n- **Collection variables** (see `Variables` tab):\n  - `baseUrl` — target host, defaults to `http://localhost:5001`\n  - `accessToken` / `refreshToken` — auto-saved by the `Login` and `Refresh` test scripts\n  - `userId` — the record used by `GET/PUT/PATCH/DELETE /api/users/{id}` requests\n  - `companyBaseUrl` — company-service host, defaults to `http://localhost:5002`\n  - `companyId` / `locationId` — ids used by the Company Service requests\n  - `resumeBaseUrl` — resume-service host, defaults to `http://localhost:5004`\n  - `resumeId` / section ids — resumes + their sub-sections (`workExperienceId`, `educationId`, `resumeSkillId`, `languageId`, `projectId`, `certificationId`, `awardId`)\n- **Auth**: collection-level Bearer auth using `{{accessToken}}`; public requests override it with `No Auth`.\n- **Error shape**: every non-2xx response (except empty-body 401s from the security layer) is\n  `{\"status\":int,\"error\":str,\"message\":str,\"details\":array|null,\"timestamp\":str}`.\n\n  - `applicationBaseUrl` - application-service host, defaults to `http://localhost:5005`\n  - `applicationId` / `noteId` - ids used by the Application Service requests\n  - `preferenceBaseUrl` - job-preference-service host, defaults to `http://localhost:5006`\n  - `savedJobId` - id used by the Saved Jobs requests\n\n## Extending\nWhen a new service/API is added, add a new top-level folder and follow the same conventions.\nSee `postman/README.md` in `common-lib`.",
+    "description": "Postman collection for all Job Portal System backend services.\n\n## Everything flows through the API gateway by default\nAll `*BaseUrl` collection variables default to the gateway (`http://localhost:5000`) — the single public entry point that validates every JWT, enforces role rules and injects `X-User-Id` / `X-User-Email` / `X-User-Role` for the services. You never need to send the `X-User-*` headers yourself while pointing at the gateway.\nTo debug one service directly (bypassing the gateway), override that service's variable back to its internal port (`user-service` 5001, `company-service` 5002, `job-service` 5003, `resume-service` 5004, `application-service` 5005, `job-preference-service` 5006) — then root/owner requests need a manual `X-User-Id: {{userId}}` header.\n\n## Conventions\n- **One top-level folder per microservice** (e.g. `User Service`, `Job Service`, ...), one subfolder per controller.\n- **Collection variables** (see `Variables` tab):\n  - every `*BaseUrl` — defaults to the gateway `http://localhost:5000`\n  - `accessToken` / `refreshToken` — auto-saved by the `Login` and `Refresh` test scripts\n  - `userId` — the record used by `GET/PUT/PATCH/DELETE /api/users/{id}` requests\n  - `companyId` / `locationId` — ids used by the Company Service requests\n  - `resumeId` / section ids — resumes + their sub-sections (`workExperienceId`, `educationId`, `resumeSkillId`, `languageId`, `projectId`, `certificationId`, `awardId`)\n- **Auth**: collection-level Bearer auth using `{{accessToken}}`; public requests override it with `No Auth`.\n- **Gateway errors**: 401/403 from the gateway return `{\"success\":false,\"message\":\"...\"}`.\n- **Service errors**: every non-2xx response (except empty-body 401s from the security layer) is\n  `{\"status\":int,\"error\":str,\"message\":str,\"details\":array|null,\"timestamp\":str}`.\n\n## Extending\nWhen a new service/API is added, add a new top-level folder and follow the same conventions.\nSee `postman/README.md` in `common-lib`.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "auth": {
@@ -18,7 +18,7 @@
   "variable": [
     {
       "key": "baseUrl",
-      "value": "http://localhost:5001",
+      "value": "http://localhost:5000",
       "type": "string"
     },
     {
@@ -38,7 +38,7 @@
     },
     {
       "key": "companyBaseUrl",
-      "value": "http://localhost:5002",
+      "value": "http://localhost:5000",
       "type": "string"
     },
     {
@@ -58,7 +58,7 @@
     },
     {
       "key": "jobBaseUrl",
-      "value": "http://localhost:5003",
+      "value": "http://localhost:5000",
       "type": "string"
     },
     {
@@ -83,7 +83,7 @@
     },
     {
       "key": "resumeBaseUrl",
-      "value": "http://localhost:5004",
+      "value": "http://localhost:5000",
       "type": "string"
     },
     {
@@ -128,7 +128,7 @@
     },
     {
       "key": "applicationBaseUrl",
-      "value": "http://localhost:5005",
+      "value": "http://localhost:5000",
       "type": "string"
     },
     {
@@ -143,7 +143,7 @@
     },
     {
       "key": "preferenceBaseUrl",
-      "value": "http://localhost:5006",
+      "value": "http://localhost:5000",
       "type": "string"
     },
     {
