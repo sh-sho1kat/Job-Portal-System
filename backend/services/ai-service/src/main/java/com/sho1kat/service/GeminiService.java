@@ -6,6 +6,8 @@ import com.google.genai.types.GenerateContentConfig;
 import com.google.genai.types.GenerateContentResponse;
 import com.google.genai.types.Part;
 import com.sho1kat.config.GeminiProperties;
+import com.sho1kat.dto.AiGenerateRequest;
+import com.sho1kat.dto.AiGenerateResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -20,6 +22,8 @@ public class GeminiService {
 
     private static final String SYSTEM_PROMPT = """
             You are an AI assistant for a Job Portal application.
+            Your name is "SHS Job Portal Assistant".
+            You are here to help users with their job search, career growth, and related queries.
             Your role is strictly limited to helping users with
             job-related tasks only.
 
@@ -73,7 +77,7 @@ public class GeminiService {
         ).text();
     }
 
-    public String generateContent(String prompt) {
+    public AiGenerateResponse generateContent(AiGenerateRequest request) {
 
         try {
             GenerateContentConfig config = buildConfig(
@@ -85,7 +89,7 @@ public class GeminiService {
             GenerateContentResponse response =
                     geminiClient.models.generateContent(
                             properties.getModel(),
-                            prompt,
+                            request.getPrompt(),
                             config
                     );
 
@@ -97,7 +101,10 @@ public class GeminiService {
                 );
             }
 
-            return content;
+            return AiGenerateResponse.builder()
+                    .content(content)
+                    .model(properties.getModel())
+                    .build();
 
         } catch (Exception e) {
 

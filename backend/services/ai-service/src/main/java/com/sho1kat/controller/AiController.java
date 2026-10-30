@@ -1,7 +1,11 @@
 package com.sho1kat.controller;
 
+import com.sho1kat.dto.AiGenerateRequest;
+import com.sho1kat.dto.AiGenerateResponse;
 import com.sho1kat.dto.ApiResponse;
 import com.sho1kat.service.GeminiService;
+import com.sho1kat.service.GroqService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -12,6 +16,7 @@ import org.springframework.web.bind.annotation.*;
 public class AiController {
 
     private final GeminiService geminiService;
+    private final GroqService groqService;
 
     @GetMapping("/default/{prompt}")
     public ResponseEntity<String> generatedefault(@PathVariable String prompt) throws Exception {
@@ -19,10 +24,22 @@ public class AiController {
         return ResponseEntity.ok(response);
     }
 
-    @GetMapping("/{prompt}")
-    public ResponseEntity<String> generate(@PathVariable String prompt) throws Exception {
-        String response = geminiService.generateContent(prompt);
-        return ResponseEntity.ok(response);
+    @GetMapping("/gemini/generate")
+    public ResponseEntity<AiGenerateResponse> geminigenerate(
+            @Valid @RequestBody AiGenerateRequest request
+    ) throws Exception {
+        return ResponseEntity.ok(
+                geminiService.generateContent(request)
+        );
+    }
+
+    @GetMapping("/groq/generate")
+    public ResponseEntity<AiGenerateResponse> groqgenerate(
+            @Valid @RequestBody AiGenerateRequest request
+    ) {
+        return ResponseEntity.ok(
+                groqService.generateContent(request)
+        );
     }
 
     @GetMapping("/home")
