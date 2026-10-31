@@ -10,11 +10,6 @@ import org.springframework.stereotype.Service;
 
 import java.util.stream.Collectors;
 
-/**
- * Employer-facing auto-generation for job postings: full descriptions,
- * responsibilities/requirements blocks, benefits, skills and tag
- * recommendations, plus a market-informed salary band. Stateless.
- */
 @Service
 @RequiredArgsConstructor
 public class JobAiService {

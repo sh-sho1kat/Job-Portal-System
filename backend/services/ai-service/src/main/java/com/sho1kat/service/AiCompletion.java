@@ -9,16 +9,6 @@ import org.springframework.stereotype.Service;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Single entry point for AI content generation. Walks the registered
- * {@link AiProvider}s in priority order (Gemini, then Groq) and uses the first
- * one that is configured AND answers successfully — a rate-limited or
- * unreachable primary transparently falls through to the next. Only when every
- * provider fails does the caller see a {@code 503}.
- *
- * A {@code null} system instruction means the generic portal persona
- * ({@link AiPersona#DEFAULT}); feature endpoints always pass their own.
- */
 @Slf4j
 @Service
 public class AiCompletion {

@@ -15,11 +15,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-/**
- * Application-flow AI: personalized cover-letter generation for the apply
- * form, plus candidate-vs-job screening scores and skills-gap analyses (the
- * data behind the application-service inbox screening columns).
- */
 @RestController
 @RequestMapping("/api/ai/application")
 @RequiredArgsConstructor

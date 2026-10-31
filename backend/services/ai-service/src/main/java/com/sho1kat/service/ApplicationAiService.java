@@ -9,11 +9,6 @@ import com.sho1kat.dto.aiServiceDto.response.SkillsGapResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
-/**
- * Application-flow AI: personalized cover-letter generation for the apply
- * form, plus candidate-vs-job screening scores and skills-gap analyses (the
- * data behind the application-service inbox screening columns). Stateless.
- */
 @Service
 @RequiredArgsConstructor
 public class ApplicationAiService {

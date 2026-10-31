@@ -16,12 +16,7 @@ import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
-/**
- * Google Gemini backend, built on the official genai SDK. The SDK client is
- * created lazily on first use so a missing {@code GEMINI_API_KEY} does not
- * break boot — calls simply answer {@code 503 unconfigured} and the facade
- * falls back to Groq.
- */
+// Order Gemini first. If Gemini is down or misconfigured, the AiCompletion facade falls back to Groq.
 @Slf4j
 @Service
 @Order(1)
@@ -43,7 +38,6 @@ public class GeminiClient implements AiProvider {
                 && StringUtils.hasText(properties.getApi().getKey());
     }
 
-    /** Open-ended playground path — keeps the generic portal persona. */
     public AiGenerateResponse generateContent(AiGenerateRequest request) {
         return AiGenerateResponse.builder()
                 .content(generateText(null, request.getPrompt()))

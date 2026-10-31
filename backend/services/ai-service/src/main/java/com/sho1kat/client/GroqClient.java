@@ -22,11 +22,7 @@ import java.net.http.HttpClient;
 import java.time.Duration;
 import java.util.List;
 
-/**
- * Groq backend (OpenAI-compatible chat completions). The REST client is built
- * lazily on first use so a missing {@code GROQ_API_KEY} does not break boot —
- * calls answer {@code 503 unconfigured} and the facade falls back to Gemini.
- */
+// Order Groq second. If Gemini is down or misconfigured, the AiCompletion facade falls back to Groq.
 @Slf4j
 @Service
 @Order(2)
@@ -48,7 +44,6 @@ public class GroqClient implements AiProvider {
                 && StringUtils.hasText(properties.getBaseUrl());
     }
 
-    /** Open-ended playground path — keeps the generic portal persona. */
     public AiGenerateResponse generateContent(AiGenerateRequest request) {
         String content = generateText(null, request.getPrompt());
         return AiGenerateResponse.builder()

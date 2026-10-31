@@ -17,11 +17,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-/**
- * Resume optimization endpoints — the resume-service frontend calls these to
- * generate a professional summary, rewrite raw experience entries into ATS
- * bullets, and obtain scored improvement tips / career feedback.
- */
 @RestController
 @RequestMapping("/api/ai/resume")
 @RequiredArgsConstructor

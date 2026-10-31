@@ -13,11 +13,6 @@ import org.springframework.stereotype.Service;
 
 import java.util.stream.Collectors;
 
-/**
- * Resume optimization features: professional summary generation, raw
- * experience → ATS bullet points, scored improvement suggestions and honest
- * career feedback. Stateless — nothing is persisted.
- */
 @Service
 @RequiredArgsConstructor
 public class ResumeAiService {

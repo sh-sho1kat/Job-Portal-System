@@ -1,10 +1,6 @@
 package com.sho1kat.client;
 
-/**
- * The generic assistant persona for the open-ended playground endpoints
- * (generic generate endpoints). Every purpose-built feature endpoint passes
- * its own tighter system instruction instead.
- */
+// The generic assistant persona for the open-ended endpoints
 public final class AiPersona {
 
     public static final String DEFAULT = """

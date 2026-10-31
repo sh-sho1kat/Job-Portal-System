@@ -16,7 +16,7 @@ public final class AiJson {
     private AiJson() {
     }
 
-    /** Parses model output into {@code type}, ignoring any prose around it. */
+    /** Parses model output into a type, ignoring any prose around it. */
     public static <T> T parse(String raw, Class<T> type) {
         String candidate = extractJson(raw);
         try {

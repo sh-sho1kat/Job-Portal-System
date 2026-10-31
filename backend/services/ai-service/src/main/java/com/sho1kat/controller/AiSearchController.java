@@ -13,11 +13,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-/**
- * Natural-language job search: turns a free sentence into structured,
- * filter-ready search criteria and suggests job-alert criteria from a
- * candidate profile.
- */
 @RestController
 @RequestMapping("/api/ai/search")
 @RequiredArgsConstructor

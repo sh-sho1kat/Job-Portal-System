@@ -18,12 +18,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-/**
- * Employer-facing auto-generation for the job posting form: description,
- * requirements/responsibilities/benefits blocks, skill & tag suggestions and a
- * salary band. The lightweight text builders take query params; structured
- * generation takes JSON bodies.
- */
 @RestController
 @Validated
 @RequestMapping("/api/ai/job")

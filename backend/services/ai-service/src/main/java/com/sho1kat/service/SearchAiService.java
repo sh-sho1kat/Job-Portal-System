@@ -7,11 +7,6 @@ import com.sho1kat.dto.aiServiceDto.response.SearchEnhanceResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
-/**
- * Natural-language job search: extracts structured, enum-compatible search
- * criteria from a free sentence and derives job-alert criteria from a
- * candidate profile. Stateless.
- */
 @Service
 @RequiredArgsConstructor
 public class SearchAiService {
