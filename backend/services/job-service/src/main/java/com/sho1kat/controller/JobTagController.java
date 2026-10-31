@@ -2,7 +2,7 @@ package com.sho1kat.controller;
 
 import com.sho1kat.dto.jobServiceDto.request.JobTagRequest;
 import com.sho1kat.dto.jobServiceDto.response.JobTagResponse;
-import com.sho1kat.service.JobTagService;
+import com.sho1kat.client.JobTagService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;

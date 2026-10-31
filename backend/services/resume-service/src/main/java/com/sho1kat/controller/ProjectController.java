@@ -2,7 +2,7 @@ package com.sho1kat.controller;
 
 import com.sho1kat.dto.ResumeServiceDto.request.ProjectRequest;
 import com.sho1kat.dto.ResumeServiceDto.response.ProjectResponse;
-import com.sho1kat.service.ProjectService;
+import com.sho1kat.client.ProjectService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;

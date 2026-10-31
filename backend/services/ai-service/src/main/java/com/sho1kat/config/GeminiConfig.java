@@ -1,31 +1,17 @@
 package com.sho1kat.config;
 
-import com.google.genai.Client;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
-import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-@Configuration
+/**
+ * Registers {@link GeminiProperties}. No client bean is built here —
+ * {@link com.sho1kat.client.GeminiClient} creates its SDK client lazily on
+ * first use, so a service started without {@code GEMINI_API_KEY} still boots
+ * and simply reports the provider as unconfigured (facade falls back to Groq).
+ */
+@Configuration(proxyBeanMethods = false)
 @RequiredArgsConstructor
 @EnableConfigurationProperties(GeminiProperties.class)
 public class GeminiConfig {
-
-    private final GeminiProperties properties;
-
-    @Bean
-    public Client geminiClient() {
-
-        String apiKey = properties.getApi().getKey();
-
-        if (apiKey == null || apiKey.isBlank()) {
-            throw new IllegalStateException(
-                    "GEMINI_API_KEY is not configured"
-            );
-        }
-
-        return Client.builder()
-                .apiKey(apiKey)
-                .build();
-    }
 }

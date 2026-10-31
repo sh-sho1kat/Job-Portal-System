@@ -2,7 +2,7 @@ package com.sho1kat.controller;
 
 import com.sho1kat.dto.companyServiceDto.response.DetailedCompanyResponse;
 import com.sho1kat.enums.CompanyStatus;
-import com.sho1kat.service.CompanyAdminService;
+import com.sho1kat.client.CompanyAdminService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;

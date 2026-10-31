@@ -5,7 +5,7 @@ import com.sho1kat.dto.jobServiceDto.request.JobSearchCriteria;
 import com.sho1kat.dto.jobServiceDto.request.UpdateJobRequest;
 import com.sho1kat.dto.jobServiceDto.response.DetailedJobResponse;
 import com.sho1kat.dto.jobServiceDto.response.JobResponse;
-import com.sho1kat.service.JobService;
+import com.sho1kat.client.JobService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;

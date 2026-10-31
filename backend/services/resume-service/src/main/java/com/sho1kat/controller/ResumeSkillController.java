@@ -2,7 +2,7 @@ package com.sho1kat.controller;
 
 import com.sho1kat.dto.ResumeServiceDto.request.ResumeSkillRequest;
 import com.sho1kat.dto.ResumeServiceDto.response.ResumeSkillResponse;
-import com.sho1kat.service.ResumeSkillService;
+import com.sho1kat.client.ResumeSkillService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;

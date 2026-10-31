@@ -5,7 +5,7 @@ import com.sho1kat.dto.ResumeServiceDto.request.PersonalInfoRequest;
 import com.sho1kat.dto.ResumeServiceDto.request.UpdateResumeRequest;
 import com.sho1kat.dto.ResumeServiceDto.request.UpdateSummaryRequest;
 import com.sho1kat.dto.ResumeServiceDto.response.ResumeResponse;
-import com.sho1kat.service.ResumeService;
+import com.sho1kat.client.ResumeService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;

@@ -2,7 +2,7 @@ package com.sho1kat.controller;
 
 import com.sho1kat.dto.ResumeServiceDto.request.LanguageProficiencyRequest;
 import com.sho1kat.dto.ResumeServiceDto.response.LanguageProficiencyResponse;
-import com.sho1kat.service.LanguageService;
+import com.sho1kat.client.LanguageService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;

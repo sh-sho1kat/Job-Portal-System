@@ -2,7 +2,7 @@ package com.sho1kat.controller;
 
 import com.sho1kat.dto.jobServiceDto.request.JobCategoryRequest;
 import com.sho1kat.dto.jobServiceDto.response.JobCategoryResponse;
-import com.sho1kat.service.JobCategoryService;
+import com.sho1kat.client.JobCategoryService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;

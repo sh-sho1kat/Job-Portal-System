@@ -2,7 +2,7 @@ package com.sho1kat.controller;
 
 import com.sho1kat.dto.ResumeServiceDto.request.WorkExperienceRequest;
 import com.sho1kat.dto.ResumeServiceDto.response.WorkExperienceResponse;
-import com.sho1kat.service.WorkExperienceService;
+import com.sho1kat.client.WorkExperienceService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;

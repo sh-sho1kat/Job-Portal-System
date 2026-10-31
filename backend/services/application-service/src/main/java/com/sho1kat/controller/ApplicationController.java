@@ -3,7 +3,7 @@ package com.sho1kat.controller;
 import com.sho1kat.dto.applicationServiceDto.request.ApplicationRequest;
 import com.sho1kat.dto.applicationServiceDto.request.WithdrawApplicationRequest;
 import com.sho1kat.dto.applicationServiceDto.response.ApplicationResponse;
-import com.sho1kat.service.ApplicationService;
+import com.sho1kat.client.ApplicationService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;

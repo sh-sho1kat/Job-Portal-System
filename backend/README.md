@@ -32,7 +32,8 @@ backend/
     ├── job-service/     # job postings & admin review (port 5003)
     ├── resume-service/  # candidate resume builder (port 5004)
     ├── application-service/ # candidate applications & employer review inbox (port 5005)
-    └── job-preference-service/ # candidate saved jobs / bookmarks (port 5006)
+    ├── job-preference-service/ # candidate saved jobs / bookmarks (port 5006)
+    └── ai-service/      # AI-powered generation (resume, jobs, applications, search) (port 5007)
 ```
 
 | Module | Artifact | Description |
@@ -47,13 +48,15 @@ backend/
 | `services/resume-service` | `resume-service` | Candidate resumes (sections, skills, languages, completion score) |
 | `services/application-service` | `application-service` | Candidate applications, employer review inbox, internal notes |
 | `services/job-preference-service` | `job-preference-service` | Candidate saved jobs (bookmarks) with personal notes |
+| `services/ai-service` | `ai-service` | AI content generation: resume optimization, job auto-generation, cover letters & screening, natural-language search |
 
 ## Requirements
 
 - **JDK 25**
 - **Maven 3.8+**
-- **PostgreSQL** (user-service database: `user_db`; company-service database: `company_db`; job-service database: `job_db`; resume-service database: `resume_db`; application-service database: `application_db`; job-preference-service database: `job_preference_db`)
+- **PostgreSQL** (user-service database: `user_db`; company-service database: `company_db`; job-service database: `job_db`; resume-service database: `resume_db`; application-service database: `application_db`; job-preference-service database: `job_preference_db`; *ai-service is database-less*)
 - **One shared `JWT_SECRET`** (`openssl rand -base64 32`) — must be given to `user-service` *and* `api-gateway`, since the gateway verifies the tokens user-service signs
+- **`GEMINI_API_KEY` (Google AI Studio) and/or `GROQ_API_KEY` (groq.com) for ai-service** — at least one; Gemini is preferred, Groq is the automatic fallback
 
 ### Ports
 
@@ -68,6 +71,7 @@ backend/
 | resume-service | 5004 |
 | application-service | 5005 |
 | job-preference-service | 5006 |
+| ai-service | 5007 |
 
 ## Build & Test
 
@@ -96,7 +100,7 @@ Startup order (later steps look up earlier ones; each step is a separate termina
 ```bash
 cd cloud/eureka-server && mvn spring-boot:run     # 1. discovery  → http://localhost:8761
 cd cloud/config-server && mvn spring-boot:run     # 2. config     → http://localhost:8888 (serves config-repo/)
-cd services/user-service && mvn spring-boot:run   # 3. services   (any subset; need DB_USERNAME/DB_PASSWORD/JWT_SECRET)
+cd services/user-service && mvn spring-boot:run   # 3. services   (any subset; need DB_USERNAME/DB_PASSWORD/JWT_SECRET, ai-service needs an AI key)
 cd cloud/api-gateway && mvn spring-boot:run       # 4. gateway    → http://localhost:5000 (needs JWT_SECRET)
 ```
 
@@ -117,7 +121,7 @@ JWT_SECRET=$(openssl rand -base64 32) mvn spring-boot:run
 
 Every HTTP request goes to the gateway (`http://localhost:5000/api/...`); it
 looks the destination up in Eureka by service name and proxies the response.
-The routing table (`com.sho1kat.config.RouteConfig`) covers all seven services'
+The routing table (`com.sho1kat.config.RouteConfig`) covers all eight services'
 API prefixes.
 
 ### Environment variables
@@ -207,7 +211,7 @@ Application errors coming from the services keep the documented
 
 In production **only the gateway port is public** (firewall / Docker network /
 L7 load balancer in front). The service ports are internal, because they trust
-the gateway-injected `X-User-*` headers. Never expose 5001-5006 directly.
+the gateway-injected `X-User-*` headers. Never expose 5001-5007 directly.
 A hardening follow-up is re-verifying the forwarded JWT inside each service;
 then the header trust becomes a secondary guard rather than the only one.
 
@@ -828,6 +832,113 @@ re-runs stay idempotent (duplicate-save 409s recover ids from the shelf, a
 fresh candidate/job pair adds rows) and smoke checks report PASS/FAIL per the
 sibling seed convention.
 
+## Running the AI Service
+
+`ai-service` listens on **port 5007** (`config-repo/ai-service.yaml`) and is
+**database-less** — it generates content on demand and persists nothing.
+
+```bash
+cd services/ai-service
+GEMINI_API_KEY=... mvn spring-boot:run      # and/or GROQ_API_KEY=...
+```
+
+### Environment variables
+
+| Variable | Required | Description |
+|---|---|---|
+| `GEMINI_API_KEY` | one of the two | Google Gemini key; the preferred provider |
+| `GROQ_API_KEY` | one of the two | Groq (OpenAI-compatible) key; the fallback provider |
+| `AI model / tuning` | no | `gemini.model`, `gemini.temperature`, `groq.model`, etc. all come from `config-repo/ai-service.yaml` |
+
+### Provider fallback
+
+Both backends implement one `AiProvider` contract; the `AiCompletion` facade
+walks them **Gemini → Groq** per request:
+
+- a provider without its key is skipped (`503` "not configured" never masks a working fallback),
+- a rate-limited / unreachable / malformed-output primary transparently falls through to the other,
+- only when **every** configured provider fails does the caller get `503` (a single at-fault
+  provider keeps its own `502` for malformed structured output),
+- **the service still boots with no keys at all** — health and validation work, generation answers `503`
+  (the `seed/smoke.py` probe flags this as SKIP),
+- model JSON replies are parsed with a tolerant extractor that strips markdown fences and
+  surrounding prose before deserialising into the typed response DTOs.
+
+### Authentication note
+
+Through the API gateway every `/api/ai/**` call requires any logged-in user
+(the gateway injects `X-User-Id` from the JWT, which ai-service ignores — there
+is no per-record ownership to enforce; output is generated, not stored). Direct
+local calls to port 5007 need no identity at all. Providers are never sent the
+caller's identity or email.
+
+## API — ai-service
+
+### Health & playground (`/api/ai`)
+
+| Method | Path | Access |
+|---|---|---|
+| `GET` | `/api/ai` | health/welcome |
+| `GET` | `/api/ai/default/{prompt}` | free playground with the portal assistant persona |
+| `POST` | `/api/ai/gemini/generate` | raw Gemini call (`AiGenerateRequest` → `AiGenerateResponse`) — bypasses fallback |
+| `POST` | `/api/ai/groq/generate` | raw Groq call — bypasses fallback |
+
+### Resume optimization (`/api/ai/resume`)
+
+| Method | Path | Body | Response |
+|---|---|---|---|
+| `POST` | `/summary` | `ResumeSummaryRequest` (target title, years, experiences/skills/educations) | `AiTextResponse` — ≤80-word ATS summary |
+| `POST` | `/experience-bullets` | `WorkExperienceRequest` (job title, company, raw description, achievements hint) | `WorkExperienceBulletResponse` — 4-5 action-verb bullets |
+| `POST` | `/improvements` | `ResumeImprovementRequest` (resume content, target title) | `ResumeImprovementResponse` — scored fix-list (`overallScore`, issues → priority) |
+| `POST` | `/career-feedback` | `CareerFeedbackRequest` | `CareerFeedbackResponse` — `profileStrength`, shortlisting issues, `targetJobs` |
+
+### Job auto-generate (`/api/ai/job`) — employer posting form
+
+| Method | Path | Input | Response |
+|---|---|---|---|
+| `POST` | `/description` | `JobDescriptionRequest` (title, skills, level, type, mode, category, context) | `AiTextResponse` — markdown description with 5 fixed sections |
+| `POST` | `/requirements?title=…&category=…` | query params | `AiTextResponse` — responsibilities + requirements block |
+| `POST` | `/responsibilities?title=…&category=…` | query params | `AiTextResponse` — plain action-verb bullet list |
+| `POST` | `/benefits?title=…&category=…&jobType=…` | query params | `AiTextResponse` — six competitive benefits |
+| `POST` | `/skills` | `JobTextInputRequest` (title + draft description) | `AiTextResponse` — 8-10 relevant skills |
+| `POST` | `/tags` | `JobTextInputRequest` | `AiTextResponse` — 8-10 discoverability tags |
+| `POST` | `/salary-suggestion` | `SalaryRangeRequest` | `SalaryRangeResponse` — `minSalary`/`maxSalary` numbers, `currency`, `period`, `marketInsight` |
+
+### Application support (`/api/ai/application`)
+
+| Method | Path | Body | Response |
+|---|---|---|---|
+| `POST` | `/cover-letter` | `CoverLetterRequest` (`jobTitle` + `candidateName` required) | `AiTextResponse` — ≤300-word first-person letter |
+| `POST` | `/screening-score` | `ScreeningScoreRequest` (all fields optional) | `ScreeningScoreResponse` — `score` + three sub-scores (0-100), matched/missing skills, strengths/concerns |
+| `POST` | `/skills-gap` | `SkillsGapRequest` | `SkillsGapResponse` — matched/missing/partial skills, learning path, `overallReadiness` |
+
+`screening-score` is what an employer UI will call to fill the application
+inbox's `aiScore` / `aiShortListStatus` columns (application-service keeps
+those decisions manual — the AI only informs them).
+
+### Natural-language job search (`/api/ai/search`)
+
+| Method | Path | Body | Response |
+|---|---|---|---|
+| `POST` | `/enhance` | `SearchEnhanceRequest` (free sentence ≤500) | `SearchEnhanceResponse` — `keywords`/`locations`/`skills` plus `jobTypes`/`workModes`/`experienceLevels` in the **exact job-service enums**, `minSalary` |
+| `POST` | `/alert-suggestion` | `JobAlertSuggestionRequest` | `JobAlertSuggestionResponse` — suggested keywords/locations/types/modes/levels/industries plus `reasoning` |
+
+Empty search fields stay `null`/`[]` — the prompt forbids invented enum values,
+so the output plugs straight into the public `GET /api/jobs` filter set.
+
+### Smoke suite
+
+`services/ai-service/seed/smoke.py` calls every surface above against a running
+service (port 5007, like the sibling seed scripts) and prints PASS/FAIL/SKIP
+per check:
+
+```bash
+python3 seed/smoke.py [base_url]    # SKIP line means no AI key reached the service
+```
+
+Nothing is persisted — each check is a live generation, so re-runs are free of
+state concerns.
+
 ## Roadmap
 
 - [x] User service (auth, user management)
@@ -837,9 +948,10 @@ sibling seed convention.
 - [x] Application service (apply, employer inbox, notes, status pipeline)
 - [x] Job preference service (saved jobs / bookmarks)
 - [x] Spring Cloud infrastructure in `cloud/` — eureka-server, config-server, api-gateway (JWT validation, role matrix, identity forwarding)
+- [x] AI service — resume optimization (summary, ATS bullets, improvement scoring, career feedback), job auto-generation (descriptions, requirements, benefits, skills/tags, salary band), application support (cover letters, screening scores, skills-gap), natural-language search (filter extraction, alert suggestions); dual-provider fallback Gemini → Groq
 - [ ] Per-record role/ownership checks inside every service (`@PreAuthorize` + cross-service ownership, e.g. job-service verifying `companyId`) — coarse role gating runs at the gateway today
 - [ ] Per-service JWT re-verification for defense in depth (services currently trust gateway-injected `X-User-*` headers)
-- [ ] Cross-service data resolution (job cards showing real company summaries, application counts, AI screening states)
+- [ ] Cross-service data resolution (job cards showing real company summaries, application counts, AI screening states) — `screening-score` now exists in ai-service; wiring the application-service inbox to it is pending
 - [ ] Additional business services (notifications)
-- [ ] AI-powered features (matching, recommendations)
+- [ ] AI-powered features (matching, recommendations) — beyond the ai-service generation suite: per-candidate job matching/recommendations
 - [ ] Container images via Jib for each service

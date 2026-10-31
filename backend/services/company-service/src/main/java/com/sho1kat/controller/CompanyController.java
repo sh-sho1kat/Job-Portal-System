@@ -5,7 +5,7 @@ import com.sho1kat.dto.companyServiceDto.request.CreateCompanyRequest;
 import com.sho1kat.dto.companyServiceDto.request.UpdateCompanyRequest;
 import com.sho1kat.dto.companyServiceDto.response.CompanyResponse;
 import com.sho1kat.dto.companyServiceDto.response.DetailedCompanyResponse;
-import com.sho1kat.service.CompanyService;
+import com.sho1kat.client.CompanyService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;

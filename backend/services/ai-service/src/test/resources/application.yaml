@@ -1,0 +1,29 @@
+# Test-only configuration: no AI keys, no config server, no discovery needed.
+# Both providers intentionally answer "unconfigured" (503) unless a test stubs
+# its own AiProvider bean — nothing external is ever contacted.
+spring:
+  application:
+    name: ai-service-test
+
+  cloud:
+    config:
+      enabled: false   # shadowed-by-test main yaml loses spring.config.import; config server is not needed in tests
+
+eureka:
+  client:
+    enabled: false     # no discovery server is running during tests
+
+gemini:
+  api:
+    key: ""            # deliberately empty -> provider unconfigured
+  model: gemini-test-model
+  max-output-tokens: 256
+  temperature: 0.2
+
+groq:
+  api-key: ""          # deliberately empty -> provider unconfigured
+  base-url: http://localhost.invalid/openai/v1
+  model: groq-test-model
+  max-completion-tokens: 256
+  temperature: 0.2
+  reasoning-effort: low

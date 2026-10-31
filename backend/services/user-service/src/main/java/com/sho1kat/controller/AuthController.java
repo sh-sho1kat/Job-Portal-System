@@ -7,7 +7,7 @@ import com.sho1kat.dto.user_service.request.RegisterRequest;
 import com.sho1kat.dto.user_service.response.AuthResponse;
 import com.sho1kat.dto.user_service.response.UserResponse;
 import com.sho1kat.security.AuthenticatedUser;
-import com.sho1kat.service.AuthService;
+import com.sho1kat.client.AuthService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;

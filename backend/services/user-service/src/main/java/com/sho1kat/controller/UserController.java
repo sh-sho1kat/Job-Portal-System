@@ -4,7 +4,7 @@ import com.sho1kat.dto.user_service.request.UpdateUserRequest;
 import com.sho1kat.dto.user_service.request.UpdateUserStatusRequest;
 import com.sho1kat.dto.user_service.response.UserResponse;
 import com.sho1kat.enums.UserRole;
-import com.sho1kat.service.UserService;
+import com.sho1kat.client.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;

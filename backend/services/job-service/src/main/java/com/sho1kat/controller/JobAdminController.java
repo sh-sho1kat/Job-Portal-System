@@ -2,7 +2,7 @@ package com.sho1kat.controller;
 
 import com.sho1kat.dto.jobServiceDto.response.DetailedJobResponse;
 import com.sho1kat.enums.JobStatus;
-import com.sho1kat.service.JobAdminService;
+import com.sho1kat.client.JobAdminService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;

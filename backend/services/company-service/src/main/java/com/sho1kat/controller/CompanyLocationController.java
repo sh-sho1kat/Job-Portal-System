@@ -2,7 +2,7 @@ package com.sho1kat.controller;
 
 import com.sho1kat.dto.companyServiceDto.request.LocationRequest;
 import com.sho1kat.dto.companyServiceDto.response.LocationResponse;
-import com.sho1kat.service.CompanyLocationService;
+import com.sho1kat.client.CompanyLocationService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;

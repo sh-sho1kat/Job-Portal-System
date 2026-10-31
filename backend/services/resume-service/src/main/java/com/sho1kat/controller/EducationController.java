@@ -2,7 +2,7 @@ package com.sho1kat.controller;
 
 import com.sho1kat.dto.ResumeServiceDto.request.EducationRequest;
 import com.sho1kat.dto.ResumeServiceDto.response.EducationResponse;
-import com.sho1kat.service.EducationService;
+import com.sho1kat.client.EducationService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;

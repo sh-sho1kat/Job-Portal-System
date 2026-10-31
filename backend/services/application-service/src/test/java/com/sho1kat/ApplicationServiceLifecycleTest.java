@@ -12,13 +12,12 @@ import com.sho1kat.enums.ApplicationStatus;
 import com.sho1kat.exception.ApiException;
 import com.sho1kat.repository.ApplicationNoteRepository;
 import com.sho1kat.repository.ApplicationRepository;
-import com.sho1kat.service.ApplicationNoteService;
-import com.sho1kat.service.ApplicationService;
+import com.sho1kat.client.ApplicationNoteService;
+import com.sho1kat.client.ApplicationService;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.data.domain.Page;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;

@@ -2,7 +2,7 @@ package com.sho1kat.controller;
 
 import com.sho1kat.dto.ResumeServiceDto.request.CertificationRequest;
 import com.sho1kat.dto.ResumeServiceDto.response.CertificationResponse;
-import com.sho1kat.service.CertificationService;
+import com.sho1kat.client.CertificationService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;

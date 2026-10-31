@@ -42,6 +42,7 @@ Import file: [`job-portal-system.postman_collection.json`](job-portal-system.pos
 | Resume Service, Job Preference Service | `ROLE_JOB_SEEKER` (or admin) | candidate-only features |
 | Application Service → Applications (candidate side) | `ROLE_JOB_SEEKER` that owns the applications | any logged-in user, ownership enforced downstream |
 | Application Service → Company Applications / Notes | `ROLE_EMPLOYER` (or admin) | employer inbox rule |
+| AI Service | any account | `/api/ai/**` authenticated; nothing owner-scoped (generation only) — needs `GEMINI_API_KEY`/`GROQ_API_KEY` in the service, a missing key answers `503` |
 
 Demo accounts are listed at the bottom of this file.
 
@@ -50,7 +51,8 @@ Demo accounts are listed at the bottom of this file.
 For debugging one service in isolation, override that service's `*BaseUrl`
 variable to its internal port — `user-service` 5001, `company-service` 5002,
 `job-service` 5003, `resume-service` 5004, `application-service` 5005,
-`job-preference-service` 5006. In this mode the requests carry the stand-in
+`job-preference-service` 5006, `ai-service` 5007. In this mode the requests
+carry the stand-in
 `X-User-Id: {{userId}}` header (kept for exactly this purpose), which equals
 the **last logged-in** account — services do not parse the JWT themselves.
 Never bypass the gateway in production: the service ports are internal and the

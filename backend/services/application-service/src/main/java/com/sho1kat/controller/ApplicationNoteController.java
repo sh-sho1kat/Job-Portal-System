@@ -2,7 +2,7 @@ package com.sho1kat.controller;
 
 import com.sho1kat.dto.applicationServiceDto.request.ApplicationNoteRequest;
 import com.sho1kat.dto.applicationServiceDto.response.ApplicationNoteResponse;
-import com.sho1kat.service.ApplicationNoteService;
+import com.sho1kat.client.ApplicationNoteService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;

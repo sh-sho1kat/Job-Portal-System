@@ -4,7 +4,7 @@ import com.sho1kat.dto.jobPreferenceDto.request.SavedJobRequest;
 import com.sho1kat.dto.jobPreferenceDto.response.SavedJobResponse;
 import com.sho1kat.exception.ApiException;
 import com.sho1kat.repository.SavedJobRepository;
-import com.sho1kat.service.SavedJobService;
+import com.sho1kat.client.SavedJobService;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;

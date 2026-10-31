@@ -2,7 +2,7 @@ package com.sho1kat.controller;
 
 import com.sho1kat.dto.ResumeServiceDto.request.AwardRequest;
 import com.sho1kat.dto.ResumeServiceDto.response.AwardResponse;
-import com.sho1kat.service.AwardService;
+import com.sho1kat.client.AwardService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;

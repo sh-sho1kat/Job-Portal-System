@@ -3,7 +3,7 @@ package com.sho1kat.controller;
 import com.sho1kat.dto.applicationServiceDto.request.CompanyApplicationFilterRequest;
 import com.sho1kat.dto.applicationServiceDto.response.ApplicationResponse;
 import com.sho1kat.enums.ApplicationStatus;
-import com.sho1kat.service.ApplicationService;
+import com.sho1kat.client.ApplicationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
