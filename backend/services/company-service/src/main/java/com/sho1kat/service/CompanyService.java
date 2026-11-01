@@ -1,4 +1,4 @@
-package com.sho1kat.client;
+package com.sho1kat.service;
 
 import com.sho1kat.dto.companyServiceDto.request.CompanySearchCriteria;
 import com.sho1kat.dto.companyServiceDto.request.CreateCompanyRequest;

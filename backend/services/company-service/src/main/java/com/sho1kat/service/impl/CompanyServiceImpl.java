@@ -1,4 +1,4 @@
-package com.sho1kat.client.impl;
+package com.sho1kat.service.impl;
 
 import com.sho1kat.dto.companyServiceDto.request.CompanySearchCriteria;
 import com.sho1kat.dto.companyServiceDto.request.CreateCompanyRequest;
@@ -13,7 +13,7 @@ import com.sho1kat.enums.SocialPlatform;
 import com.sho1kat.exception.ApiException;
 import com.sho1kat.mapper.CompanyMapper;
 import com.sho1kat.repository.CompanyRepository;
-import com.sho1kat.client.CompanyService;
+import com.sho1kat.service.CompanyService;
 import com.sho1kat.util.SlugUtils;
 import jakarta.persistence.criteria.Join;
 import jakarta.persistence.criteria.JoinType;

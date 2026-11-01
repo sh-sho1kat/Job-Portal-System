@@ -1,4 +1,4 @@
-package com.sho1kat.client.impl;
+package com.sho1kat.service.impl;
 
 import com.sho1kat.dto.companyServiceDto.request.LocationRequest;
 import com.sho1kat.dto.companyServiceDto.response.LocationResponse;
@@ -8,7 +8,7 @@ import com.sho1kat.exception.ApiException;
 import com.sho1kat.mapper.CompanyMapper;
 import com.sho1kat.repository.CompanyLocationRepository;
 import com.sho1kat.repository.CompanyRepository;
-import com.sho1kat.client.CompanyLocationService;
+import com.sho1kat.service.CompanyLocationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;

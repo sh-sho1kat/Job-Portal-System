@@ -1,4 +1,4 @@
-package com.sho1kat.client.impl;
+package com.sho1kat.service.impl;
 
 import com.sho1kat.dto.companyServiceDto.response.DetailedCompanyResponse;
 import com.sho1kat.entity.Company;
@@ -6,7 +6,7 @@ import com.sho1kat.enums.CompanyStatus;
 import com.sho1kat.exception.ApiException;
 import com.sho1kat.mapper.CompanyMapper;
 import com.sho1kat.repository.CompanyRepository;
-import com.sho1kat.client.CompanyAdminService;
+import com.sho1kat.service.CompanyAdminService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;

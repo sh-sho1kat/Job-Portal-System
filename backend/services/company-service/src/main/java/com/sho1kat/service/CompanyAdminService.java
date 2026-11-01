@@ -1,4 +1,4 @@
-package com.sho1kat.client;
+package com.sho1kat.service;
 
 import com.sho1kat.dto.companyServiceDto.response.DetailedCompanyResponse;
 import com.sho1kat.enums.CompanyStatus;
