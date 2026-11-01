@@ -13,7 +13,7 @@ spring:
           uri: "https://github.com/sh-sho1kat/Job-Portal-System"
           default-label: main
           search-paths: config-repo
-          clone-on-start: false
+          clone-on-start: true
 
 Eureka:
   client:
