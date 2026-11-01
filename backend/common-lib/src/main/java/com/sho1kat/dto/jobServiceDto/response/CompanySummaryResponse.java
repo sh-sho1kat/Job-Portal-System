@@ -3,9 +3,10 @@ package com.sho1kat.dto.jobServiceDto.response;
 import com.sho1kat.enums.IndustryType;
 
 /**
- * Company details denormalised onto job cards. job-service cannot fetch
- * company-service data until service discovery is wired up, so until then the
- * mapper fills only {@code id} and leaves the display fields {@code null}.
+ * Company details denormalised onto job cards. job-service populates these by
+ * looking the company up in company-service over service discovery
+ * ({@code CompanyClient}); when that lookup fails (company-service unreachable,
+ * or an unknown/deactivated company) the card degrades to {@code id}-only.
  */
 public record CompanySummaryResponse(
         Long id,

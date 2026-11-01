@@ -1,4 +1,4 @@
-package com.sho1kat.client.impl;
+package com.sho1kat.service.impl;
 
 import com.sho1kat.dto.jobServiceDto.response.DetailedJobResponse;
 import com.sho1kat.entity.Job;
@@ -7,7 +7,7 @@ import com.sho1kat.exception.ApiException;
 import com.sho1kat.mapper.JobMapper;
 import com.sho1kat.repository.JobRepository;
 import com.sho1kat.repository.JobSpecification;
-import com.sho1kat.client.JobAdminService;
+import com.sho1kat.service.JobAdminService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;

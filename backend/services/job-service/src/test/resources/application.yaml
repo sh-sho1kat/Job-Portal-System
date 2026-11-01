@@ -3,6 +3,11 @@ spring:
   cloud:
     config:
       enabled: false   # shadowed-by-test main yaml loses spring.config.import; config server is not needed in tests
+    # feign circuit breakers degrade company lookups (no eureka instance exists
+    # during tests) to id-only summaries via the fallback
+    openfeign:
+      circuitbreaker:
+        enabled: true
   application:
     name: job-service-test
 
@@ -15,6 +20,7 @@ spring:
   jpa:
     hibernate:
       ddl-auto: create-drop
+
 eureka:
   client:
     enabled: false     # no discovery server is running during tests

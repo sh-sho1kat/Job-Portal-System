@@ -1,4 +1,4 @@
-package com.sho1kat.client.impl;
+package com.sho1kat.service.impl;
 
 import com.sho1kat.dto.jobServiceDto.request.CreateJobRequest;
 import com.sho1kat.dto.jobServiceDto.request.JobSearchCriteria;
@@ -17,9 +17,9 @@ import com.sho1kat.mapper.JobMapper;
 import com.sho1kat.repository.JobCategoryRepository;
 import com.sho1kat.repository.JobRepository;
 import com.sho1kat.repository.JobSpecification;
-import com.sho1kat.client.JobService;
-import com.sho1kat.client.JobSkillService;
-import com.sho1kat.client.JobTagService;
+import com.sho1kat.service.JobService;
+import com.sho1kat.service.JobSkillService;
+import com.sho1kat.service.JobTagService;
 import com.sho1kat.util.SlugUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -81,9 +81,10 @@ public class JobServiceImpl implements JobService {
 
         verifyUserId(employerId, "post a job");
 
-        // companyId (and company ownership) are not verified yet: job-service has no
-        // company-service client until service discovery is wired up. Postings start
-        // as DRAFT and only exist publicly once the employer publishes them.
+        // companyId (and company ownership) are not verified yet: job-service can
+        // look companies up in company-service (CompanyClient) but a "does this
+        // posting belong to the caller's company" check is still pending. Postings
+        // start as DRAFT and only exist publicly once the employer publishes them.
         validate(request);
         JobCategory category = requireActiveCategory(request.categoryId());
         List<JobSkill> skills = jobSkillService.getJobSkillsByIds(request.skillIds());

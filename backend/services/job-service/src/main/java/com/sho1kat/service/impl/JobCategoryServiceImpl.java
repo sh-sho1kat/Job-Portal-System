@@ -1,4 +1,4 @@
-package com.sho1kat.client.impl;
+package com.sho1kat.service.impl;
 
 import com.sho1kat.dto.jobServiceDto.request.JobCategoryRequest;
 import com.sho1kat.dto.jobServiceDto.response.JobCategoryResponse;
@@ -7,7 +7,7 @@ import com.sho1kat.exception.ApiException;
 import com.sho1kat.mapper.JobCategoryMapper;
 import com.sho1kat.repository.JobCategoryRepository;
 import com.sho1kat.repository.JobRepository;
-import com.sho1kat.client.JobCategoryService;
+import com.sho1kat.service.JobCategoryService;
 import com.sho1kat.util.SlugUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;

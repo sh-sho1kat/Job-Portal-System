@@ -1,5 +1,6 @@
 package com.sho1kat.mapper;
 
+import com.sho1kat.client.CompanyClient;
 import com.sho1kat.dto.jobServiceDto.request.CreateJobRequest;
 import com.sho1kat.dto.jobServiceDto.request.UpdateJobRequest;
 import com.sho1kat.dto.jobServiceDto.response.CompanySummaryResponse;
@@ -12,6 +13,7 @@ import com.sho1kat.entity.JobCategory;
 import com.sho1kat.entity.JobSkill;
 import com.sho1kat.entity.JobTag;
 import com.sho1kat.enums.JobStatus;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
@@ -19,7 +21,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Component
+@RequiredArgsConstructor
 public class JobMapper {
+
+    private final CompanyClient companyClient;
 
     /**
      * New jobs start as DRAFT and are published by the employer (publishJob);
@@ -141,11 +146,12 @@ public class JobMapper {
     // ---- helpers ----
 
     /**
-     * TODO: populated once job-service can look companies up in company-service
-     * (service discovery pending); only the id is known locally.
+     * Company display fields are fetched from company-service over service
+     * discovery (see {@link CompanyClient}); failed lookups trip the
+     * circuit breaker and become the id-only shape the DTO documents.
      */
     private CompanySummaryResponse companySummary(Job job) {
-        return new CompanySummaryResponse(job.getCompanyId(), null, null, null, null);
+        return companyClient.getCompanyById(job.getCompanyId());
     }
 
     private JobLocation toLocation(String address, String city, String state, String country, String zipCode) {

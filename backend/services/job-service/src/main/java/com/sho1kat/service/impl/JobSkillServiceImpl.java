@@ -1,4 +1,4 @@
-package com.sho1kat.client.impl;
+package com.sho1kat.service.impl;
 
 import com.sho1kat.dto.jobServiceDto.request.JobSkillRequest;
 import com.sho1kat.dto.jobServiceDto.response.JobSkillResponse;
@@ -7,7 +7,7 @@ import com.sho1kat.exception.ApiException;
 import com.sho1kat.mapper.JobSkillMapper;
 import com.sho1kat.repository.JobRepository;
 import com.sho1kat.repository.JobSkillRepository;
-import com.sho1kat.client.JobSkillService;
+import com.sho1kat.service.JobSkillService;
 import com.sho1kat.util.SlugUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Sort;

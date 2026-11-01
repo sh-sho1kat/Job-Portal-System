@@ -493,8 +493,9 @@ Employment types: `FULL_TIME`, `PART_TIME`, `CONTRACT`, `INTERNSHIP`, `TEMPORARY
 - **Job tag**: `name` (required).
 - The public catalogue hides drafts/rejected/closed/deleted postings and
   expired deadlines; admin views show everything not deleted. `CompanySummaryResponse`
-  fields come denormalised onto job cards, but until the company-service
-  integration only `id` is populated.
+  fields are fetched from company-service over Eureka discovery via OpenFeign;
+  failed lookups (company-service down or unknown/deactivated company) trip the
+  circuit breaker and the card degrades to the id-only summary.
 - `DetailedJobResponse` carries real `viewCount`/`applicationCount` counters:
   views increment atomically on every public `GET /api/jobs/{id}`, application
   count is an integration point for the application flow (`incrementApplicationCount`,

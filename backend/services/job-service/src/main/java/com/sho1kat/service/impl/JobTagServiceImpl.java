@@ -1,4 +1,4 @@
-package com.sho1kat.client.impl;
+package com.sho1kat.service.impl;
 
 import com.sho1kat.dto.jobServiceDto.request.JobTagRequest;
 import com.sho1kat.dto.jobServiceDto.response.JobTagResponse;
@@ -7,7 +7,7 @@ import com.sho1kat.exception.ApiException;
 import com.sho1kat.mapper.JobTagMapper;
 import com.sho1kat.repository.JobRepository;
 import com.sho1kat.repository.JobTagRepository;
-import com.sho1kat.client.JobTagService;
+import com.sho1kat.service.JobTagService;
 import com.sho1kat.util.SlugUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Sort;
