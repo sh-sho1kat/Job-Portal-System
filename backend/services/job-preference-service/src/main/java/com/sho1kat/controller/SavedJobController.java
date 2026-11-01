@@ -2,7 +2,7 @@ package com.sho1kat.controller;
 
 import com.sho1kat.dto.jobPreferenceDto.request.SavedJobRequest;
 import com.sho1kat.dto.jobPreferenceDto.response.SavedJobResponse;
-import com.sho1kat.client.SavedJobService;
+import com.sho1kat.service.SavedJobService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;

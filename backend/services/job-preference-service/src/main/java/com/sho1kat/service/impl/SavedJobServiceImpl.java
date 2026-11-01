@@ -1,4 +1,4 @@
-package com.sho1kat.client.impl;
+package com.sho1kat.service.impl;
 
 import com.sho1kat.dto.jobPreferenceDto.request.SavedJobRequest;
 import com.sho1kat.dto.jobPreferenceDto.response.SavedJobResponse;
@@ -6,7 +6,7 @@ import com.sho1kat.entity.SavedJob;
 import com.sho1kat.exception.ApiException;
 import com.sho1kat.mapper.SavedJobMapper;
 import com.sho1kat.repository.SavedJobRepository;
-import com.sho1kat.client.SavedJobService;
+import com.sho1kat.service.SavedJobService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
