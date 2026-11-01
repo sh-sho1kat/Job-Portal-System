@@ -1,4 +1,4 @@
-package com.sho1kat.client;
+package com.sho1kat.service;
 
 import com.sho1kat.dto.ResumeServiceDto.request.ResumeRequest;
 import com.sho1kat.dto.ResumeServiceDto.request.PersonalInfoRequest;

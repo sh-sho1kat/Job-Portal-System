@@ -1,4 +1,4 @@
-package com.sho1kat.client.impl;
+package com.sho1kat.service.impl;
 
 import com.sho1kat.dto.ResumeServiceDto.request.CertificationRequest;
 import com.sho1kat.dto.ResumeServiceDto.response.CertificationResponse;
@@ -7,8 +7,8 @@ import com.sho1kat.entity.Resume;
 import com.sho1kat.exception.ApiException;
 import com.sho1kat.mapper.CertificationMapper;
 import com.sho1kat.repository.CertificationRepository;
-import com.sho1kat.client.CertificationService;
-import com.sho1kat.client.ResumeService;
+import com.sho1kat.service.CertificationService;
+import com.sho1kat.service.ResumeService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;

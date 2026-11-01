@@ -1,4 +1,4 @@
-package com.sho1kat.client.impl;
+package com.sho1kat.service.impl;
 
 import com.sho1kat.dto.ResumeServiceDto.request.LanguageProficiencyRequest;
 import com.sho1kat.dto.ResumeServiceDto.response.LanguageProficiencyResponse;
@@ -7,8 +7,8 @@ import com.sho1kat.entity.Resume;
 import com.sho1kat.exception.ApiException;
 import com.sho1kat.mapper.LanguageMapper;
 import com.sho1kat.repository.LanguageRepository;
-import com.sho1kat.client.LanguageService;
-import com.sho1kat.client.ResumeService;
+import com.sho1kat.service.LanguageService;
+import com.sho1kat.service.ResumeService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;

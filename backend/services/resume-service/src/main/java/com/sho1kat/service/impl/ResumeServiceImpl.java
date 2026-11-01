@@ -1,4 +1,4 @@
-package com.sho1kat.client.impl;
+package com.sho1kat.service.impl;
 
 import com.sho1kat.dto.ResumeServiceDto.request.ResumeRequest;
 import com.sho1kat.dto.ResumeServiceDto.request.PersonalInfoRequest;
@@ -19,7 +19,7 @@ import com.sho1kat.repository.ProjectRepository;
 import com.sho1kat.repository.ResumeRepository;
 import com.sho1kat.repository.ResumeSkillRepository;
 import com.sho1kat.repository.WorkExperienceRepository;
-import com.sho1kat.client.ResumeService;
+import com.sho1kat.service.ResumeService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;

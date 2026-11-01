@@ -1,4 +1,4 @@
-package com.sho1kat.client.impl;
+package com.sho1kat.service.impl;
 
 import com.sho1kat.dto.ResumeServiceDto.request.ResumeSkillRequest;
 import com.sho1kat.dto.ResumeServiceDto.response.ResumeSkillResponse;
@@ -7,8 +7,8 @@ import com.sho1kat.entity.ResumeSkill;
 import com.sho1kat.exception.ApiException;
 import com.sho1kat.mapper.ResumeSkillMapper;
 import com.sho1kat.repository.ResumeSkillRepository;
-import com.sho1kat.client.ResumeService;
-import com.sho1kat.client.ResumeSkillService;
+import com.sho1kat.service.ResumeService;
+import com.sho1kat.service.ResumeSkillService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
