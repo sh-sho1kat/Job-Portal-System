@@ -1,4 +1,4 @@
-package com.sho1kat.client;
+package com.sho1kat.service.impl;
 
 import com.sho1kat.dto.user_service.request.ChangePasswordRequest;
 import com.sho1kat.dto.user_service.request.LoginRequest;
@@ -15,6 +15,7 @@ import com.sho1kat.mapper.UserMapper;
 import com.sho1kat.repository.RefreshTokenRepository;
 import com.sho1kat.repository.UserRepository;
 import com.sho1kat.security.JwtService;
+import com.sho1kat.service.AuthService;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -69,16 +70,6 @@ public class AuthServiceImpl implements AuthService {
         return buildAuthResponse(user);
     }
 
-    private User authenticateUser(@NotBlank(message = "Email is required") @Email(message = "Email is not valid") String email, @NotBlank(message = "Password is required") String password) {
-        User user = userRepository.findByEmailIgnoreCase(email)
-                .orElseThrow(() -> unauthorized("No User found with the provided email " + email));
-        if (!passwordEncoder.matches(password, user.getPasswordHash())) {
-            throw unauthorized("Invalid email or password");
-        }
-        validateUserStatus(user);
-        return user;
-    }
-
     @Override
     @Transactional(noRollbackFor = ApiException.class)
     public AuthResponse refresh(RefreshTokenRequest request) {
@@ -124,6 +115,16 @@ public class AuthServiceImpl implements AuthService {
 
         user.setPasswordHash(passwordEncoder.encode(request.newPassword()));
         refreshTokenRepository.revokeAllByUserId(userId); // force re-login on every device
+    }
+
+    private User authenticateUser(@NotBlank(message = "Email is required") @Email(message = "Email is not valid") String email, @NotBlank(message = "Password is required") String password) {
+        User user = userRepository.findByEmailIgnoreCase(email)
+                .orElseThrow(() -> unauthorized("No User found with the provided email " + email));
+        if (!passwordEncoder.matches(password, user.getPasswordHash())) {
+            throw unauthorized("Invalid email or password");
+        }
+        validateUserStatus(user);
+        return user;
     }
 
     private AuthResponse buildAuthResponse(User user) {

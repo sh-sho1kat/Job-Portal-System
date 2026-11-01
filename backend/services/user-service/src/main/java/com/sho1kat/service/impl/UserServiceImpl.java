@@ -1,4 +1,4 @@
-package com.sho1kat.client;
+package com.sho1kat.service.impl;
 
 import com.sho1kat.dto.user_service.request.UpdateUserRequest;
 import com.sho1kat.dto.user_service.request.UpdateUserStatusRequest;
@@ -10,6 +10,7 @@ import com.sho1kat.exception.ApiException;
 import com.sho1kat.mapper.UserMapper;
 import com.sho1kat.repository.RefreshTokenRepository;
 import com.sho1kat.repository.UserRepository;
+import com.sho1kat.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
