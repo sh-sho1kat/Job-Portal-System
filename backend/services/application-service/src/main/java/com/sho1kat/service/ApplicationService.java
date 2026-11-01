@@ -1,4 +1,4 @@
-package com.sho1kat.client;
+package com.sho1kat.service;
 
 import com.sho1kat.dto.applicationServiceDto.request.ApplicationRequest;
 import com.sho1kat.dto.applicationServiceDto.request.CompanyApplicationFilterRequest;

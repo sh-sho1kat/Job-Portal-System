@@ -1,0 +1,13 @@
+package com.sho1kat.client;
+
+import com.sho1kat.client.fallback.CompanyClientFallbackFactory;
+import com.sho1kat.dto.jobServiceDto.response.CompanySummaryResponse;
+import org.springframework.cloud.openfeign.FeignClient;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+
+@FeignClient(name = "company-service", fallbackFactory = CompanyClientFallbackFactory.class)
+public interface CompanyClient {
+    @GetMapping("/api/companies/{id}")
+    CompanySummaryResponse getCompanyById(@PathVariable("id") Long id);
+}

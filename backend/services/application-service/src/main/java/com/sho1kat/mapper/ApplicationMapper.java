@@ -1,5 +1,8 @@
 package com.sho1kat.mapper;
 
+import com.sho1kat.client.CompanyClient;
+import com.sho1kat.client.JobClient;
+import com.sho1kat.client.UserClient;
 import com.sho1kat.dto.applicationServiceDto.request.ApplicationRequest;
 import com.sho1kat.dto.applicationServiceDto.response.ApplicationNoteResponse;
 import com.sho1kat.dto.applicationServiceDto.response.ApplicationResponse;
@@ -10,12 +13,18 @@ import com.sho1kat.dto.jobServiceDto.response.JobSummaryResponse;
 import com.sho1kat.dto.user_service.response.UserResponse;
 import com.sho1kat.entity.Application;
 import com.sho1kat.enums.ApplicationStatus;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
 
 @Component
+@RequiredArgsConstructor
 public class ApplicationMapper {
+
+    private final CompanyClient companyClient;
+    private final JobClient jobClient;
+    private final UserClient userClient;
 
     public Application toEntity(Long candidateId, ApplicationRequest request) {
         return Application.builder()
@@ -59,31 +68,43 @@ public class ApplicationMapper {
 
     // ---- cross-service stand-ins (only the ids are known locally) ----
 
-    /**
-     * TODO: populated once application-service can look candidates up in
-     * user-service (service discovery pending); only the id is known here.
-     */
+//    /**
+//     * TODO: populated once application-service can look candidates up in
+//     * user-service (service discovery pending); only the id is known here.
+//     */
     private UserResponse candidateSummary(Application application) {
         return new UserResponse(
                 application.getCandidateId(),
                 null, null, null, null, null,
                 null, null, null, null, null, null);
     }
+//
+//    /**
+//     * TODO: populated once application-service can look companies up in
+//     * company-service (service discovery pending); only the id is known here.
+//     */
+//    private CompanySummaryResponse companySummary(Application application) {
+//        return new CompanySummaryResponse(application.getCompanyId(), null, null, null, null);
+//    }
+//
+//    /**
+//     * TODO: populated once application-service can look jobs up in
+//     * job-service (service discovery pending); only the id is known here.
+//     */
+//    private JobSummaryResponse jobSummary(Application application) {
+//        return new JobSummaryResponse(application.getJobId(), null, null, null, null);
+//    }
 
-    /**
-     * TODO: populated once application-service can look companies up in
-     * company-service (service discovery pending); only the id is known here.
-     */
+//    private UserResponse candidateSummary(Application application) {
+//        return userClient.getUserById(application.getCandidateId());
+//    }
+
     private CompanySummaryResponse companySummary(Application application) {
-        return new CompanySummaryResponse(application.getCompanyId(), null, null, null, null);
+        return companyClient.getCompanyById(application.getCompanyId());
     }
 
-    /**
-     * TODO: populated once application-service can look jobs up in
-     * job-service (service discovery pending); only the id is known here.
-     */
     private JobSummaryResponse jobSummary(Application application) {
-        return new JobSummaryResponse(application.getJobId(), null, null, null, null);
+        return jobClient.getJobById(application.getJobId());
     }
 
     private String trim(String value) {

@@ -1,4 +1,4 @@
-package com.sho1kat.client.impl;
+package com.sho1kat.service.impl;
 
 import com.sho1kat.dto.applicationServiceDto.request.ApplicationRequest;
 import com.sho1kat.dto.applicationServiceDto.request.CompanyApplicationFilterRequest;
@@ -12,7 +12,7 @@ import com.sho1kat.mapper.ApplicationNoteMapper;
 import com.sho1kat.repository.ApplicationNoteRepository;
 import com.sho1kat.repository.ApplicationRepository;
 import com.sho1kat.repository.ApplicationSpecification;
-import com.sho1kat.client.ApplicationService;
+import com.sho1kat.service.ApplicationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;

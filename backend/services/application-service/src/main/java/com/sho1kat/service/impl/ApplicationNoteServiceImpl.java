@@ -1,4 +1,4 @@
-package com.sho1kat.client.impl;
+package com.sho1kat.service.impl;
 
 import com.sho1kat.dto.applicationServiceDto.request.ApplicationNoteRequest;
 import com.sho1kat.dto.applicationServiceDto.response.ApplicationNoteResponse;
@@ -8,7 +8,7 @@ import com.sho1kat.exception.ApiException;
 import com.sho1kat.mapper.ApplicationNoteMapper;
 import com.sho1kat.repository.ApplicationNoteRepository;
 import com.sho1kat.repository.ApplicationRepository;
-import com.sho1kat.client.ApplicationNoteService;
+import com.sho1kat.service.ApplicationNoteService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
