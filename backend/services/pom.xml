@@ -50,6 +50,7 @@
         <module>application-service</module>
         <module>job-preference-service</module>
         <module>ai-service</module>
+        <module>notification-service</module>
     </modules>
 
 </project>
