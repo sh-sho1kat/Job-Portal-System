@@ -69,7 +69,7 @@ public class MailServiceImpl implements MailService {
                 request.companyName(),
                 request.companyName()
         );
-        String subject = "Congratulations! Your CV is shortlisted";
+        String subject = "Congratulations! Your CV has been shortlisted";
         sendPlainTextMail(
                 to,
                 subject,
@@ -92,7 +92,7 @@ public class MailServiceImpl implements MailService {
                 We wish you all the best in your future career.
 
                 Best regards,
-                %s
+                HR, %s
                 """.formatted(
                 getName(request.candidateName()),
                 request.jobTitle(),
@@ -122,7 +122,7 @@ public class MailServiceImpl implements MailService {
                 We are excited to have you join our team.
 
                 Best regards,
-                %s
+                HR, %s
                 """.formatted(
                 getName(request.candidateName()),
                 request.jobTitle(),
