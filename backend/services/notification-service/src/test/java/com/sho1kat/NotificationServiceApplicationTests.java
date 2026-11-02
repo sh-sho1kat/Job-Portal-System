@@ -1,4 +1,4 @@
-package com.sho1kt;
+package com.sho1kat;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;

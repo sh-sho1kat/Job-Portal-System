@@ -1,4 +1,4 @@
-package com.sho1kt.controller;
+package com.sho1kat.controller;
 
 import com.sho1kat.dto.ApiResponse;
 import org.springframework.web.bind.annotation.RequestMapping;
