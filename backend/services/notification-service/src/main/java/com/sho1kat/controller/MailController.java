@@ -1,9 +1,7 @@
 package com.sho1kat.controller;
 
 import com.sho1kat.dto.MessageResponse;
-import com.sho1kat.dto.notificationServiceDto.request.HiringRequest;
-import com.sho1kat.dto.notificationServiceDto.request.RejectionRequest;
-import com.sho1kat.dto.notificationServiceDto.request.ShortListedRequest;
+import com.sho1kat.event.ApplicationStatusUpdateEvent;
 import com.sho1kat.service.MailService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -28,37 +26,33 @@ public class MailController {
 
     @PostMapping("/status")
     public ResponseEntity<MessageResponse> sendStatusChangeMail(
-            @RequestParam String to,
-            @RequestParam String status
+            @RequestBody ApplicationStatusUpdateEvent event
     ) {
-        mailService.sendStatusChangeMail(to, status);
+        mailService.sendStatusChangeMail(event);
         return ResponseEntity.ok(new MessageResponse("Status update email sent"));
     }
 
     @PostMapping("/shortlisted")
     public ResponseEntity<MessageResponse> sendShortListedMail(
-            @RequestParam String to,
-            @RequestBody ShortListedRequest request
+            @RequestBody ApplicationStatusUpdateEvent event
     ) {
-        mailService.sendShortListedMail(to, request);
+        mailService.sendShortListedMail(event);
         return ResponseEntity.ok(new MessageResponse("Shortlisted email sent"));
     }
 
     @PostMapping("/rejection")
     public ResponseEntity<MessageResponse> sendRejectionMail(
-            @RequestParam String to,
-            @RequestBody RejectionRequest request
+            @RequestBody ApplicationStatusUpdateEvent event
     ) {
-        mailService.sendRejectionMail(to, request);
+        mailService.sendRejectionMail(event);
         return ResponseEntity.ok(new MessageResponse("Rejection email sent"));
     }
 
     @PostMapping("/hiring")
     public ResponseEntity<MessageResponse> sendHiringMail(
-            @RequestParam String to,
-            @RequestBody HiringRequest request
+            @RequestBody ApplicationStatusUpdateEvent event
     ) {
-        mailService.sendHiringMail(to, request);
+        mailService.sendHiringMail(event);
         return ResponseEntity.ok(new MessageResponse("Hiring email sent"));
     }
 

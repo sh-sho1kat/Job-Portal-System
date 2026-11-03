@@ -1,8 +1,6 @@
 package com.sho1kat.service.impl;
 
-import com.sho1kat.dto.notificationServiceDto.request.HiringRequest;
-import com.sho1kat.dto.notificationServiceDto.request.RejectionRequest;
-import com.sho1kat.dto.notificationServiceDto.request.ShortListedRequest;
+import com.sho1kat.event.ApplicationStatusUpdateEvent;
 import com.sho1kat.service.MailService;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
@@ -29,17 +27,24 @@ public class MailServiceImpl implements MailService {
     }
 
     @Override
-    public void sendStatusChangeMail(String to, String status) {
+    public void sendStatusChangeMail(ApplicationStatusUpdateEvent event) {
+        String to = event.email();
+        String oldStatus = event.oldStatus().toString();
+        String newStatus = event.newStatus().toString();
+        String CandidateName = event.FirstName() + " " + event.MiddleName() + " " + event.LastName();
+        String CompanyName = event.companyName();
 
         String body = """
-                Hello,
+                Dear %s,
 
                 Your application status has been updated.
 
                 Current Status: %s
+                Previous Status: %s
 
-                Thank you.
-                """.formatted(status);
+                Best regards,
+                HR, %s
+                """.formatted(CandidateName, newStatus, oldStatus, CompanyName);
         String subject = "Application Status Updated";
 
         sendPlainTextMail(
@@ -50,7 +55,10 @@ public class MailServiceImpl implements MailService {
     }
 
     @Override
-    public void sendShortListedMail(String to, ShortListedRequest request) {
+    public void sendShortListedMail(ApplicationStatusUpdateEvent event) {
+        String to = event.email();
+        String CandidateName = event.FirstName() + " " + event.MiddleName() + " " + event.LastName();
+        String CompanyName = event.companyName();
 
         String body = """
                 Dear %s,
@@ -64,10 +72,10 @@ public class MailServiceImpl implements MailService {
                 Best regards,
                 HR, %s
                 """.formatted(
-                getName(request.candidateName()),
-                request.jobTitle(),
-                request.companyName(),
-                request.companyName()
+                CandidateName,
+                event.jobTitle(),
+                CompanyName,
+                CompanyName
         );
         String subject = "Congratulations! Your CV has been shortlisted";
         sendPlainTextMail(
@@ -78,7 +86,10 @@ public class MailServiceImpl implements MailService {
     }
 
     @Override
-    public void sendRejectionMail(String to, RejectionRequest request) {
+    public void sendRejectionMail(ApplicationStatusUpdateEvent event) {
+        String to = event.email();
+        String CandidateName = event.FirstName() + " " + event.MiddleName() + " " + event.LastName();
+        String CompanyName = event.companyName();
 
         String body = """
                 Dear %s,
@@ -94,10 +105,10 @@ public class MailServiceImpl implements MailService {
                 Best regards,
                 HR, %s
                 """.formatted(
-                getName(request.candidateName()),
-                request.jobTitle(),
-                request.companyName(),
-                request.companyName()
+                CandidateName,
+                event.jobTitle(),
+                CompanyName,
+                CompanyName
         );
         String subject = "Update Regarding Your Application";
         sendPlainTextMail(
@@ -108,7 +119,10 @@ public class MailServiceImpl implements MailService {
     }
 
     @Override
-    public void sendHiringMail(String to, HiringRequest request) {
+    public void sendHiringMail(ApplicationStatusUpdateEvent event) {
+        String to = event.email();
+        String CandidateName = event.FirstName() + " " + event.MiddleName() + " " + event.LastName();
+        String CompanyName = event.companyName();
 
         String body = """
                 Dear %s,
@@ -124,10 +138,10 @@ public class MailServiceImpl implements MailService {
                 Best regards,
                 HR, %s
                 """.formatted(
-                getName(request.candidateName()),
-                request.jobTitle(),
-                request.companyName(),
-                request.companyName()
+                getName(CandidateName),
+                event.jobTitle(),
+                CompanyName,
+                CompanyName
         );
         String subject = "Congratulations! You Have Been Selected";
         sendPlainTextMail(
