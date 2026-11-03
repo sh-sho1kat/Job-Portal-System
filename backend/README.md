@@ -271,7 +271,7 @@ mvn spring-boot:run
 `GET /` on the service root serves as a lightweight welcome/health endpoint.
 
 A ready-made Postman collection is available at
-`common-lib/postman/job-portal-system.postman_collection.json` — every request
+`postman` — every request
 in it targets the gateway (`http://localhost:5000`) by default.
 
 ## Running the Company Service
