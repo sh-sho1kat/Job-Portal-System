@@ -81,6 +81,7 @@ public class JobServiceImpl implements JobService {
 
         verifyUserId(employerId, "post a job");
 
+        //todo:
         // companyId (and company ownership) are not verified yet: job-service can
         // look companies up in company-service (CompanyClient) but a "does this
         // posting belong to the caller's company" check is still pending. Postings
