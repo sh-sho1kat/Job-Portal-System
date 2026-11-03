@@ -21,7 +21,7 @@ This directory contains the parent POM and all backend modules.
 backend/
 ├── pom.xml              # parent POM (dependency & plugin management)
 ├── common-lib/          # job-portal-common — shared DTOs, enums, exceptions
-│   └── postman/         # Postman collection for the API
+├── postman/             # job-portal-system.postman_collection.json — every request targets the gateway by default
 ├── cloud/               # job-portal-cloud — Spring Cloud infrastructure
 │   ├── eureka-server/   # service discovery (port 8761)
 │   ├── config-server/   # externalized config (port 8888, serves config-repo/ from GitHub)
@@ -33,7 +33,8 @@ backend/
     ├── resume-service/  # candidate resume builder (port 5004)
     ├── application-service/ # candidate applications & employer review inbox (port 5005)
     ├── job-preference-service/ # candidate saved jobs / bookmarks (port 5006)
-    └── ai-service/      # AI-powered generation (resume, jobs, applications, search) (port 5007)
+    ├── ai-service/      # AI-powered generation (resume, jobs, applications, search) (port 5007)
+    └── notification-service/ # Kafka-driven application status emails (port 5008)
 ```
 
 | Module | Artifact | Description |
@@ -49,14 +50,17 @@ backend/
 | `services/application-service` | `application-service` | Candidate applications, employer review inbox, internal notes |
 | `services/job-preference-service` | `job-preference-service` | Candidate saved jobs (bookmarks) with personal notes |
 | `services/ai-service` | `ai-service` | AI content generation: resume optimization, job auto-generation, cover letters & screening, natural-language search |
+| `services/notification-service` | `notification-service` | Email notifications: Kafka consumer over `application.status.change` turning candidate status moves into plain-text template mails (shortlisted / rejected / hired / generic update) |
 
 ## Requirements
 
 - **JDK 25**
 - **Maven 3.8+**
-- **PostgreSQL** (user-service database: `user_db`; company-service database: `company_db`; job-service database: `job_db`; resume-service database: `resume_db`; application-service database: `application_db`; job-preference-service database: `job_preference_db`; *ai-service is database-less*)
+- **PostgreSQL** (user-service database: `user_db`; company-service database: `company_db`; job-service database: `job_db`; resume-service database: `resume_db`; application-service database: `application_db`; job-preference-service database: `job_preference_db`; *ai-service and notification-service are database-less*)
 - **One shared `JWT_SECRET`** (`openssl rand -base64 32`) — must be given to `user-service` *and* `api-gateway`, since the gateway verifies the tokens user-service signs
 - **`GEMINI_API_KEY` (Google AI Studio) and/or `GROQ_API_KEY` (groq.com) for ai-service** — at least one; Gemini is preferred, Groq is the automatic fallback
+- **Apache Kafka reachable on `KAFKA_BOOTSTRAP_SERVERS` (default `localhost:9092`)** — application-service publishes application-status events, notification-service consumes them
+- **SMTP account for notification-service** (`MAIL_USERNAME` / `MAIL_PASSWORD`, default host `smtp.gmail.com` on port `587` with STARTTLS) — the address mails are sent from
 
 ### Ports
 
@@ -72,6 +76,7 @@ backend/
 | application-service | 5005 |
 | job-preference-service | 5006 |
 | ai-service | 5007 |
+| notification-service | 5008 |
 
 ## Build & Test
 
@@ -100,7 +105,7 @@ Startup order (later steps look up earlier ones; each step is a separate termina
 ```bash
 cd cloud/eureka-server && mvn spring-boot:run     # 1. discovery  → http://localhost:8761
 cd cloud/config-server && mvn spring-boot:run     # 2. config     → http://localhost:8888 (serves config-repo/)
-cd services/user-service && mvn spring-boot:run   # 3. services   (any subset; need DB_USERNAME/DB_PASSWORD/JWT_SECRET, ai-service needs an AI key)
+cd services/user-service && mvn spring-boot:run   # 3. services   (any subset; need DB_USERNAME/DB_PASSWORD/JWT_SECRET, ai-service needs an AI key, notification-service needs Kafka + SMTP credentials)
 cd cloud/api-gateway && mvn spring-boot:run       # 4. gateway    → http://localhost:5000 (needs JWT_SECRET)
 ```
 
@@ -121,8 +126,9 @@ JWT_SECRET=$(openssl rand -base64 32) mvn spring-boot:run
 
 Every HTTP request goes to the gateway (`http://localhost:5000/api/...`); it
 looks the destination up in Eureka by service name and proxies the response.
-The routing table (`com.sho1kat.config.RouteConfig`) covers all eight services'
-API prefixes.
+The routing table (`com.sho1kat.config.RouteConfig`) covers the API prefixes of
+the routed services — notification-service has no route yet, so it is called on
+its own port for now (see its run section below).
 
 ### Environment variables
 
@@ -211,7 +217,7 @@ Application errors coming from the services keep the documented
 
 In production **only the gateway port is public** (firewall / Docker network /
 L7 load balancer in front). The service ports are internal, because they trust
-the gateway-injected `X-User-*` headers. Never expose 5001-5007 directly.
+the gateway-injected `X-User-*` headers. Never expose 5001-5008 directly.
 A hardening follow-up is re-verifying the forwarded JWT inside each service;
 then the header trust becomes a secondary guard rather than the only one.
 
@@ -272,7 +278,10 @@ mvn spring-boot:run
 
 A ready-made Postman collection is available at
 `postman` — every request
-in it targets the gateway (`http://localhost:5000`) by default.
+in it targets the gateway (`http://localhost:5000`) by default; the only
+exception is the Notification Service folder, whose `notificationBaseUrl`
+defaults to the direct port `http://localhost:5008` because the gateway has no
+route for `/api/notifications/**` yet.
 
 ## Running the Company Service
 
@@ -299,7 +308,7 @@ requests come **through the API gateway** that header is set from the verified
 JWT (gateway strips anything the client sent), and the gateway additionally
 gates writes/admin areas to `EMPLOYER`/`ADMIN` roles. When you hit port 5002
 directly in **local development**, you supply the header yourself — exactly the
-stand-in behaviour (`com.sho1kat.controller.RequesterId` documents it). Public
+stand-in behaviour (`com.sho1kat.security.RequesterContext` documents it). Public
 catalogue endpoints need no header either way.
 
 ## API — company-service
@@ -377,11 +386,13 @@ Same pattern as company-service: `job-service` trusts the `X-User-Id` header as
 the caller's identity. Through the API gateway the header arrives verified (and
 the gateway only lets `EMPLOYER`/`ADMIN` calls reach the write endpoints),
 while direct local calls to port 5003 supply it manually
-(`com.sho1kat.controller.RequesterId` documents the stand-in). Public search
-endpoints need no header. `companyId` is still only supplied in the payload —
-cross-checking that the caller actually owns the company before accepting
-postings (by matching `X-User-Id` against company-service data) remains a
-pending integration.
+(`com.sho1kat.security.RequesterContext` documents the stand-in). Public search
+endpoints need no header. `POST /api/jobs/create` now verifies that the
+`companyId` in the payload actually belongs to the caller: the service asks
+company-service for the caller's company (`/api/companies/my-company`, with the
+verified `X-User-Id` forwarded over Feign) and rejects mismatches with
+`403` before persisting anything — a company-service outage answers `503`
+rather than skipping the check.
 
 ## API — job-service
 
@@ -940,6 +951,91 @@ python3 seed/smoke.py [base_url]    # SKIP line means no AI key reached the serv
 Nothing is persisted — each check is a live generation, so re-runs are free of
 state concerns.
 
+## Running the Notification Service
+
+`notification-service` listens on **port 5008**
+(`config-repo/notification-service.yaml`) and is **database-less** like
+ai-service — it sends mails on demand and persists nothing. It is the consumer
+side of the application-status pipeline: application-service publishes
+`ApplicationStatusUpdateEvent`s to the Kafka topic
+`application.status.change` on every employer status move, and the service
+turns them into plain-text SMTP mails for the candidate.
+
+```bash
+cd services/notification-service
+mvn spring-boot:run
+```
+
+### Environment variables
+
+| Variable | Required | Description |
+|---|---|---|
+| `MAIL_USERNAME` | yes | SMTP account — also used as the `From:` address (`spring.mail.username`) |
+| `MAIL_PASSWORD` | yes | SMTP password (Gmail: use an app password) |
+| `MAIL_HOST` | no | SMTP host (default `smtp.gmail.com`) |
+| `MAIL_PORT` | no | SMTP port (default `587`, STARTTLS) |
+| `KAFKA_BOOTSTRAP_SERVERS` | no | Kafka brokers (default `localhost:9092`) |
+
+### The status-change pipeline
+
+```
+employer moves a status in application-service
+  (POST /api/companies/{companyId}/applications/{applicationId}/status)
+        │  ApplicationEventPublisher
+        ▼
+  Kafka topic: application.status.change
+        │  NotificationKafkaConsumer (group: notification-service)
+        ▼
+  newStatus routing:
+    SHORTLISTED   → sendShortListedMail   "Congratulations! Your CV has been shortlisted"
+    REJECTED      → sendRejectionMail     "Update Regarding Your Application"
+    HIRED         → sendHiringMail        "Congratulations! You Have Been Selected"
+    anything else → sendStatusChangeMail  "Application Status Updated"
+```
+
+The event (`com.sho1kat.event.ApplicationStatusUpdateEvent` in common-lib)
+carries `oldStatus`, `newStatus`, the candidate's name (`FirstName`,
+`MiddleName`, `LastName`), `email` and the `jobTitle`/`companyName` pair for
+the letter body. One caveat while cross-service identity lookup is still
+pending: the publisher fills the candidate contact fields with demo
+placeholders (see the `// Enable when interservice authentication is
+configured.` comment in `ApplicationEventPublisher`), so mails name the
+recipient only once user-service lookups are wired in.
+
+### Authentication note
+
+Through the API gateway the service is not routed yet (`RouteConfig` has no
+`/api/notifications/**` entry), so local development calls port 5008 directly.
+None of the endpoints read `X-User-Id` today and there is no per-record
+ownership at all — nothing is stored, and the mail content comes entirely from
+the caller-provided event. When a gateway route lands, lock the write endpoints
+down (only backends / trusted roles should send mail) before exposing them.
+
+## API — notification-service
+
+### Health (`/`)
+
+| Method | Path | Access |
+|---|---|---|
+| `GET` | `/` | public — welcome/health response (`{success: true, message: …}`) |
+
+### Mails (`/api/notifications/mail`)
+
+| Method | Path | Access |
+|---|---|---|
+| `POST` | `/api/notifications/mail/send?to=…&subject=…` | unauthenticated today — plain-text general mail |
+| `POST` | `/api/notifications/mail/status` | unauthenticated today — `ApplicationStatusUpdateEvent` body, generic status-update mail |
+| `POST` | `/api/notifications/mail/shortlisted` | unauthenticated today — shortlist congratulations mail |
+| `POST` | `/api/notifications/mail/rejection` | unauthenticated today — rejection mail |
+| `POST` | `/api/notifications/mail/hiring` | unauthenticated today — hiring congratulations mail |
+
+All mail bodies are plain text (`MimeMessageHelper`, no HTML — TODO in code for
+templates). `POST /send` takes `to`/`subject` as query params and the message
+body as a plain text request body; the four event endpoints take the event JSON
+documented above. Delivery failures surface as `500` (SMTP misconfiguration,
+unreachable host, blank recipient guarded in `MailServiceImpl`).
+
+
 ## Roadmap
 
 - [x] User service (auth, user management)
@@ -950,9 +1046,9 @@ state concerns.
 - [x] Job preference service (saved jobs / bookmarks)
 - [x] Spring Cloud infrastructure in `cloud/` — eureka-server, config-server, api-gateway (JWT validation, role matrix, identity forwarding)
 - [x] AI service — resume optimization (summary, ATS bullets, improvement scoring, career feedback), job auto-generation (descriptions, requirements, benefits, skills/tags, salary band), application support (cover letters, screening scores, skills-gap), natural-language search (filter extraction, alert suggestions); dual-provider fallback Gemini → Groq
-- [ ] Per-record role/ownership checks inside every service (`@PreAuthorize` + cross-service ownership, e.g. job-service verifying `companyId`) — coarse role gating runs at the gateway today
+- [x] Notification service — Kafka-driven application status emails on `application.status.change` (shortlisted / rejected / hired templates, plain-text SMTP out)
+- [ ] Method-level role checks in the services — coarse role gating runs at the gateway today; per-record ownership is handled per service (job-service now also verifies the posting's `companyId` against company-service at creation)
 - [ ] Per-service JWT re-verification for defense in depth (services currently trust gateway-injected `X-User-*` headers)
-- [ ] Cross-service data resolution (job cards showing real company summaries, application counts, AI screening states) — `screening-score` now exists in ai-service; wiring the application-service inbox to it is pending
-- [ ] Additional business services (notifications)
+- [ ] Cross-service data resolution finishing touches — job cards already embed live company summaries over Feign; pending: application-count wiring from application-service, AI screening integration in the inbox, and real candidate contact data in status events (currently demo placeholders)
 - [ ] AI-powered features (matching, recommendations) — beyond the ai-service generation suite: per-candidate job matching/recommendations
 - [ ] Container images via Jib for each service

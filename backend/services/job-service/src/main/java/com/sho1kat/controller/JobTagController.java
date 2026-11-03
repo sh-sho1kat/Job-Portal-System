@@ -2,6 +2,7 @@ package com.sho1kat.controller;
 
 import com.sho1kat.dto.jobServiceDto.request.JobTagRequest;
 import com.sho1kat.dto.jobServiceDto.response.JobTagResponse;
+import com.sho1kat.security.RequesterContext;
 import com.sho1kat.service.JobTagService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -39,25 +40,25 @@ public class JobTagController {
 
     @PostMapping
     public ResponseEntity<JobTagResponse> createJobTag(
-            @RequestHeader(name = RequesterId.HEADER, required = false) String requesterId,
+            @RequestHeader(name = RequesterContext.HEADER, required = false) String requesterId,
             @Valid @RequestBody JobTagRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(jobTagService.createJobTag(RequesterId.from(requesterId), request));
+                .body(jobTagService.createJobTag(RequesterContext.from(requesterId), request));
     }
 
     @PutMapping("/{id}")
     public ResponseEntity<JobTagResponse> updateJobTag(
             @PathVariable Long id,
-            @RequestHeader(name = RequesterId.HEADER, required = false) String requesterId,
+            @RequestHeader(name = RequesterContext.HEADER, required = false) String requesterId,
             @Valid @RequestBody JobTagRequest request) {
-        return ResponseEntity.ok(jobTagService.updateJobTag(id, RequesterId.from(requesterId), request));
+        return ResponseEntity.ok(jobTagService.updateJobTag(id, RequesterContext.from(requesterId), request));
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteJobTag(
             @PathVariable Long id,
-            @RequestHeader(name = RequesterId.HEADER, required = false) String requesterId) {
-        jobTagService.deleteJobTag(id, RequesterId.from(requesterId));
+            @RequestHeader(name = RequesterContext.HEADER, required = false) String requesterId) {
+        jobTagService.deleteJobTag(id, RequesterContext.from(requesterId));
         return ResponseEntity.noContent().build();
     }
 }

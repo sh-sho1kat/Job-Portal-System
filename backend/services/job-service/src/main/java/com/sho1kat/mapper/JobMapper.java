@@ -26,12 +26,6 @@ public class JobMapper {
 
     private final CompanyClient companyClient;
 
-    /**
-     * New jobs start as DRAFT and are published by the employer (publishJob);
-     * the slug is generated in the service layer (it must check uniqueness
-     * against the repository first) and taxonomy references are resolved in
-     * the service layer (existence checks).
-     */
     public Job toEntity(CreateJobRequest request, Long ownerId, String slug,
                         JobCategory category, List<JobSkill> skills, List<JobTag> tags) {
         return Job.builder()
@@ -59,11 +53,11 @@ public class JobMapper {
                 .build();
     }
 
-    public JobResponse toResponse(Job job) {
+    public JobResponse toResponse(Job job, CompanySummaryResponse company) {
         return new JobResponse(
                 job.getId(),
                 job.getCompanyId(),
-                companySummary(job),
+                company,
                 job.getTitle(),
                 job.getDescription(),
                 job.getResponsibilities(),
@@ -87,12 +81,12 @@ public class JobMapper {
         );
     }
 
-    public DetailedJobResponse toDetailedResponse(Job job) {
+    public DetailedJobResponse toDetailedResponse(Job job, CompanySummaryResponse company) {
         return new DetailedJobResponse(
                 job.getId(),
                 job.getCompanyId(),
                 job.getPostedByOwnerId(),
-                companySummary(job),
+                company,
                 job.getTitle(),
                 job.getDescription(),
                 job.getResponsibilities(),
@@ -144,15 +138,6 @@ public class JobMapper {
     }
 
     // ---- helpers ----
-
-    /**
-     * Company display fields are fetched from company-service over service
-     * discovery (see {@link CompanyClient}); failed lookups trip the
-     * circuit breaker and become the id-only shape the DTO documents.
-     */
-    private CompanySummaryResponse companySummary(Job job) {
-        return companyClient.getCompanyById(job.getCompanyId());
-    }
 
     private JobLocation toLocation(String address, String city, String state, String country, String zipCode) {
         return JobLocation.builder()

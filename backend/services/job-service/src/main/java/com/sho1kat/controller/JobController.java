@@ -5,6 +5,7 @@ import com.sho1kat.dto.jobServiceDto.request.JobSearchCriteria;
 import com.sho1kat.dto.jobServiceDto.request.UpdateJobRequest;
 import com.sho1kat.dto.jobServiceDto.response.DetailedJobResponse;
 import com.sho1kat.dto.jobServiceDto.response.JobResponse;
+import com.sho1kat.security.RequesterContext;
 import com.sho1kat.service.JobService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -46,49 +47,49 @@ public class JobController {
 
     @PostMapping("/create")
     public ResponseEntity<DetailedJobResponse> createJob(
-            @RequestHeader(name = RequesterId.HEADER, required = false) String ownerId,
+            @RequestHeader(name = RequesterContext.HEADER, required = false) String ownerId,
             @Valid @RequestBody CreateJobRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(jobService.createJob(RequesterId.from(ownerId), request));
+                .body(jobService.createJob(RequesterContext.from(ownerId), request));
     }
 
     @GetMapping("/my-jobs")
     public ResponseEntity<Page<DetailedJobResponse>> getMyJobs(
-            @RequestHeader(name = RequesterId.HEADER, required = false) String ownerId,
+            @RequestHeader(name = RequesterContext.HEADER, required = false) String ownerId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
-        return ResponseEntity.ok(jobService.getMyJobs(RequesterId.from(ownerId), page, size));
+        return ResponseEntity.ok(jobService.getMyJobs(RequesterContext.from(ownerId), page, size));
     }
 
     @PutMapping("/{id}")
     public ResponseEntity<DetailedJobResponse> updateJob(
             @PathVariable Long id,
-            @RequestHeader(name = RequesterId.HEADER, required = false) String requesterId,
+            @RequestHeader(name = RequesterContext.HEADER, required = false) String requesterId,
             @Valid @RequestBody UpdateJobRequest request) {
-        return ResponseEntity.ok(jobService.updateJob(id, RequesterId.from(requesterId), request));
+        return ResponseEntity.ok(jobService.updateJob(id, RequesterContext.from(requesterId), request));
     }
 
     /** DRAFT -> ACTIVE */
     @PostMapping("/{id}/publish")
     public ResponseEntity<DetailedJobResponse> publishJob(
             @PathVariable Long id,
-            @RequestHeader(name = RequesterId.HEADER, required = false) String requesterId) {
-        return ResponseEntity.ok(jobService.publishJob(RequesterId.from(requesterId), id));
+            @RequestHeader(name = RequesterContext.HEADER, required = false) String requesterId) {
+        return ResponseEntity.ok(jobService.publishJob(RequesterContext.from(requesterId), id));
     }
 
     /** ACTIVE -> CLOSED */
     @PostMapping("/{id}/close")
     public ResponseEntity<DetailedJobResponse> closeJob(
             @PathVariable Long id,
-            @RequestHeader(name = RequesterId.HEADER, required = false) String requesterId) {
-        return ResponseEntity.ok(jobService.closeJob(id, RequesterId.from(requesterId)));
+            @RequestHeader(name = RequesterContext.HEADER, required = false) String requesterId) {
+        return ResponseEntity.ok(jobService.closeJob(id, RequesterContext.from(requesterId)));
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteJob(
             @PathVariable Long id,
-            @RequestHeader(name = RequesterId.HEADER, required = false) String requesterId) {
-        jobService.deleteJob(id, RequesterId.from(requesterId));
+            @RequestHeader(name = RequesterContext.HEADER, required = false) String requesterId) {
+        jobService.deleteJob(id, RequesterContext.from(requesterId));
         return ResponseEntity.noContent().build();
     }
 }

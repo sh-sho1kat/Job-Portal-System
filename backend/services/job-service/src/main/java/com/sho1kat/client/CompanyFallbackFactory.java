@@ -1,25 +1,33 @@
 package com.sho1kat.client;
 
 import com.sho1kat.dto.jobServiceDto.response.CompanySummaryResponse;
+import com.sho1kat.exception.ApiException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cloud.openfeign.FallbackFactory;
 import org.springframework.stereotype.Component;
 
-/**
- * Answers the id-only summary the DTO documents on any failed company lookup —
- * company-service down, unknown/deactivated company, registry unavailable.
- * The WARN line keeps degradation visible in job-service's logs.
- */
+// Fallback factory for the CompanyClient, providing a degraded response when the company-service is unavailable.
 @Slf4j
 @Component
 public class CompanyFallbackFactory implements FallbackFactory<CompanyClient> {
 
     @Override
     public CompanyClient create(Throwable cause) {
-        return companyId -> {
-            log.warn("company lookup for company {} failed ({}): job cards degrade to id-only summaries",
-                    companyId, cause.getMessage());
-            return new CompanySummaryResponse(companyId, null, null, null, null);
+        log.warn("company lookup failed ({}): job cards degrade to id-only summaries",
+                cause.getMessage());
+        return new CompanyClient() {
+            @Override
+            public CompanySummaryResponse getCompanyById(Long companyId) {
+                return new CompanySummaryResponse(companyId, null, null, null, null);
+            }
+
+            @Override
+            public CompanySummaryResponse getMyCompany() {
+                // company-service is down: ownership cannot be verified, so creating
+                // a posting must fail instead of silently trusting existing data
+                throw ApiException.serviceUnavailable(
+                        "Company ownership could not be verified: company-service is unavailable. Please try again.");
+            }
         };
     }
 }

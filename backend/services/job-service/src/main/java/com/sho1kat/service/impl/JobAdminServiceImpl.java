@@ -1,5 +1,6 @@
 package com.sho1kat.service.impl;
 
+import com.sho1kat.client.CompanyClient;
 import com.sho1kat.dto.jobServiceDto.response.DetailedJobResponse;
 import com.sho1kat.entity.Job;
 import com.sho1kat.enums.JobStatus;
@@ -24,6 +25,7 @@ public class JobAdminServiceImpl implements JobAdminService {
 
     private final JobRepository jobRepository;
     private final JobMapper jobMapper;
+    private final CompanyClient companyClient;
 
     @Override
     @Transactional(readOnly = true)
@@ -32,13 +34,14 @@ public class JobAdminServiceImpl implements JobAdminService {
                 Sort.by("createdAt").descending());
 
         return jobRepository.findAll(JobSpecification.adminList(status, companyId, title), pageable)
-                .map(jobMapper::toDetailedResponse);
+                .map(job -> jobMapper.toDetailedResponse(job, companyClient.getCompanyById(job.getCompanyId())));
     }
 
     @Override
     @Transactional(readOnly = true)
     public DetailedJobResponse getJob(Long jobId) {
-        return jobMapper.toDetailedResponse(requireJob(jobId));
+        Job job = requireJob(jobId);
+        return jobMapper.toDetailedResponse(job, companyClient.getCompanyById(job.getCompanyId()));
     }
 
     /** ACTIVE -> SUSPENDED */
@@ -49,7 +52,8 @@ public class JobAdminServiceImpl implements JobAdminService {
         requireStatus(job, JobStatus.ACTIVE, "Only active jobs can be suspended");
         job.setStatus(JobStatus.SUSPENDED);
         log.info("Job {} suspended: {}", jobId, reason);
-        return jobMapper.toDetailedResponse(jobRepository.save(job));
+        return jobMapper.toDetailedResponse(jobRepository.save(job),
+                companyClient.getCompanyById(job.getCompanyId()));
     }
 
     /** SUSPENDED -> ACTIVE */
@@ -60,7 +64,8 @@ public class JobAdminServiceImpl implements JobAdminService {
         requireStatus(job, JobStatus.SUSPENDED, "Only suspended jobs can be reactivated");
         job.setStatus(JobStatus.ACTIVE);
         log.info("Job {} reactivated", jobId);
-        return jobMapper.toDetailedResponse(jobRepository.save(job));
+        return jobMapper.toDetailedResponse(jobRepository.save(job),
+                companyClient.getCompanyById(job.getCompanyId()));
     }
 
     // ---- helpers ----

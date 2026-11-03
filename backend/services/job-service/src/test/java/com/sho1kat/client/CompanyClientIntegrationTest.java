@@ -51,8 +51,8 @@ class CompanyClientIntegrationTest {
                 .workMode(WorkMode.ON_SITE)
                 .category(JobCategory.builder().id(5L).build())
                 .build();
-
-        JobResponse card = jobMapper.toResponse(job);
+        CompanySummaryResponse summary = companyClient.getCompanyById(job.getCompanyId());
+        JobResponse card = jobMapper.toResponse(job, summary);
 
         assertEquals(101L, card.company().id());
         assertNull(card.company().name());

@@ -2,6 +2,7 @@ package com.sho1kat.controller;
 
 import com.sho1kat.dto.jobServiceDto.request.JobSkillRequest;
 import com.sho1kat.dto.jobServiceDto.response.JobSkillResponse;
+import com.sho1kat.security.RequesterContext;
 import com.sho1kat.service.JobSkillService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -42,32 +43,32 @@ public class JobSkillController {
     /** Flat list including inactive skills. */
     @GetMapping("/all")
     public ResponseEntity<List<JobSkillResponse>> getAllJobSkillsIncludingInactive(
-            @RequestHeader(name = RequesterId.HEADER, required = false) String requesterId) {
-        RequesterId.from(requesterId); // authenticated callers only
+            @RequestHeader(name = RequesterContext.HEADER, required = false) String requesterId) {
+        RequesterContext.from(requesterId); // authenticated callers only
         return ResponseEntity.ok(jobSkillService.getAllJobSkillsIncludingInactive());
     }
 
     @PostMapping
     public ResponseEntity<JobSkillResponse> createJobSkill(
-            @RequestHeader(name = RequesterId.HEADER, required = false) String requesterId,
+            @RequestHeader(name = RequesterContext.HEADER, required = false) String requesterId,
             @Valid @RequestBody JobSkillRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(jobSkillService.createJobSkill(RequesterId.from(requesterId), request));
+                .body(jobSkillService.createJobSkill(RequesterContext.from(requesterId), request));
     }
 
     @PutMapping("/{id}")
     public ResponseEntity<JobSkillResponse> updateJobSkill(
             @PathVariable Long id,
-            @RequestHeader(name = RequesterId.HEADER, required = false) String requesterId,
+            @RequestHeader(name = RequesterContext.HEADER, required = false) String requesterId,
             @Valid @RequestBody JobSkillRequest request) {
-        return ResponseEntity.ok(jobSkillService.updateJobSkill(id, RequesterId.from(requesterId), request));
+        return ResponseEntity.ok(jobSkillService.updateJobSkill(id, RequesterContext.from(requesterId), request));
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteJobSkill(
             @PathVariable Long id,
-            @RequestHeader(name = RequesterId.HEADER, required = false) String requesterId) {
-        jobSkillService.deleteJobSkill(id, RequesterId.from(requesterId));
+            @RequestHeader(name = RequesterContext.HEADER, required = false) String requesterId) {
+        jobSkillService.deleteJobSkill(id, RequesterContext.from(requesterId));
         return ResponseEntity.noContent().build();
     }
 }

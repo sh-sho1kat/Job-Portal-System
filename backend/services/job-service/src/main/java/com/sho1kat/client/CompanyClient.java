@@ -11,4 +11,7 @@ public interface CompanyClient {
 
     @GetMapping("/api/companies/{id}")
     CompanySummaryResponse getCompanyById(@PathVariable("id") Long id);
+
+    @GetMapping("/api/companies/my-company")
+    CompanySummaryResponse getMyCompany();
 }

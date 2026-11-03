@@ -1,8 +1,10 @@
 package com.sho1kat.service.impl;
 
+import com.sho1kat.client.CompanyClient;
 import com.sho1kat.dto.jobServiceDto.request.CreateJobRequest;
 import com.sho1kat.dto.jobServiceDto.request.JobSearchCriteria;
 import com.sho1kat.dto.jobServiceDto.request.UpdateJobRequest;
+import com.sho1kat.dto.jobServiceDto.response.CompanySummaryResponse;
 import com.sho1kat.dto.jobServiceDto.response.DetailedJobResponse;
 import com.sho1kat.dto.jobServiceDto.response.JobResponse;
 import com.sho1kat.entity.Job;
@@ -43,6 +45,7 @@ public class JobServiceImpl implements JobService {
     private final JobSkillService jobSkillService;
     private final JobTagService jobTagService;
     private final JobMapper jobMapper;
+    private final CompanyClient companyClient;
 
     // ---- public ----
 
@@ -52,7 +55,7 @@ public class JobServiceImpl implements JobService {
         Pageable pageable = PageRequest.of(Math.max(page, 0), Math.clamp(size, 1, 100),
                 Sort.by("createdAt").descending());
         return jobRepository.findAll(JobSpecification.publicSearch(criteria), pageable)
-                .map(jobMapper::toResponse);
+                .map(job -> jobMapper.toResponse(job, companyClient.getCompanyById(job.getCompanyId())));
     }
 
     @Override
@@ -60,7 +63,8 @@ public class JobServiceImpl implements JobService {
     public JobResponse getJobById(Long id) {
         Job job = visibleJob(id);   // 404 unless publicly visible
         incrementViewCount(id);     // count only postings that were actually served
-        return jobMapper.toResponse(job);
+        CompanySummaryResponse company = companyClient.getCompanyById(job.getCompanyId());
+        return jobMapper.toResponse(job, company);
     }
 
     @Override
@@ -69,7 +73,7 @@ public class JobServiceImpl implements JobService {
         return jobRepository.findByCompanyIdAndDeletedAtIsNullOrderByCreatedAtDesc(companyId)
                 .stream()
                 .filter(this::isVisible)
-                .map(jobMapper::toResponse)
+                .map(job -> jobMapper.toResponse(job, companyClient.getCompanyById(job.getCompanyId())))
                 .toList();
     }
 
@@ -81,11 +85,9 @@ public class JobServiceImpl implements JobService {
 
         verifyUserId(employerId, "post a job");
 
-        //todo:
-        // companyId (and company ownership) are not verified yet: job-service can
-        // look companies up in company-service (CompanyClient) but a "does this
-        // posting belong to the caller's company" check is still pending. Postings
-        // start as DRAFT and only exist publicly once the employer publishes them.
+        // the posting's company must actually belong to the caller
+        CompanySummaryResponse company = companyClient.getMyCompany();
+        validateCompanyOwnership(company.id(), request.companyId());
         validate(request);
         JobCategory category = requireActiveCategory(request.categoryId());
         List<JobSkill> skills = jobSkillService.getJobSkillsByIds(request.skillIds());
@@ -93,7 +95,13 @@ public class JobServiceImpl implements JobService {
 
         Job job = jobMapper.toEntity(request, employerId, convertToSlug(request.title(), null), category, skills, tags);
 
-        return jobMapper.toDetailedResponse(jobRepository.save(job));
+        return jobMapper.toDetailedResponse(jobRepository.save(job), company);
+    }
+
+    private void validateCompanyOwnership(Long ownerCompanyId, Long dtoCompanyId) {
+        if (ownerCompanyId == null || !ownerCompanyId.equals(dtoCompanyId)) {
+            throw ApiException.forbidden("You are not the owner of this company");
+        }
     }
 
     @Override
@@ -104,7 +112,7 @@ public class JobServiceImpl implements JobService {
         Pageable pageable = PageRequest.of(Math.max(page, 0), Math.clamp(size, 1, 100),
                 Sort.by("createdAt").descending());
         return jobRepository.findByPostedByOwnerIdAndDeletedAtIsNull(employerId, pageable)
-                .map(jobMapper::toDetailedResponse);
+                .map(job -> jobMapper.toDetailedResponse(job, companyClient.getCompanyById(job.getCompanyId())));
     }
 
     @Override
@@ -124,7 +132,8 @@ public class JobServiceImpl implements JobService {
             // edits send rejected postings back to the drafts for re-publishing
             job.setStatus(JobStatus.DRAFT);
         }
-        return jobMapper.toDetailedResponse(jobRepository.save(job));
+        CompanySummaryResponse company = companyClient.getCompanyById(job.getCompanyId());
+        return jobMapper.toDetailedResponse(jobRepository.save(job), company);
     }
 
     @Override
@@ -136,7 +145,8 @@ public class JobServiceImpl implements JobService {
         }
         job.setStatus(JobStatus.ACTIVE);
         job.setPublishedAt(Instant.now());
-        return jobMapper.toDetailedResponse(jobRepository.save(job));
+        CompanySummaryResponse company = companyClient.getCompanyById(job.getCompanyId());
+        return jobMapper.toDetailedResponse(jobRepository.save(job), company);
     }
 
     @Override
@@ -148,7 +158,8 @@ public class JobServiceImpl implements JobService {
         }
         job.setStatus(JobStatus.CLOSED);
         job.setClosedAt(Instant.now());
-        return jobMapper.toDetailedResponse(jobRepository.save(job));
+        CompanySummaryResponse company = companyClient.getCompanyById(job.getCompanyId());
+        return jobMapper.toDetailedResponse(jobRepository.save(job), company);
     }
 
     @Override

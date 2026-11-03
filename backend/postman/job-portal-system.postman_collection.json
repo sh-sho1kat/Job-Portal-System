@@ -155,6 +155,11 @@
       "key": "savedJobId",
       "value": "",
       "type": "string"
+    },
+    {
+      "key": "notificationBaseUrl",
+      "value": "http://localhost:5008",
+      "type": "string"
     }
   ],
   "item": [
@@ -5121,6 +5126,283 @@
                 },
                 "description": "Never-miss-it alert criteria derived from a candidate profile. **Body** - `JobAlertSuggestionRequest` (all fields optional).\n\n**Responses** - `200` -> `JobAlertSuggestionResponse` (`suggestedKeywords[]`, `suggestedLocations[]`, `suggestedJobTypes[]`, `suggestedWorkModes[]`, `suggestedExperienceLevels[]`, `suggestedIndustries[]`, `reasoning`)."
               }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Notification Service",
+      "description": "Mail-out service behind `notificationBaseUrl`. It has **no database** and no auth checks of its own today: the api-gateway does not route `/api/notifications/**` yet (`RouteConfig`), so requests default to the direct port `http://localhost:5008` — switch `notificationBaseUrl` to the gateway once a route lands. Mails leave as plain-text SMTP configured via `config-repo/notification-service.yaml` (`spring.mail.username`/`password`, `MAIL_USERNAME` / `MAIL_PASSWORD` env). The Kafka consumer (`application.status.change`, group `notification-service`) fires these mails automatically from the application-service status moves; the manual requests below exist for trying templates on demand.",
+      "item": [
+        {
+          "name": "Welcome",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{notificationBaseUrl}}/",
+              "host": [
+                "{{notificationBaseUrl}}"
+              ],
+              "query": [],
+              "path": []
+            },
+            "header": [],
+            "description": "Health/welcome endpoint. **Responses** - `200` -> `{success: true, message: \"Welcome to the Notification Service API!\"}`."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Mail",
+          "item": [
+            {
+              "name": "Send Raw Mail",
+              "request": {
+                "method": "POST",
+                "url": {
+                  "raw": "{{notificationBaseUrl}}/api/notifications/mail/send",
+                  "host": [
+                    "{{notificationBaseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "notifications",
+                    "mail",
+                    "send"
+                  ],
+                  "query": [
+                    {
+                      "key": "to",
+                      "value": "addressee@example.com"
+                    },
+                    {
+                      "key": "subject",
+                      "value": "Hello from the Job Portal"
+                    }
+                  ]
+                },
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "text/plain"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "Hello from the Job Portal notification pipeline — plain text body only in this version.",
+                  "options": {
+                    "raw": {
+                      "language": "text"
+                    }
+                  }
+                },
+                "description": "General-purpose plain-text mail. **Query** - `to` (recipient address, required), `subject` (required); **body** - the plain-text message body.\n\n**Responses**\n- `200` -> `\\\"Mail sent successfully\\\"`\n- `500` -> SMTP delivery failed"
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP 200', () => pm.response.to.have.status(200));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Send Status Change Mail",
+              "request": {
+                "method": "POST",
+                "url": {
+                  "raw": "{{notificationBaseUrl}}/api/notifications/mail/status",
+                  "host": [
+                    "{{notificationBaseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "notifications",
+                    "mail",
+                    "status"
+                  ],
+                  "query": []
+                },
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"oldStatus\": \"REVIEWING\",\n  \"newStatus\": \"REVIEWING\",\n  \"FirstName\": \"Demo\",\n  \"MiddleName\": \"\",\n  \"LastName\": \"Demo\",\n  \"email\": \"candidate@example.com\",\n  \"jobTitle\": \"Backend Engineer\",\n  \"companyName\": \"Acme Labs\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "description": "Generic status-update mail — used for any new status other than `SHORTLISTED`/`REJECTED`/`HIRED` built from `ApplicationStatusUpdateEvent`. **Body** - `ApplicationStatusUpdateEvent`: `oldStatus`/`newStatus` (`ApplicationStatus`: `PENDING`, `REVIEWING`, `SHORTLISTED`, `INTERVIEW_SCHEDULED`, `REJECTED`, `HIRED`, `WITHDRAWN`), `FirstName`/`MiddleName`/`LastName` (shortlisted/rejection/hiring mouldings use them; keep the capitalised names exactly — that is the Kafka wire format), `email` (recipient), `jobTitle`, `companyName`.\n\n**Responses**\n- `200` -> template mail sent to `email`\n- `500` -> SMTP delivery failed (host/credentials from `config-repo/notification-service.yaml`)"
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP 200', () => pm.response.to.have.status(200));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Send Shortlisted Mail",
+              "request": {
+                "method": "POST",
+                "url": {
+                  "raw": "{{notificationBaseUrl}}/api/notifications/mail/shortlisted",
+                  "host": [
+                    "{{notificationBaseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "notifications",
+                    "mail",
+                    "shortlisted"
+                  ],
+                  "query": []
+                },
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"oldStatus\": \"REVIEWING\",\n  \"newStatus\": \"SHORTLISTED\",\n  \"FirstName\": \"Demo\",\n  \"MiddleName\": \"\",\n  \"LastName\": \"Demo\",\n  \"email\": \"candidate@example.com\",\n  \"jobTitle\": \"Backend Engineer\",\n  \"companyName\": \"Acme Labs\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "description": "Congratulations mail for the `SHORTLISTED` status (mentions `jobTitle`/`companyName`) built from `ApplicationStatusUpdateEvent`. **Body** - `ApplicationStatusUpdateEvent`: `oldStatus`/`newStatus` (`ApplicationStatus`: `PENDING`, `REVIEWING`, `SHORTLISTED`, `INTERVIEW_SCHEDULED`, `REJECTED`, `HIRED`, `WITHDRAWN`), `FirstName`/`MiddleName`/`LastName` (shortlisted/rejection/hiring mouldings use them; keep the capitalised names exactly — that is the Kafka wire format), `email` (recipient), `jobTitle`, `companyName`.\n\n**Responses**\n- `200` -> template mail sent to `email`\n- `500` -> SMTP delivery failed (host/credentials from `config-repo/notification-service.yaml`)"
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP 200', () => pm.response.to.have.status(200));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Send Rejection Mail",
+              "request": {
+                "method": "POST",
+                "url": {
+                  "raw": "{{notificationBaseUrl}}/api/notifications/mail/rejection",
+                  "host": [
+                    "{{notificationBaseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "notifications",
+                    "mail",
+                    "rejection"
+                  ],
+                  "query": []
+                },
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"oldStatus\": \"REVIEWING\",\n  \"newStatus\": \"REJECTED\",\n  \"FirstName\": \"Demo\",\n  \"MiddleName\": \"\",\n  \"LastName\": \"Demo\",\n  \"email\": \"candidate@example.com\",\n  \"jobTitle\": \"Backend Engineer\",\n  \"companyName\": \"Acme Labs\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "description": "Polite rejection mail for the `REJECTED` status built from `ApplicationStatusUpdateEvent`. **Body** - `ApplicationStatusUpdateEvent`: `oldStatus`/`newStatus` (`ApplicationStatus`: `PENDING`, `REVIEWING`, `SHORTLISTED`, `INTERVIEW_SCHEDULED`, `REJECTED`, `HIRED`, `WITHDRAWN`), `FirstName`/`MiddleName`/`LastName` (shortlisted/rejection/hiring mouldings use them; keep the capitalised names exactly — that is the Kafka wire format), `email` (recipient), `jobTitle`, `companyName`.\n\n**Responses**\n- `200` -> template mail sent to `email`\n- `500` -> SMTP delivery failed (host/credentials from `config-repo/notification-service.yaml`)"
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP 200', () => pm.response.to.have.status(200));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Send Hiring Mail",
+              "request": {
+                "method": "POST",
+                "url": {
+                  "raw": "{{notificationBaseUrl}}/api/notifications/mail/hiring",
+                  "host": [
+                    "{{notificationBaseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "notifications",
+                    "mail",
+                    "hiring"
+                  ],
+                  "query": []
+                },
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"oldStatus\": \"REVIEWING\",\n  \"newStatus\": \"HIRED\",\n  \"FirstName\": \"Demo\",\n  \"MiddleName\": \"\",\n  \"LastName\": \"Demo\",\n  \"email\": \"candidate@example.com\",\n  \"jobTitle\": \"Backend Engineer\",\n  \"companyName\": \"Acme Labs\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "description": "Congratulations-you-are-hired mail for the `HIRED` status built from `ApplicationStatusUpdateEvent`. **Body** - `ApplicationStatusUpdateEvent`: `oldStatus`/`newStatus` (`ApplicationStatus`: `PENDING`, `REVIEWING`, `SHORTLISTED`, `INTERVIEW_SCHEDULED`, `REJECTED`, `HIRED`, `WITHDRAWN`), `FirstName`/`MiddleName`/`LastName` (shortlisted/rejection/hiring mouldings use them; keep the capitalised names exactly — that is the Kafka wire format), `email` (recipient), `jobTitle`, `companyName`.\n\n**Responses**\n- `200` -> template mail sent to `email`\n- `500` -> SMTP delivery failed (host/credentials from `config-repo/notification-service.yaml`)"
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP 200', () => pm.response.to.have.status(200));"
+                    ]
+                  }
+                }
+              ]
             }
           ]
         }
