@@ -4,6 +4,7 @@ public record ApplicationStatusUpdateEvent(
         String oldStatus,
         String newStatus,
         String FirstName,
+        String MiddleName,
         String LastName,
         String email,
         String jobTitle,
