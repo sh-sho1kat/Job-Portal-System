@@ -1,8 +1,10 @@
 package com.sho1kat.event;
 
+import com.sho1kat.enums.ApplicationStatus;
+
 public record ApplicationStatusUpdateEvent(
-        String oldStatus,
-        String newStatus,
+        ApplicationStatus oldStatus,
+        ApplicationStatus newStatus,
         String FirstName,
         String MiddleName,
         String LastName,

@@ -35,6 +35,9 @@ spring:
             connect-timeout: 2000
             read-timeout: 3000
 
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+
 eureka:
   client:
     fetch-registry: true

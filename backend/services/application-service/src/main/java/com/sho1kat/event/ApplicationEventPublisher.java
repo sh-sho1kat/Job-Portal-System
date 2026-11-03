@@ -9,11 +9,14 @@ import com.sho1kat.dto.jobServiceDto.response.JobResponse;
 import com.sho1kat.dto.jobServiceDto.response.JobSummaryResponse;
 import com.sho1kat.dto.user_service.response.UserResponse;
 import com.sho1kat.entity.Application;
+import com.sho1kat.enums.ApplicationStatus;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Component;
 
 @Component
+@Slf4j
 @RequiredArgsConstructor
 public class ApplicationEventPublisher {
     public static final String TOPIC = "application.status.change";
@@ -23,7 +26,8 @@ public class ApplicationEventPublisher {
     private final CompanyClient companyClient;
     private final JobClient jobClient;
 
-    public void publishApplicationStatusUpdateEvent(Application application, String oldStatus, String newStatus) {
+    public void publishApplicationStatusUpdateEvent(Application application, ApplicationStatus oldStatus, ApplicationStatus newStatus) {
+        // todo: uncomment when interservice authentication is set up
 //        UserResponse candidate = userClient.getUserById(application.getCandidateId());
         UserResponse candidate = null;
         CompanySummaryResponse company = companyClient.getCompanyById(application.getCompanyId());
@@ -43,6 +47,7 @@ public class ApplicationEventPublisher {
                 job.title(),
                 company.name()
         );
+        log.info("Publishing application status update event: {}", event);
         kafkaTemplate.send(TOPIC, event.toString());
     }
 }

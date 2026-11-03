@@ -6,6 +6,7 @@ import com.sho1kat.dto.applicationServiceDto.request.WithdrawApplicationRequest;
 import com.sho1kat.dto.applicationServiceDto.response.ApplicationResponse;
 import com.sho1kat.entity.Application;
 import com.sho1kat.enums.ApplicationStatus;
+import com.sho1kat.event.ApplicationEventPublisher;
 import com.sho1kat.exception.ApiException;
 import com.sho1kat.mapper.ApplicationMapper;
 import com.sho1kat.mapper.ApplicationNoteMapper;
@@ -58,6 +59,7 @@ public class ApplicationServiceImpl implements ApplicationService {
     private final ApplicationNoteRepository applicationNoteRepository;
     private final ApplicationMapper applicationMapper;
     private final ApplicationNoteMapper applicationNoteMapper;
+    private final ApplicationEventPublisher applicationEventPublisher;
 
     // ---- candidate ----
 
@@ -161,18 +163,19 @@ public class ApplicationServiceImpl implements ApplicationService {
     @Transactional
     public ApplicationResponse updateStatus(Long companyId, Long applicationId, ApplicationStatus targetStatus) {
         Application application = requireCompanyApplication(companyId, applicationId);
-        ApplicationStatus current = application.getStatus();
+        ApplicationStatus oldStatus = application.getStatus();
         if (targetStatus == ApplicationStatus.WITHDRAWN) {
             throw ApiException.badRequest("Only candidates withdraw their own applications");
         }
-        if (targetStatus == current) {
-            throw ApiException.badRequest("Application " + applicationId + " is already in status " + current);
+        if (targetStatus == oldStatus) {
+            throw ApiException.badRequest("Application " + applicationId + " is already in status " + oldStatus);
         }
-        if (!ALLOWED_TRANSITIONS.getOrDefault(current, Set.of()).contains(targetStatus)) {
+        if (!ALLOWED_TRANSITIONS.getOrDefault(oldStatus, Set.of()).contains(targetStatus)) {
             throw ApiException.conflict(
-                    "Status change from " + current + " to " + targetStatus + " is not allowed");
+                    "Status change from " + oldStatus + " to " + targetStatus + " is not allowed");
         }
         application.setStatus(targetStatus);
+        applicationEventPublisher.publishApplicationStatusUpdateEvent(application, oldStatus, targetStatus);
         return toDetail(application);
     }
 
