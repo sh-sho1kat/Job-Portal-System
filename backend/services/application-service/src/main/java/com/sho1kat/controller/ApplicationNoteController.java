@@ -2,6 +2,7 @@ package com.sho1kat.controller;
 
 import com.sho1kat.dto.applicationServiceDto.request.ApplicationNoteRequest;
 import com.sho1kat.dto.applicationServiceDto.response.ApplicationNoteResponse;
+import com.sho1kat.security.RequesterContext;
 import com.sho1kat.service.ApplicationNoteService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -22,19 +23,19 @@ public class ApplicationNoteController {
     @GetMapping
     public ResponseEntity<List<ApplicationNoteResponse>> getNotes(
             @PathVariable Long applicationId,
-            @RequestHeader(name = RequesterId.HEADER, required = false) String requesterId) {
+            @RequestHeader(name = RequesterContext.HEADER, required = false) String requesterId) {
         return ResponseEntity.ok(applicationNoteService.getNotesByApplication(
-                applicationId, RequesterId.from(requesterId)));
+                applicationId, RequesterContext.from(requesterId)));
     }
 
     //201 created; the note records its author (the {@code X-User-Id} caller).
     @PostMapping
     public ResponseEntity<ApplicationNoteResponse> addNote(
             @PathVariable Long applicationId,
-            @RequestHeader(name = RequesterId.HEADER, required = false) String requesterId,
+            @RequestHeader(name = RequesterContext.HEADER, required = false) String requesterId,
             @Valid @RequestBody ApplicationNoteRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(applicationNoteService.addNote(applicationId, RequesterId.from(requesterId), request));
+                .body(applicationNoteService.addNote(applicationId, RequesterContext.from(requesterId), request));
     }
 
     //Single note by id.
@@ -42,9 +43,9 @@ public class ApplicationNoteController {
     public ResponseEntity<ApplicationNoteResponse> getNote(
             @PathVariable Long applicationId,
             @PathVariable Long noteId,
-            @RequestHeader(name = RequesterId.HEADER, required = false) String requesterId) {
+            @RequestHeader(name = RequesterContext.HEADER, required = false) String requesterId) {
         return ResponseEntity.ok(applicationNoteService.getNote(
-                applicationId, noteId, RequesterId.from(requesterId)));
+                applicationId, noteId, RequesterContext.from(requesterId)));
     }
 
     // 204; only the note author may delete their own note (403 otherwise).
@@ -52,8 +53,8 @@ public class ApplicationNoteController {
     public ResponseEntity<Void> deleteNote(
             @PathVariable Long applicationId,
             @PathVariable Long noteId,
-            @RequestHeader(name = RequesterId.HEADER, required = false) String requesterId) {
-        applicationNoteService.deleteNote(applicationId, noteId, RequesterId.from(requesterId));
+            @RequestHeader(name = RequesterContext.HEADER, required = false) String requesterId) {
+        applicationNoteService.deleteNote(applicationId, noteId, RequesterContext.from(requesterId));
         return ResponseEntity.noContent().build();
     }
 }
