@@ -2,7 +2,9 @@ package com.sho1kat.controller;
 
 import com.sho1kat.dto.ResumeServiceDto.request.WorkExperienceRequest;
 import com.sho1kat.dto.ResumeServiceDto.response.WorkExperienceResponse;
+import com.sho1kat.security.RequesterContext;
 import com.sho1kat.service.WorkExperienceService;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -11,9 +13,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-/**
- * Employment history entries of one resume; every endpoint is owner-scoped.
- */
+@Tag(name = "Work Experience", description = "Employment history entries of one resume; every endpoint is owner-scoped.")
 @RestController
 @RequestMapping("/api/resumes/{resumeId}/work-experiences")
 @RequiredArgsConstructor
@@ -24,38 +24,38 @@ public class WorkExperienceController {
     @GetMapping
     public ResponseEntity<List<WorkExperienceResponse>> getAllWorkExperiences(
             @PathVariable Long resumeId,
-            @RequestHeader(name = RequesterId.HEADER, required = false) String candidateId) {
+            @RequestHeader(name = RequesterContext.HEADER, required = false) String candidateId) {
         return ResponseEntity.ok(
-                workExperienceService.getAllWorkExperiences(resumeId, RequesterId.from(candidateId)));
+                workExperienceService.getAllWorkExperiences(resumeId, RequesterContext.from(candidateId)));
     }
 
     @PostMapping
     public ResponseEntity<WorkExperienceResponse> createWorkExperience(
             @PathVariable Long resumeId,
-            @RequestHeader(name = RequesterId.HEADER, required = false) String candidateId,
+            @RequestHeader(name = RequesterContext.HEADER, required = false) String candidateId,
             @Valid @RequestBody WorkExperienceRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(workExperienceService.createWorkExperience(
-                        resumeId, RequesterId.from(candidateId), request));
+                        resumeId, RequesterContext.from(candidateId), request));
     }
 
     @PutMapping("/{workExperienceId}")
     public ResponseEntity<WorkExperienceResponse> updateWorkExperience(
             @PathVariable Long resumeId,
             @PathVariable Long workExperienceId,
-            @RequestHeader(name = RequesterId.HEADER, required = false) String candidateId,
+            @RequestHeader(name = RequesterContext.HEADER, required = false) String candidateId,
             @Valid @RequestBody WorkExperienceRequest request) {
         return ResponseEntity.ok(workExperienceService.updateWorkExperience(
-                workExperienceId, resumeId, RequesterId.from(candidateId), request));
+                workExperienceId, resumeId, RequesterContext.from(candidateId), request));
     }
 
     @DeleteMapping("/{workExperienceId}")
     public ResponseEntity<Void> deleteWorkExperience(
             @PathVariable Long resumeId,
             @PathVariable Long workExperienceId,
-            @RequestHeader(name = RequesterId.HEADER, required = false) String candidateId) {
+            @RequestHeader(name = RequesterContext.HEADER, required = false) String candidateId) {
         workExperienceService.deleteWorkExperience(
-                workExperienceId, resumeId, RequesterId.from(candidateId));
+                workExperienceId, resumeId, RequesterContext.from(candidateId));
         return ResponseEntity.noContent().build();
     }
 }
