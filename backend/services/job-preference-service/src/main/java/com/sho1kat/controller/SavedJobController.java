@@ -2,6 +2,7 @@ package com.sho1kat.controller;
 
 import com.sho1kat.dto.jobPreferenceDto.request.SavedJobRequest;
 import com.sho1kat.dto.jobPreferenceDto.response.SavedJobResponse;
+import com.sho1kat.security.RequesterContext;
 import com.sho1kat.service.SavedJobService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -19,10 +20,6 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
-/**
- * Candidate job bookmarks. Identity uses the temporary {@code X-User-Id}
- * stand-in header (see {@link RequesterId}) until JWT enforcement lands.
- */
 @RestController
 @RequestMapping("/api/preferences/saved-jobs")
 @RequiredArgsConstructor
@@ -33,33 +30,33 @@ public class SavedJobController {
     //List view of the caller's bookmarks, newest first.
     @GetMapping
     public ResponseEntity<List<SavedJobResponse>> getMySavedJobs(
-            @RequestHeader(name = RequesterId.HEADER, required = false) String requesterId) {
-        return ResponseEntity.ok(savedJobService.getSavedJobs(RequesterId.from(requesterId)));
+            @RequestHeader(name = RequesterContext.HEADER, required = false) String requesterId) {
+        return ResponseEntity.ok(savedJobService.getSavedJobs(RequesterContext.from(requesterId)));
     }
 
     //201; saving a job that is already bookmarked answers 409.
     @PostMapping
     public ResponseEntity<SavedJobResponse> saveJob(
-            @RequestHeader(name = RequesterId.HEADER, required = false) String requesterId,
+            @RequestHeader(name = RequesterContext.HEADER, required = false) String requesterId,
             @Valid @RequestBody SavedJobRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(savedJobService.saveJob(RequesterId.from(requesterId), request));
+                .body(savedJobService.saveJob(RequesterContext.from(requesterId), request));
     }
 
     //Bookmark probe for the job list UI (checkbox state).
     @GetMapping("/check")
     public ResponseEntity<Boolean> isSaved(
-            @RequestHeader(name = RequesterId.HEADER, required = false) String requesterId,
+            @RequestHeader(name = RequesterContext.HEADER, required = false) String requesterId,
             @RequestParam Long jobId) {
-        return ResponseEntity.ok(savedJobService.isSaved(RequesterId.from(requesterId), jobId));
+        return ResponseEntity.ok(savedJobService.isSaved(RequesterContext.from(requesterId), jobId));
     }
 
     //204; bookmarks belonging to another candidate answer 404.
     @DeleteMapping("/{savedJobId}")
     public ResponseEntity<Void> unsaveJob(
             @PathVariable Long savedJobId,
-            @RequestHeader(name = RequesterId.HEADER, required = false) String requesterId) {
-        savedJobService.unsaveJob(RequesterId.from(requesterId), savedJobId);
+            @RequestHeader(name = RequesterContext.HEADER, required = false) String requesterId) {
+        savedJobService.unsaveJob(RequesterContext.from(requesterId), savedJobId);
         return ResponseEntity.noContent().build();
     }
 }
