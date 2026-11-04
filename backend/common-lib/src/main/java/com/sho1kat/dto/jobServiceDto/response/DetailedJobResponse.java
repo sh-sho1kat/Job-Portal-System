@@ -1,5 +1,6 @@
 package com.sho1kat.dto.jobServiceDto.response;
 
+import com.sho1kat.dto.companyServiceDto.response.CompanySummaryResponse;
 import com.sho1kat.enums.EmploymentType;
 import com.sho1kat.enums.ExperienceLevel;
 import com.sho1kat.enums.JobStatus;

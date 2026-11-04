@@ -1,9 +1,9 @@
 package com.sho1kat.dto.applicationServiceDto.response;
 
 import com.sho1kat.enums.ApplicationStatus;
-import com.sho1kat.dto.jobServiceDto.response.CompanySummaryResponse;
+import com.sho1kat.dto.companyServiceDto.response.CompanySummaryResponse;
 import com.sho1kat.dto.jobServiceDto.response.JobSummaryResponse;
-import com.sho1kat.dto.user_service.response.UserResponse;
+import com.sho1kat.dto.userServiceDto.response.UserResponse;
 
 import java.math.BigDecimal;
 import java.time.Instant;

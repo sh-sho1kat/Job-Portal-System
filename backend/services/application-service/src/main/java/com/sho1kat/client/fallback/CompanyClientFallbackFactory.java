@@ -1,7 +1,7 @@
 package com.sho1kat.client.fallback;
 
 import com.sho1kat.client.CompanyClient;
-import com.sho1kat.dto.jobServiceDto.response.CompanySummaryResponse;
+import com.sho1kat.dto.companyServiceDto.response.CompanySummaryResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cloud.openfeign.FallbackFactory;
 import org.springframework.stereotype.Component;

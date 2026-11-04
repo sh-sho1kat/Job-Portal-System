@@ -1,8 +1,8 @@
 package com.sho1kat.service;
 
-import com.sho1kat.dto.user_service.request.UpdateUserRequest;
-import com.sho1kat.dto.user_service.request.UpdateUserStatusRequest;
-import com.sho1kat.dto.user_service.response.UserResponse;
+import com.sho1kat.dto.userServiceDto.request.UpdateUserRequest;
+import com.sho1kat.dto.userServiceDto.request.UpdateUserStatusRequest;
+import com.sho1kat.dto.userServiceDto.response.UserResponse;
 import com.sho1kat.enums.UserRole;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;

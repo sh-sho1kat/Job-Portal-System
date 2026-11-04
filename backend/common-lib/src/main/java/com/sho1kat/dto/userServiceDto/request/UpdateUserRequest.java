@@ -1,4 +1,4 @@
-package com.sho1kat.dto.user_service.request;
+package com.sho1kat.dto.userServiceDto.request;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;

@@ -1,4 +1,4 @@
-package com.sho1kat.dto.jobServiceDto.response;
+package com.sho1kat.dto.companyServiceDto.response;
 
 import com.sho1kat.enums.IndustryType;
 

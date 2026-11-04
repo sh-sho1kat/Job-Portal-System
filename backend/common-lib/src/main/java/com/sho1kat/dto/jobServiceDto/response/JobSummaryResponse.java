@@ -5,6 +5,7 @@ import com.sho1kat.enums.WorkMode;
 
 public record JobSummaryResponse(
         Long id,
+        Long companyId,
         String title,
         String slug,
         EmploymentType employmentType,

@@ -1,6 +1,6 @@
 package com.sho1kat.client;
 
-import com.sho1kat.dto.jobServiceDto.response.CompanySummaryResponse;
+import com.sho1kat.dto.companyServiceDto.response.CompanySummaryResponse;
 import com.sho1kat.exception.ApiException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cloud.openfeign.FallbackFactory;

@@ -1,7 +1,7 @@
 package com.sho1kat.client.fallback;
 
 import com.sho1kat.client.UserClient;
-import com.sho1kat.dto.user_service.response.UserResponse;
+import com.sho1kat.dto.userServiceDto.response.UserResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cloud.openfeign.FallbackFactory;
 import org.springframework.stereotype.Component;

@@ -1,8 +1,8 @@
 package com.sho1kat.mapper;
 
-import com.sho1kat.dto.user_service.request.RegisterRequest;
-import com.sho1kat.dto.user_service.request.UpdateUserRequest;
-import com.sho1kat.dto.user_service.response.UserResponse;
+import com.sho1kat.dto.userServiceDto.request.RegisterRequest;
+import com.sho1kat.dto.userServiceDto.request.UpdateUserRequest;
+import com.sho1kat.dto.userServiceDto.response.UserResponse;
 import com.sho1kat.entity.User;
 import com.sho1kat.enums.UserStatus;
 import org.springframework.stereotype.Component;

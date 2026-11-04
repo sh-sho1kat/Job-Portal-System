@@ -1,6 +1,6 @@
 package com.sho1kat.client;
 
-import com.sho1kat.dto.jobServiceDto.response.CompanySummaryResponse;
+import com.sho1kat.dto.companyServiceDto.response.CompanySummaryResponse;
 import com.sho1kat.dto.jobServiceDto.response.JobResponse;
 import com.sho1kat.entity.Job;
 import com.sho1kat.entity.JobCategory;

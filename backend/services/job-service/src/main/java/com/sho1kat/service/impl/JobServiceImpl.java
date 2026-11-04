@@ -4,7 +4,7 @@ import com.sho1kat.client.CompanyClient;
 import com.sho1kat.dto.jobServiceDto.request.CreateJobRequest;
 import com.sho1kat.dto.jobServiceDto.request.JobSearchCriteria;
 import com.sho1kat.dto.jobServiceDto.request.UpdateJobRequest;
-import com.sho1kat.dto.jobServiceDto.response.CompanySummaryResponse;
+import com.sho1kat.dto.companyServiceDto.response.CompanySummaryResponse;
 import com.sho1kat.dto.jobServiceDto.response.DetailedJobResponse;
 import com.sho1kat.dto.jobServiceDto.response.JobResponse;
 import com.sho1kat.entity.Job;

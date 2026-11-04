@@ -1,4 +1,4 @@
-package com.sho1kat.dto.user_service.request;
+package com.sho1kat.dto.userServiceDto.request;
 
 import com.sho1kat.enums.UserRole;
 import jakarta.validation.constraints.*;

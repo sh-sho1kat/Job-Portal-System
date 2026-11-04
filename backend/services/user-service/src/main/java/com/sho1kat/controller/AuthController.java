@@ -1,11 +1,11 @@
 package com.sho1kat.controller;
 
-import com.sho1kat.dto.user_service.request.ChangePasswordRequest;
-import com.sho1kat.dto.user_service.request.LoginRequest;
-import com.sho1kat.dto.user_service.request.RefreshTokenRequest;
-import com.sho1kat.dto.user_service.request.RegisterRequest;
-import com.sho1kat.dto.user_service.response.AuthResponse;
-import com.sho1kat.dto.user_service.response.UserResponse;
+import com.sho1kat.dto.userServiceDto.request.ChangePasswordRequest;
+import com.sho1kat.dto.userServiceDto.request.LoginRequest;
+import com.sho1kat.dto.userServiceDto.request.RefreshTokenRequest;
+import com.sho1kat.dto.userServiceDto.request.RegisterRequest;
+import com.sho1kat.dto.userServiceDto.response.AuthResponse;
+import com.sho1kat.dto.userServiceDto.response.UserResponse;
 import com.sho1kat.security.AuthenticatedUser;
 import com.sho1kat.service.AuthService;
 import jakarta.validation.Valid;

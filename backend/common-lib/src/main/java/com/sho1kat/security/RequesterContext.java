@@ -6,6 +6,7 @@ import com.sho1kat.exception.ApiException;
 public final class RequesterContext {
 
     public static final String HEADER = "X-User-Id";
+    public static final String ROLE_HEADER = "X-User-Role";
 
     private RequesterContext() {
     }
@@ -19,5 +20,10 @@ public final class RequesterContext {
         } catch (NumberFormatException ex) {
             throw ApiException.unauthorized(HEADER + " must contain a numeric user id");
         }
+    }
+    public static String roleFrom(String headerValue) {
+        if (headerValue == null || headerValue.isBlank()) return null;
+        String role = headerValue.trim();
+        return role.startsWith("ROLE_") ? role.substring(5) : role;
     }
 }

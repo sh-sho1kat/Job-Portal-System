@@ -2,7 +2,7 @@ package com.sho1kat.client;
 
 
 import com.sho1kat.client.fallback.UserClientFallbackFactory;
-import com.sho1kat.dto.user_service.response.UserResponse;
+import com.sho1kat.dto.userServiceDto.response.UserResponse;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
