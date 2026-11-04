@@ -4,6 +4,7 @@ import com.sho1kat.dto.jobServiceDto.request.JobCategoryRequest;
 import com.sho1kat.dto.jobServiceDto.response.JobCategoryResponse;
 import com.sho1kat.security.RequesterContext;
 import com.sho1kat.service.JobCategoryService;
+import io.swagger.v3.oas.annotations.Operation;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -20,9 +21,8 @@ public class JobCategoryController {
     private final JobCategoryService jobCategoryService;
 
     // ---- public ----
-
-    /** Active categories as a tree. */
     @GetMapping
+    @Operation(summary = "Get all active job categories", description = "Returns a tree structure of active job categories")
     public ResponseEntity<List<JobCategoryResponse>> getAllJobCategories() {
         return ResponseEntity.ok(jobCategoryService.getAllJobCategories());
     }
@@ -33,9 +33,8 @@ public class JobCategoryController {
     }
 
     // ---- admin / employer ----
-
-    /** Flat list including inactive categories. */
     @GetMapping("/all")
+    @Operation(summary = "Get all job categories including inactive ones", description = "Requires authentication")
     public ResponseEntity<List<JobCategoryResponse>> getAllJobCategoriesIncludingInactive(
             @RequestHeader(name = RequesterContext.HEADER, required = false) String requesterId) {
         RequesterContext.from(requesterId); // authenticated callers only

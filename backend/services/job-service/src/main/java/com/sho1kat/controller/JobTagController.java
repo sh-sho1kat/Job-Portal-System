@@ -12,11 +12,6 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-/**
- * Job tags (free-form labels, e.g. "AI/ML"). CRUD is open to employers/admins
- * for now via the temporary {@code X-User-Id} stand-in; reads are public.
- * When real role enforcement lands, write access should tighten to admins only.
- */
 @RestController
 @RequestMapping("/api/job-tags")
 @RequiredArgsConstructor

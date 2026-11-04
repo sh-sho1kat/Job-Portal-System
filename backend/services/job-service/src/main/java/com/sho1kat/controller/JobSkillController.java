@@ -4,6 +4,7 @@ import com.sho1kat.dto.jobServiceDto.request.JobSkillRequest;
 import com.sho1kat.dto.jobServiceDto.response.JobSkillResponse;
 import com.sho1kat.security.RequesterContext;
 import com.sho1kat.service.JobSkillService;
+import io.swagger.v3.oas.annotations.Operation;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -12,12 +13,6 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-/**
- * Job skills (named, e.g. "Spring Boot", with a skill category). CRUD is open
- * to employers/admins for now via the temporary {@code X-User-Id} stand-in;
- * reads are public. When real role enforcement lands, write access should
- * tighten to admins only.
- */
 @RestController
 @RequestMapping("/api/job-skills")
 @RequiredArgsConstructor
@@ -27,7 +22,7 @@ public class JobSkillController {
 
     // ---- public ----
 
-    /** Active skills, sorted by name. */
+    @Operation(summary = "Get all active job skills", description = "Returns a list of active job skills, sorted by name.")
     @GetMapping
     public ResponseEntity<List<JobSkillResponse>> getAllJobSkills() {
         return ResponseEntity.ok(jobSkillService.getAllJobSkills());
@@ -40,7 +35,7 @@ public class JobSkillController {
 
     // ---- admin / employer ----
 
-    /** Flat list including inactive skills. */
+    @Operation(summary = "Get all job skills including inactive ones", description = "Returns a flat list of all job skills, including inactive ones, sorted by name.")
     @GetMapping("/all")
     public ResponseEntity<List<JobSkillResponse>> getAllJobSkillsIncludingInactive(
             @RequestHeader(name = RequesterContext.HEADER, required = false) String requesterId) {

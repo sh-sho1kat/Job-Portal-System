@@ -3,6 +3,7 @@ package com.sho1kat.controller;
 import com.sho1kat.dto.jobServiceDto.response.DetailedJobResponse;
 import com.sho1kat.enums.JobStatus;
 import com.sho1kat.service.JobAdminService;
+import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
@@ -30,14 +31,14 @@ public class JobAdminController {
         return ResponseEntity.ok(jobAdminService.getJob(jobId));
     }
 
-    /** ACTIVE -> SUSPENDED */
+    @Operation(summary = "Suspend a job", description = "ACTIVE -> SUSPENDED")
     @PostMapping("/{jobId}/suspend")
     public ResponseEntity<DetailedJobResponse> suspend(@PathVariable Long jobId,
                                                        @RequestParam(required = false) String reason) {
         return ResponseEntity.ok(jobAdminService.suspend(jobId, reason));
     }
 
-    /** SUSPENDED -> ACTIVE */
+    @Operation(summary = "Reactivate a job", description = "SUSPENDED -> ACTIVE")
     @PostMapping("/{jobId}/reactivate")
     public ResponseEntity<DetailedJobResponse> reactivate(@PathVariable Long jobId) {
         return ResponseEntity.ok(jobAdminService.reactivate(jobId));
