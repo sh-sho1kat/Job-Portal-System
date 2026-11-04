@@ -45,42 +45,30 @@ public class CompanyController {
     // ---- employer / owner ----
     @PostMapping("/create")
     public ResponseEntity<DetailedCompanyResponse> createCompany(
-            @RequestHeader(name = RequesterContext.USER_ID_HEADER, required = false) String userId,
-            @RequestHeader(name = RequesterContext.USER_ROLE_HEADER, required = false) String role,
+            @RequestHeader(name = RequesterContext.HEADER, required = false) String userId,
             @Valid @RequestBody CreateCompanyRequest request) {
-        RequesterContext requester = RequesterContext.fromHeaders(userId, role);
-        requester.checkIfJobSeeker();
-        return ResponseEntity.ok(companyService.createCompany(requester.userId(), request));
+        return ResponseEntity.ok(companyService.createCompany(RequesterContext.from(userId), request));
     }
 
     @GetMapping("/my-company")
     public ResponseEntity<DetailedCompanyResponse> getMyCompany(
-            @RequestHeader(name = "X-User-Id", required = false) String ownerId,
-            @RequestHeader(name = "X-User-Role", required = false) String role) {
-        RequesterContext requester = RequesterContext.fromHeaders(ownerId, role);
-        requester.checkIfJobSeeker();
-        return ResponseEntity.ok(companyService.getMyCompany(requester.userId()));
+            @RequestHeader(name = RequesterContext.HEADER, required = false) String ownerId){
+        return ResponseEntity.ok(companyService.getMyCompany(RequesterContext.from(ownerId)));
     }
 
     @PutMapping("/{id}")
     public ResponseEntity<DetailedCompanyResponse> updateCompany(
-            @RequestHeader(name = RequesterContext.USER_ID_HEADER, required = false) String userId,
-            @RequestHeader(name = RequesterContext.USER_ROLE_HEADER, required = false) String role,
+            @RequestHeader(name = RequesterContext.HEADER, required = false) String userId,
             @PathVariable Long id,
             @Valid @RequestBody UpdateCompanyRequest request) {
-        RequesterContext requester = RequesterContext.fromHeaders(userId, role);
-        requester.checkIfJobSeeker();
-        return ResponseEntity.ok(companyService.updateCompany(id, requester.userId(), request));
+        return ResponseEntity.ok(companyService.updateCompany(id, RequesterContext.from(userId), request));
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<MessageResponse> deleteCompany(
-            @RequestHeader(name = RequesterContext.USER_ID_HEADER, required = false) String userId,
-            @RequestHeader(name = RequesterContext.USER_ROLE_HEADER, required = false) String role,
+            @RequestHeader(name = RequesterContext.HEADER, required = false) String userId,
             @PathVariable Long id) {
-        RequesterContext requester = RequesterContext.fromHeaders(userId, role);
-        requester.checkIfJobSeeker();
-        companyService.deleteCompany(id, requester.userId());
+        companyService.deleteCompany(id, RequesterContext.from(userId));
         return ResponseEntity.ok(new MessageResponse("Company deleted successfully"));
     }
 }

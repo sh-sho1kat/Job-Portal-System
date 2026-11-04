@@ -1,5 +1,6 @@
 package com.sho1kat.controller;
 
+import com.sho1kat.dto.MessageResponse;
 import com.sho1kat.dto.companyServiceDto.request.LocationRequest;
 import com.sho1kat.dto.companyServiceDto.response.LocationResponse;
 import com.sho1kat.security.RequesterContext;
@@ -27,37 +28,28 @@ public class CompanyLocationController {
     @PostMapping
     public ResponseEntity<LocationResponse> addLocation(
             @PathVariable Long companyId,
-            @RequestHeader(name = RequesterContext.USER_ID_HEADER, required = false) String userId,
-            @RequestHeader(name = RequesterContext.USER_ROLE_HEADER, required = false) String role,
+            @RequestHeader(name = RequesterContext.HEADER, required = false) String userId,
             @Valid @RequestBody LocationRequest request) {
-        RequesterContext requester = RequesterContext.fromHeaders(userId, role);
-        requester.checkIfJobSeeker();
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(locationService.addLocation(companyId, requester.userId(), request));
+                .body(locationService.addLocation(companyId, RequesterContext.from(userId), request));
     }
 
     @PutMapping("/{locationId}")
     public ResponseEntity<LocationResponse> updateLocation(
             @PathVariable Long companyId,
             @PathVariable Long locationId,
-            @RequestHeader(name = RequesterContext.USER_ID_HEADER, required = false) String userId,
-            @RequestHeader(name = RequesterContext.USER_ROLE_HEADER, required = false) String role,
+            @RequestHeader(name = RequesterContext.HEADER, required = false) String userId,
             @Valid @RequestBody LocationRequest request) {
-        RequesterContext requester = RequesterContext.fromHeaders(userId, role);
-        requester.checkIfJobSeeker();
         return ResponseEntity.ok(
-                locationService.updateLocation(companyId, locationId, requester.userId(), request));
+                locationService.updateLocation(companyId, locationId, RequesterContext.from(userId), request));
     }
 
     @DeleteMapping("/{locationId}")
-    public ResponseEntity<Void> deleteLocation(
+    public ResponseEntity<MessageResponse> deleteLocation(
             @PathVariable Long companyId,
             @PathVariable Long locationId,
-            @RequestHeader(name = RequesterContext.USER_ID_HEADER, required = false) String userId,
-            @RequestHeader(name = RequesterContext.USER_ROLE_HEADER, required = false) String role) {
-        RequesterContext requester = RequesterContext.fromHeaders(userId, role);
-        requester.checkIfJobSeeker();
-        locationService.deleteLocation(companyId, locationId, requester.userId());
-        return ResponseEntity.noContent().build();
+            @RequestHeader(name = RequesterContext.HEADER, required = false) String userId) {
+        locationService.deleteLocation(companyId, locationId, RequesterContext.from(userId));
+        return ResponseEntity.ok(new MessageResponse("Location deleted successfully"));
     }
 }
