@@ -2,6 +2,7 @@ package com.sho1kat.service.impl;
 
 import com.sho1kat.dto.userServiceDto.request.UpdateUserRequest;
 import com.sho1kat.dto.userServiceDto.request.UpdateUserStatusRequest;
+import com.sho1kat.dto.userServiceDto.response.CandidateSummaryResponse;
 import com.sho1kat.dto.userServiceDto.response.UserResponse;
 import com.sho1kat.entity.User;
 import com.sho1kat.enums.UserRole;
@@ -31,6 +32,12 @@ public class UserServiceImpl implements UserService {
     @Transactional(readOnly = true)
     public UserResponse getUserById(Long id) {
         return userMapper.toResponse(findActiveUserOrThrow(id));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public CandidateSummaryResponse getCandidateSummaryById(Long id) {
+        return userMapper.toCandidateSummaryResponse(findActiveUserOrThrow(id));
     }
 
     @Override

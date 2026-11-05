@@ -2,6 +2,7 @@ package com.sho1kat.mapper;
 
 import com.sho1kat.dto.userServiceDto.request.RegisterRequest;
 import com.sho1kat.dto.userServiceDto.request.UpdateUserRequest;
+import com.sho1kat.dto.userServiceDto.response.CandidateSummaryResponse;
 import com.sho1kat.dto.userServiceDto.response.UserResponse;
 import com.sho1kat.entity.User;
 import com.sho1kat.enums.UserStatus;
@@ -37,6 +38,18 @@ public class UserMapper {
                 user.getCreatedAt(),
                 user.getUpdatedAt(),
                 user.getLastLoginAt()
+        );
+    }
+
+    public CandidateSummaryResponse toCandidateSummaryResponse(User user) {
+        return new CandidateSummaryResponse(
+                user.getId(),
+                user.getFirstName(),
+                user.getMiddleName(),
+                user.getLastName(),
+                user.getEmail(),
+                user.getPhoneNumber(),
+                user.getProfilePictureUrl()
         );
     }
 

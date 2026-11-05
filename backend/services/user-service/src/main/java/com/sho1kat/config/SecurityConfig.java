@@ -1,5 +1,6 @@
 package com.sho1kat.config;
 
+import com.sho1kat.security.InternalTokenFilter;
 import com.sho1kat.security.JwtAuthenticationFilter;
 import com.sho1kat.security.JwtService;
 import com.sho1kat.security.RateLimitFilter;
@@ -28,6 +29,7 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http,
                                                    JwtService jwtService,
+                                                   @Value("${INTERNAL_SERVICE_TOKEN:}") String internalServiceToken,
                                                    @Value("${app.rate-limit.auth-max-requests:30}") long maxRequests,
                                                    @Value("${app.rate-limit.auth-window-seconds:60}") long windowSeconds)
             throws Exception {
@@ -41,11 +43,16 @@ public class SecurityConfig {
                                 "/api/auth/refresh",
                                 "/api/auth/logout"
                         ).permitAll()
+                        .requestMatchers(
+                                "/internal/**"
+                        ).hasAuthority("ROLE_SERVICE")
                         .anyRequest().authenticated())
                 .exceptionHandling(ex -> ex
                         .authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)))
                 .addFilterBefore(new JwtAuthenticationFilter(jwtService),
                         UsernamePasswordAuthenticationFilter.class)
+                .addFilterBefore(new InternalTokenFilter(internalServiceToken),
+                        JwtAuthenticationFilter.class)
                 // anchored before the JWT filter, so rejected clients never reach token parsing
                 .addFilterBefore(new RateLimitFilter("/api/auth/", maxRequests, Duration.ofSeconds(windowSeconds)),
                         JwtAuthenticationFilter.class);
