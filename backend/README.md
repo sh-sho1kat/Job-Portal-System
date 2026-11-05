@@ -189,7 +189,7 @@ token; running the business workflows needs the matching *role*:
 | `ROLE_EMPLOYER` | companies | create company, publish jobs, review applications |
 | `ROLE_ADMIN` / `ROLE_SUPER_ADMIN` | platform staff | verification, suspensions, taxonomy CRUD, user management |
 
-### Access matrix (`SecurityConfig`, first match wins)
+### Access matrix (`InternalTokenFilterConfig`, first match wins)
 
 | Request | Who may call it |
 |---|---|

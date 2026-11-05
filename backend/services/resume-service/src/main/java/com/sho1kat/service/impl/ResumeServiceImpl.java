@@ -5,6 +5,7 @@ import com.sho1kat.dto.ResumeServiceDto.request.PersonalInfoRequest;
 import com.sho1kat.dto.ResumeServiceDto.request.UpdateResumeRequest;
 import com.sho1kat.dto.ResumeServiceDto.request.UpdateSummaryRequest;
 import com.sho1kat.dto.ResumeServiceDto.response.ResumeResponse;
+import com.sho1kat.dto.ResumeServiceDto.response.ResumeSummaryResponse;
 import com.sho1kat.entity.PersonalInfo;
 import com.sho1kat.entity.Resume;
 import com.sho1kat.enums.ResumeTemplateType;
@@ -97,6 +98,13 @@ public class ResumeServiceImpl implements ResumeService {
         Resume resume = requireOwnedResume(resumeId, candidateId);
         resume.setLastViewedAt(Instant.now()); // count only views actually served
         return toDetailResponse(resume);
+    }
+
+    @Override
+    @Transactional
+    public ResumeSummaryResponse getResumeSummary(Long resumeId, Long candidateId) {
+        Resume resume = requireOwnedResume(resumeId, candidateId);
+        return toEmployerResponse(resume);
     }
 
     @Override
@@ -230,6 +238,18 @@ public class ResumeServiceImpl implements ResumeService {
 
     private ResumeResponse toDetailResponse(Resume resume) {
         return resumeMapper.toDetailResponse(
+                resume,
+                workExperienceRepository.findByResumeIdOrderByDisplayOrderAscIdAsc(resume.getId()),
+                educationRepository.findByResumeIdOrderByDisplayOrderAscIdAsc(resume.getId()),
+                resumeSkillRepository.findByResumeIdOrderByDisplayOrderAscIdAsc(resume.getId()),
+                projectRepository.findByResumeIdOrderByDisplayOrderAscIdAsc(resume.getId()),
+                certificationRepository.findByResumeIdOrderByDisplayOrderAscIdAsc(resume.getId()),
+                awardRepository.findByResumeIdOrderByDisplayOrderAscIdAsc(resume.getId()),
+                languageRepository.findByResumeIdOrderByDisplayOrderAscIdAsc(resume.getId()));
+    }
+
+    private ResumeSummaryResponse toEmployerResponse(Resume resume) {
+        return resumeMapper.toEmployerResponse(
                 resume,
                 workExperienceRepository.findByResumeIdOrderByDisplayOrderAscIdAsc(resume.getId()),
                 educationRepository.findByResumeIdOrderByDisplayOrderAscIdAsc(resume.getId()),

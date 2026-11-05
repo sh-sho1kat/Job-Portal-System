@@ -2,6 +2,7 @@ package com.sho1kat.mapper;
 
 import com.sho1kat.dto.ResumeServiceDto.response.PersonalInfoResponse;
 import com.sho1kat.dto.ResumeServiceDto.response.ResumeResponse;
+import com.sho1kat.dto.ResumeServiceDto.response.ResumeSummaryResponse;
 import com.sho1kat.entity.Award;
 import com.sho1kat.entity.Certification;
 import com.sho1kat.entity.Education;
@@ -50,6 +51,30 @@ public class ResumeMapper {
                 resume.getLastViewedAt(),
                 resume.getCreatedAt(),
                 resume.getUpdatedAt(),
+                mapList(workExperiences, workExperienceMapper::toResponse),
+                mapList(educations, educationMapper::toResponse),
+                mapList(skills, resumeSkillMapper::toResponse),
+                mapList(projects, projectMapper::toResponse),
+                mapList(certifications, certificationMapper::toResponse),
+                mapList(awards, awardMapper::toResponse),
+                mapList(languages, languageMapper::toResponse));
+    }
+
+    public ResumeSummaryResponse toEmployerResponse(
+            Resume resume,
+            List<WorkExperience> workExperiences,
+            List<Education> educations,
+            List<ResumeSkill> skills,
+            List<Project> projects,
+            List<Certification> certifications,
+            List<Award> awards,
+            List<Language> languages) {
+        return new ResumeSummaryResponse(
+                resume.getId(),
+                resume.getCandidateId(),
+                resume.getTitle(),
+                toPersonalInfoResponse(resume.getPersonalInfo()),
+                resume.getSummary(),
                 mapList(workExperiences, workExperienceMapper::toResponse),
                 mapList(educations, educationMapper::toResponse),
                 mapList(skills, resumeSkillMapper::toResponse),
