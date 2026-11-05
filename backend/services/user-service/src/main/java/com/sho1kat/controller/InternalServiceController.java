@@ -5,6 +5,7 @@ import com.sho1kat.dto.userServiceDto.response.UserResponse;
 import com.sho1kat.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -15,7 +16,7 @@ public class InternalServiceController {
     private final UserService userService;
 
     @GetMapping("/{id}")
-    public CandidateSummaryResponse getCandidateSummary(Long candidateId) {
+    public CandidateSummaryResponse getCandidateSummary(@PathVariable("id") Long candidateId) {
         return userService.getCandidateSummaryById(candidateId);
     }
 

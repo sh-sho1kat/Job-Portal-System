@@ -13,7 +13,7 @@ public class InternalTokenFilterConfig {
 
     @Bean
     public FilterRegistrationBean<InternalTokenFilter> internalTokenFilter(
-            @Value("${INTERNAL_SERVICE_TOKEN:}") String internalServiceToken) {
+            @Value("${app.internal.service-token:}") String internalServiceToken) {
         FilterRegistrationBean<InternalTokenFilter> registration = new FilterRegistrationBean<>(
                 new InternalTokenFilter(internalServiceToken));
         registration.setUrlPatterns(List.of("/internal/*", "/*")); // guard the prefix, pass everything else

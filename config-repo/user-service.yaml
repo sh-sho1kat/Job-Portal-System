@@ -28,6 +28,9 @@ app:
     auth-max-requests: ${AUTH_RATE_LIMIT_MAX:30}       # max requests per client
     auth-window-seconds: ${AUTH_RATE_LIMIT_WINDOW:60}  # per this many seconds
 
+  internal:
+    service-token: ${INTERNAL_SERVICE_TOKEN:}
+
 eureka:
   client:
     fetch-registry: true

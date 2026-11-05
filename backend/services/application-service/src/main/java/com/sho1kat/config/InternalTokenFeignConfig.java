@@ -20,7 +20,7 @@ public class InternalTokenFeignConfig {
 
     @Bean
     public RequestInterceptor internalTokenInterceptor(
-            @Value("${INTERNAL_SERVICE_TOKEN:}") String internalServiceToken) {
+            @Value("${app.internal.service-token:}") String internalServiceToken) {
         return template -> {
             if (internalServiceToken == null || internalServiceToken.isBlank()) {
                 return; // fail-closed downstream: /internal/** rejects an unauthenticated call
