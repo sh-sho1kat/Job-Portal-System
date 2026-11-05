@@ -9,12 +9,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-/**
- * Company-side (employer) application inbox, scoped by {@code companyId} — the
- * same stand-in as job-service: the id is unverified until company-service
- * integration (TODO). Note writes additionally carry the acting user's
- * {@code X-User-Id} so notes record their author.
- */
 @RestController
 @RequestMapping("/api/companies/{companyId}/applications")
 @RequiredArgsConstructor

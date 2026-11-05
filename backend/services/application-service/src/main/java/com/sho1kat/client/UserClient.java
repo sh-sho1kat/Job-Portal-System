@@ -16,6 +16,6 @@ import java.util.List;
         configuration = InternalTokenFeignConfig.class)
 public interface UserClient {
 
-    @GetMapping("/internal/users/{id}/summary")
+    @GetMapping("/internal/users/{id}")
     CandidateSummaryResponse getUserSummary(@PathVariable("id") Long id);
 }
