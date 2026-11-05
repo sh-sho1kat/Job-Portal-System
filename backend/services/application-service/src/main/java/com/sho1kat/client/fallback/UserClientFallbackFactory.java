@@ -6,7 +6,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.cloud.openfeign.FallbackFactory;
 import org.springframework.stereotype.Component;
 
-import java.util.Arrays;
 import java.util.List;
 
 @Slf4j
@@ -24,19 +23,6 @@ public class UserClientFallbackFactory
             @Override
             public CandidateSummaryResponse getUserSummary(Long id) {
                 return createEmptyCandidateSummary(id);
-            }
-
-            @Override
-            public List<CandidateSummaryResponse> getUserSummaries(String ids) {
-                if(ids == null || ids.isBlank()) {
-                    return List.of();
-                }
-                return Arrays.stream(ids.split(","))
-                        .map(String::trim)
-                        .map(Long::valueOf)
-                        .distinct()
-                        .map(this::createEmptyCandidateSummary)
-                        .toList();
             }
 
             private CandidateSummaryResponse createEmptyCandidateSummary(Long id) {
