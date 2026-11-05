@@ -13,14 +13,24 @@ public class CompanyClientFallbackFactory implements FallbackFactory<CompanyClie
     @Override
     public CompanyClient create(Throwable cause) {
 
-        log.warn("Company service unavailable: {}", cause.toString());
+        log.warn("Company service unavailable: {}", cause.getMessage());
 
-        return id -> new CompanySummaryResponse(
-                id,
-                null,
-                null,
-                null,
-                null
-        );
+        return new CompanyClient() {
+            @Override
+            public CompanySummaryResponse getCompanyById(Long id) {
+                return new CompanySummaryResponse(
+                        id,
+                        null,
+                        null,
+                        null,
+                        null
+                );
+            }
+
+            @Override
+            public CompanySummaryResponse getMyCompany() {
+                return null;
+            }
+        };
     }
 }

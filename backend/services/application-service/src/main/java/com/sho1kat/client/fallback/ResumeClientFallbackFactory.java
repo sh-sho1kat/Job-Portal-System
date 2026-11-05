@@ -11,6 +11,7 @@ import org.springframework.stereotype.Component;
 public class ResumeClientFallbackFactory implements FallbackFactory<ResumeClient> {
     @Override
     public ResumeClient create(Throwable cause) {
-        return id -> new ResumeResponse(null, null, null, null, null, null, null, null, null, null, null, null);
+        log.warn("resume lookup failed ({}): detail views degrade without the resume", cause.getMessage());
+        return (resumeId, candidateId) -> null;
     }
 }

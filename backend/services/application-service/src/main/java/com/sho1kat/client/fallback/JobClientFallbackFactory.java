@@ -14,10 +14,11 @@ public class JobClientFallbackFactory
     @Override
     public JobClient create(Throwable cause) {
 
-        log.warn("Job service unavailable: {}", cause.toString());
+        log.warn("Job service unavailable: {}", cause.getMessage());
 
         return id -> new JobSummaryResponse(
                 id,
+                null,
                 null,
                 null,
                 null,
