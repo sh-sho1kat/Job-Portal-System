@@ -25,18 +25,18 @@ public class ApplicationNoteServiceImpl implements ApplicationNoteService {
 
     @Override
     @Transactional
-    public ApplicationNoteResponse addNote(Long applicationId, Long employerId, ApplicationNoteRequest request) {
+    public ApplicationNoteResponse addNote(Long applicationId, Long ownerId, ApplicationNoteRequest request) {
         Application application = requireApplication(applicationId);
         ApplicationNote note = applicationNoteRepository.save(
-                applicationNoteMapper.toEntity(application, employerId, request));
+                applicationNoteMapper.toEntity(application, ownerId, request));
         return applicationNoteMapper.toResponse(note);
     }
 
     @Override
     @Transactional(readOnly = true)
-    public List<ApplicationNoteResponse> getNotesByApplication(Long applicationId, Long employerId) {
+    public List<ApplicationNoteResponse> getNotesByApplication(Long applicationId, Long ownerId) {
         requireApplication(applicationId);
-        return applicationNoteRepository.findByApplicationIdOrderByCreatedAtAscIdAsc(applicationId)
+        return applicationNoteRepository.findByApplicationIdAndAuthorIdOrderByCreatedAtAscIdAsc(applicationId, ownerId)
                 .stream()
                 .map(applicationNoteMapper::toResponse)
                 .toList();
@@ -44,33 +44,26 @@ public class ApplicationNoteServiceImpl implements ApplicationNoteService {
 
     @Override
     @Transactional(readOnly = true)
-    public ApplicationNoteResponse getNote(Long applicationId, Long noteId, Long employerId) {
+    public ApplicationNoteResponse getNote(Long applicationId, Long noteId, Long ownerId) {
         requireApplication(applicationId);
-        return applicationNoteRepository.findByIdAndApplicationId(noteId, applicationId)
+        return applicationNoteRepository.findByIdAndApplicationIdAndAuthorId(noteId, applicationId, ownerId)
                 .map(applicationNoteMapper::toResponse)
                 .orElseThrow(() -> ApiException.notFound("Note not found with id: " + noteId));
     }
 
     @Override
     @Transactional
-    public void deleteNote(Long applicationId, Long noteId, Long employerId) {
+    public void deleteNote(Long applicationId, Long noteId, Long ownerId) {
         requireApplication(applicationId);
-        ApplicationNote note = applicationNoteRepository.findByIdAndApplicationId(noteId, applicationId)
+        ApplicationNote note = applicationNoteRepository.findByIdAndApplicationIdAndAuthorId(noteId, applicationId, ownerId)
                 .orElseThrow(() -> ApiException.notFound("Note not found with id: " + noteId));
-        // TODO: once the gateway forwards identity and roles, replace the
-        //  author-only rule with role-aware checks (admins may moderate).
-        if (!note.getAddedByUserId().equals(employerId)) {
+
+        if (!note.getAuthorId().equals(ownerId)) {
             throw ApiException.forbidden("Only the note author can delete it");
         }
         applicationNoteRepository.delete(note);
     }
 
-    // ---- helpers ----
-
-    /**
-     * Notes address the application id directly; company membership of the
-     * acting employer is unverified until identity enforcement lands (TODO).
-     */
     private Application requireApplication(Long applicationId) {
         return applicationRepository.findById(applicationId)
                 .orElseThrow(() -> ApiException.notFound("Application not found with id: " + applicationId));

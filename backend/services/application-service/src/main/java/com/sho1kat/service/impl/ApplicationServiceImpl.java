@@ -1,9 +1,17 @@
 package com.sho1kat.service.impl;
 
+import com.sho1kat.client.CompanyClient;
+import com.sho1kat.client.JobClient;
+import com.sho1kat.client.ResumeClient;
+import com.sho1kat.client.UserClient;
+import com.sho1kat.dto.ResumeServiceDto.response.ResumeResponse;
 import com.sho1kat.dto.applicationServiceDto.request.ApplicationRequest;
 import com.sho1kat.dto.applicationServiceDto.request.CompanyApplicationFilterRequest;
 import com.sho1kat.dto.applicationServiceDto.request.WithdrawApplicationRequest;
 import com.sho1kat.dto.applicationServiceDto.response.ApplicationResponse;
+import com.sho1kat.dto.companyServiceDto.response.CompanySummaryResponse;
+import com.sho1kat.dto.jobServiceDto.response.JobSummaryResponse;
+import com.sho1kat.dto.userServiceDto.response.CandidateSummaryResponse;
 import com.sho1kat.entity.Application;
 import com.sho1kat.enums.ApplicationStatus;
 import com.sho1kat.event.ApplicationEventPublisher;
@@ -14,6 +22,7 @@ import com.sho1kat.repository.ApplicationNoteRepository;
 import com.sho1kat.repository.ApplicationRepository;
 import com.sho1kat.repository.ApplicationSpecification;
 import com.sho1kat.service.ApplicationService;
+import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -60,6 +69,10 @@ public class ApplicationServiceImpl implements ApplicationService {
     private final ApplicationMapper applicationMapper;
     private final ApplicationNoteMapper applicationNoteMapper;
     private final ApplicationEventPublisher applicationEventPublisher;
+    private final ResumeClient resumeClient;
+    private final JobClient jobClient;
+    private final UserClient userClient;
+    private final CompanyClient companyClient;
 
     // ---- candidate ----
 
@@ -71,10 +84,20 @@ public class ApplicationServiceImpl implements ApplicationService {
             throw ApiException.conflict("Candidate " + candidateId + " already has an application for job "
                     + request.jobId() + "; only withdrawn applications can be re-applied for");
         }
+        JobSummaryResponse job = fetchJobSummary(request.jobId(), request.companyId());
+        CompanySummaryResponse company = fetchCompanySummary(request.companyId());
+        CandidateSummaryResponse candidate = fetchCandidateSummary(candidateId);
+        ResumeResponse resume = fetchResumeSummary(request.resumeId(), candidateId);
         Application application = applicationRepository.save(applicationMapper.toEntity(candidateId, request));
         // TODO: ask job-service to bump its applicationCount for this posting
         //  (JobService.incrementApplicationCount) once service discovery exists.
-        return applicationMapper.toDetail(application, List.of());
+        return applicationMapper.toDetail(
+                application,
+                candidate,
+                company,
+                job,
+                resume,
+                List.of());
     }
 
     @Override
@@ -89,14 +112,31 @@ public class ApplicationServiceImpl implements ApplicationService {
                 ));
 
         return applicationRepository.findByCandidateId(candidateId, pageable)
-                .map(application -> applicationMapper.toDetail(application, List.of()));
+                .map(application -> applicationMapper.toDetail(application,
+                        fetchCandidateSummary(candidateId),
+                        fetchCompanySummary(application.getCompanyId()),
+                        fetchJobSummary(application.getJobId(), application.getCompanyId()),
+                        fetchResumeSummary(application.getResumeId(), candidateId),
+                        applicationNoteRepository.findByApplicationIdAndAuthorIdOrderByCreatedAtAscIdAsc(application.getId(), application.getCandidateId())
+                                .stream()
+                                .map(applicationNoteMapper::toResponse)
+                                .toList()));
     }
 
     @Override
     @Transactional(readOnly = true)
     public ApplicationResponse getCandidateApplication(Long applicationId, Long candidateId) {
         Application application = requireOwnedApplication(applicationId, candidateId);
-        return applicationMapper.toDetail(application, List.of());
+        return applicationMapper.toDetail(
+                application,
+                fetchCandidateSummary(candidateId),
+                fetchCompanySummary(application.getCompanyId()),
+                fetchJobSummary(application.getJobId(), application.getCompanyId()),
+                fetchResumeSummary(application.getResumeId(), candidateId),
+                applicationNoteRepository.findByApplicationIdAndAuthorIdOrderByCreatedAtAscIdAsc(application.getId(), application.getCandidateId())
+                        .stream()
+                        .map(applicationNoteMapper::toResponse)
+                        .toList());
     }
 
     @Override
@@ -114,7 +154,16 @@ public class ApplicationServiceImpl implements ApplicationService {
         application.setStatus(ApplicationStatus.WITHDRAWN);
         application.setWithdrawnReason(trimToNull(request == null ? null : request.withdrawnReason()));
         application.setWithdrawnAt(Instant.now());
-        return applicationMapper.toDetail(application, List.of());
+        return applicationMapper.toDetail(
+                application,
+                fetchCandidateSummary(candidateId),
+                fetchCompanySummary(application.getCompanyId()),
+                fetchJobSummary(application.getJobId(), application.getCompanyId()),
+                fetchResumeSummary(application.getResumeId(), candidateId),
+                applicationNoteRepository.findByApplicationIdAndAuthorIdOrderByCreatedAtAscIdAsc(application.getId(), application.getCandidateId())
+                        .stream()
+                        .map(applicationNoteMapper::toResponse)
+                        .toList());
     }
 
     // ---- company (employer inbox) ----
@@ -139,16 +188,37 @@ public class ApplicationServiceImpl implements ApplicationService {
             default -> Sort.by(Sort.Order.desc("createdAt"), Sort.Order.desc("id"));
         };
         Pageable pageable = PageRequest.of(Math.max(page, 0), Math.clamp(size, 1, 100), sort);
-        return applicationRepository
-                .findAll(ApplicationSpecification.companyFilter(companyId, criteria), pageable)
-                .map(application -> applicationMapper.toDetail(application, List.of()));
+
+        Page<Application> applications = applicationRepository
+                .findAll(ApplicationSpecification.companyFilter(companyId, criteria), pageable);
+
+        return applications.map(application -> applicationMapper.toDetail(
+                application,
+                fetchCandidateSummary(application.getCandidateId()),
+                companyClient.getMyCompany(),
+                fetchJobSummary(application.getJobId(), application.getCompanyId()),
+                fetchResumeSummary(application.getResumeId(), application.getCandidateId()),
+                applicationNoteRepository.findByApplicationIdAndAuthorIdOrderByCreatedAtAscIdAsc(application.getId(), application.getCandidateId())
+                        .stream()
+                        .map(applicationNoteMapper::toResponse)
+                        .toList()
+        ));
     }
 
     @Override
     @Transactional(readOnly = true)
     public ApplicationResponse getCompanyApplication(Long companyId, Long applicationId) {
         Application application = requireCompanyApplication(companyId, applicationId);
-        return toDetail(application);
+        return applicationMapper.toDetail(
+                application,
+                fetchCandidateSummary(application.getCandidateId()),
+                companyClient.getMyCompany(),
+                fetchJobSummary(application.getJobId(), application.getCompanyId()),
+                fetchResumeSummary(application.getResumeId(), application.getCandidateId()),
+                applicationNoteRepository.findByApplicationIdAndAuthorIdOrderByCreatedAtAscIdAsc(application.getId(), application.getCandidateId())
+                        .stream()
+                        .map(applicationNoteMapper::toResponse)
+                        .toList());
     }
 
     @Override
@@ -156,7 +226,16 @@ public class ApplicationServiceImpl implements ApplicationService {
     public ApplicationResponse setStar(Long companyId, Long applicationId, boolean starred) {
         Application application = requireCompanyApplication(companyId, applicationId);
         application.setStarred(starred);
-        return toDetail(application);
+        return applicationMapper.toDetail(
+                application,
+                fetchCandidateSummary(application.getCandidateId()),
+                companyClient.getMyCompany(),
+                fetchJobSummary(application.getJobId(), application.getCompanyId()),
+                fetchResumeSummary(application.getResumeId(), application.getCandidateId()),
+                applicationNoteRepository.findByApplicationIdAndAuthorIdOrderByCreatedAtAscIdAsc(application.getId(), application.getCandidateId())
+                        .stream()
+                        .map(applicationNoteMapper::toResponse)
+                        .toList());
     }
 
     @Override
@@ -176,10 +255,60 @@ public class ApplicationServiceImpl implements ApplicationService {
         }
         application.setStatus(targetStatus);
         applicationEventPublisher.publishApplicationStatusUpdateEvent(application, oldStatus, targetStatus);
-        return toDetail(application);
+        return applicationMapper.toDetail(
+                application,
+                fetchCandidateSummary(application.getCandidateId()),
+                companyClient.getMyCompany(),
+                fetchJobSummary(application.getJobId(), application.getCompanyId()),
+                fetchResumeSummary(application.getResumeId(), application.getCandidateId()),
+                applicationNoteRepository.findByApplicationIdAndAuthorIdOrderByCreatedAtAscIdAsc(application.getId(), application.getCandidateId())
+                        .stream()
+                        .map(applicationNoteMapper::toResponse)
+                        .toList());
     }
 
     // ---- helpers ----
+
+
+    private ResumeResponse fetchResumeSummary(
+            @NotNull(message = "resumeId is required") Long resumeId,
+            Long candidateId) {
+
+        ResumeResponse resume = resumeClient.getResume(resumeId, candidateId);
+        if (resume == null || !resume.candidateId().equals(candidateId)) {
+            throw ApiException.notFound("Resume not found with id: " + resumeId);
+        }
+        return resume;
+    }
+
+    private CandidateSummaryResponse fetchCandidateSummary(Long candidateId) {
+        return userClient.getUserSummary(candidateId);
+    }
+
+    private CompanySummaryResponse fetchCompanySummary(@NotNull(message = "companyId is required") Long companyId) {
+        CompanySummaryResponse company = companyClient.getCompanyById(companyId);
+        if (company == null || company.id() == null) {
+            throw ApiException.serviceUnavailable(
+                    "Company details are unavailable right now; the posting could not be verified. Please retry.");
+        }
+        return company;
+    }
+
+    private JobSummaryResponse fetchJobSummary(
+            @NotNull(message = "jobId is required") Long jobId,
+            @NotNull(message = "companyId is required") Long companyId) {
+        JobSummaryResponse job = jobClient.getJobById(jobId);
+        if (job == null || job.id() == null || job.companyId() == null) {
+            throw ApiException.serviceUnavailable(
+                    "Job details are unavailable right now; the posting could not be verified. Please retry.");
+        }
+        if (!job.companyId().equals(companyId)) {
+            throw ApiException.badRequest("companyId " + companyId
+                    + " does not match job " + jobId + " (the posting belongs to company "
+                    + job.companyId() + ")");
+        }
+        return job;
+    }
 
     private Application requireOwnedApplication(Long applicationId, Long candidateId) {
         return applicationRepository.findByIdAndCandidateId(applicationId, candidateId)
@@ -191,13 +320,6 @@ public class ApplicationServiceImpl implements ApplicationService {
                 .orElseThrow(() -> ApiException.notFound("Application not found with id: " + applicationId));
     }
 
-    private ApplicationResponse toDetail(Application application) {
-        return applicationMapper.toDetail(application, applicationNoteRepository
-                .findByApplicationIdOrderByCreatedAtAscIdAsc(application.getId())
-                .stream()
-                .map(applicationNoteMapper::toResponse)
-                .toList());
-    }
 
     private String trimToNull(String value) {
         if (value == null) {

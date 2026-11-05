@@ -18,7 +18,4 @@ public interface UserClient {
 
     @GetMapping("/internal/users/{id}/summary")
     CandidateSummaryResponse getUserSummary(@PathVariable("id") Long id);
-
-    @GetMapping("/internal/users/summaries")
-    List<CandidateSummaryResponse> getUserSummaries(@RequestParam("ids") String ids);
 }

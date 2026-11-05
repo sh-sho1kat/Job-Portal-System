@@ -1,5 +1,7 @@
 package com.sho1kat.dto.applicationServiceDto.response;
 
+import com.sho1kat.dto.ResumeServiceDto.response.ResumeResponse;
+import com.sho1kat.dto.userServiceDto.response.CandidateSummaryResponse;
 import com.sho1kat.enums.ApplicationStatus;
 import com.sho1kat.dto.companyServiceDto.response.CompanySummaryResponse;
 import com.sho1kat.dto.jobServiceDto.response.JobSummaryResponse;
@@ -13,7 +15,7 @@ import java.util.List;
 public record ApplicationResponse(
         Long id,
 
-        UserResponse candidate,
+        CandidateSummaryResponse candidate,
 
         Long employerId,
 
@@ -21,7 +23,7 @@ public record ApplicationResponse(
 
         JobSummaryResponse job,
 
-        Long resumeId,
+        ResumeResponse resume,
 
         String coverLetter,
 

@@ -10,7 +10,7 @@ import java.util.Optional;
 @Repository
 public interface ApplicationNoteRepository extends JpaRepository<ApplicationNote, Long> {
 
-    List<ApplicationNote> findByApplicationIdOrderByCreatedAtAscIdAsc(Long applicationId);
+    List<ApplicationNote> findByApplicationIdAndAuthorIdOrderByCreatedAtAscIdAsc(Long applicationId, Long authorId);
 
-    Optional<ApplicationNote> findByIdAndApplicationId(Long id, Long applicationId);
+    Optional<ApplicationNote> findByIdAndApplicationIdAndAuthorId(Long id, Long applicationId, Long authorId);
 }

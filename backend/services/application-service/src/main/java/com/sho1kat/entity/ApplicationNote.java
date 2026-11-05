@@ -1,5 +1,6 @@
 package com.sho1kat.entity;
 
+import com.sho1kat.enums.UserRole;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -45,7 +46,7 @@ public class ApplicationNote {
     private Application application;
 
     @Column(nullable = false)
-    private Long addedByUserId;
+    private Long authorId;
 
     @Column(columnDefinition = "TEXT", nullable = false)
     private String content;
