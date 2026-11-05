@@ -8,7 +8,6 @@ import lombok.RequiredArgsConstructor;
 import org.jspecify.annotations.NonNull;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
@@ -38,15 +37,8 @@ public class InternalTokenFilter extends OncePerRequestFilter {
                     null,
                     List.of(new SimpleGrantedAuthority(SERVICE_AUTHORITY))
             );
-            try {
-                SecurityContextHolder.getContext().setAuthentication(authentication);
-                filterChain.doFilter(request, response);
-            } finally {
-                SecurityContextHolder.clearContext();
-            }
-            return;
         }
-        if (request.getRequestURI().startsWith("/internal/")) {
+        else if (request.getRequestURI().startsWith("/internal/"))  {
             response.sendError(HttpServletResponse.SC_FORBIDDEN, "Invalid internal service token");
             return;
         }

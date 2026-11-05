@@ -1,6 +1,6 @@
 package com.sho1kat.dto.applicationServiceDto.response;
 
-import com.sho1kat.dto.ResumeServiceDto.response.ResumeSummaryResponse;
+import com.sho1kat.dto.ResumeServiceDto.response.ResumeResponse;
 import com.sho1kat.dto.userServiceDto.response.CandidateSummaryResponse;
 import com.sho1kat.enums.ApplicationStatus;
 import com.sho1kat.dto.companyServiceDto.response.CompanySummaryResponse;
@@ -23,7 +23,7 @@ public record ApplicationResponse(
 
         JobSummaryResponse job,
 
-        ResumeSummaryResponse resume,
+        ResumeResponse resume,
 
         String coverLetter,
 

@@ -29,7 +29,7 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http,
                                                    JwtService jwtService,
-                                                   @Value("${app.internal.service-token:}") String internalServiceToken,
+                                                   @Value("${INTERNAL_SERVICE_TOKEN:}") String internalServiceToken,
                                                    @Value("${app.rate-limit.auth-max-requests:30}") long maxRequests,
                                                    @Value("${app.rate-limit.auth-window-seconds:60}") long windowSeconds)
             throws Exception {

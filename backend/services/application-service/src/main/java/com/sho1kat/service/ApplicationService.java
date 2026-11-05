@@ -26,18 +26,14 @@ public interface ApplicationService {
     // ---- company (employer inbox) ----
 
     Page<ApplicationResponse> getCompanyApplications(
-            Long companyId, CompanyApplicationFilterRequest criteria,
-            Long requesterId, String requesterRole, int page, int size);
+            Long companyId, CompanyApplicationFilterRequest criteria, int page, int size);
 
-    /** Company-scoped detail view, including the notes the requester authored. */
-    ApplicationResponse getCompanyApplication(Long companyId, Long applicationId,
-                                              Long requesterId, String requesterRole);
+    /** Company-scoped detail view including the internal notes. */
+    ApplicationResponse getCompanyApplication(Long companyId, Long applicationId);
 
     /** Bookmark toggle for the reviewing employer. */
-    ApplicationResponse setStar(Long companyId, Long applicationId, boolean starred,
-                                Long requesterId, String requesterRole);
+    ApplicationResponse setStar(Long companyId, Long applicationId, boolean starred);
 
     /** Employer status move (see ApplicationServiceImpl for the allowed steps). */
-    ApplicationResponse updateStatus(Long companyId, Long applicationId, ApplicationStatus targetStatus,
-                                     Long requesterId, String requesterRole);
+    ApplicationResponse updateStatus(Long companyId, Long applicationId, ApplicationStatus targetStatus);
 }

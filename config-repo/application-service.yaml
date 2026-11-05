@@ -38,17 +38,6 @@ spring:
   kafka:
     bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
 
-app:
-  jwt:
-    secret: ${JWT_SECRET}
-    issuer: job-portal-application-service
-    access-token-expiration-minutes: 15
-    refresh-token-expiration-days: 7
-    refresh-token-cleanup-cron: ${REFRESH_TOKEN_CLEANUP_CRON:0 0 3 * * *}
-
-  internal:
-    service-token: ${INTERNAL_SERVICE_TOKEN:}
-
 eureka:
   client:
     fetch-registry: true

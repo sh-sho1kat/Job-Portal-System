@@ -4,7 +4,7 @@ import com.sho1kat.client.CompanyClient;
 import com.sho1kat.client.JobClient;
 import com.sho1kat.client.ResumeClient;
 import com.sho1kat.client.UserClient;
-import com.sho1kat.dto.ResumeServiceDto.response.ResumeSummaryResponse;
+import com.sho1kat.dto.ResumeServiceDto.response.ResumeResponse;
 import com.sho1kat.dto.applicationServiceDto.request.ApplicationRequest;
 import com.sho1kat.dto.applicationServiceDto.request.CompanyApplicationFilterRequest;
 import com.sho1kat.dto.applicationServiceDto.request.WithdrawApplicationRequest;
@@ -87,7 +87,7 @@ public class ApplicationServiceImpl implements ApplicationService {
         JobSummaryResponse job = fetchJobSummary(request.jobId(), request.companyId());
         CompanySummaryResponse company = fetchCompanySummary(request.companyId());
         CandidateSummaryResponse candidate = fetchCandidateSummary(candidateId);
-        ResumeSummaryResponse resume = fetchResumeSummary(request.resumeId(), candidateId);
+        ResumeResponse resume = fetchResumeSummary(request.resumeId(), candidateId);
         Application application = applicationRepository.save(applicationMapper.toEntity(candidateId, request));
         // TODO: ask job-service to bump its applicationCount for this posting
         //  (JobService.incrementApplicationCount) once service discovery exists.
@@ -111,11 +111,9 @@ public class ApplicationServiceImpl implements ApplicationService {
                         Sort.Order.desc("id")
                 ));
 
-        CandidateSummaryResponse candidate = fetchCandidateSummary(candidateId);
-
         return applicationRepository.findByCandidateId(candidateId, pageable)
                 .map(application -> applicationMapper.toDetail(application,
-                        candidate,
+                        fetchCandidateSummary(candidateId),
                         fetchCompanySummary(application.getCompanyId()),
                         fetchJobSummary(application.getJobId(), application.getCompanyId()),
                         fetchResumeSummary(application.getResumeId(), candidateId),
@@ -175,12 +173,8 @@ public class ApplicationServiceImpl implements ApplicationService {
     public Page<ApplicationResponse> getCompanyApplications(
             Long companyId,
             CompanyApplicationFilterRequest criteria,
-            Long requesterId,
-            String requesterRole,
             int page,
             int size) {
-        CompanySummaryResponse company = requireInboxAccess(companyId, requesterRole);
-
         // default sort is appliedAt (stored as createdAt) descending, then id descending
         String sortBy = criteria.sortBy() == null ? "appliedAt" : criteria.sortBy().trim();
 
@@ -201,10 +195,10 @@ public class ApplicationServiceImpl implements ApplicationService {
         return applications.map(application -> applicationMapper.toDetail(
                 application,
                 fetchCandidateSummary(application.getCandidateId()),
-                company,
+                companyClient.getMyCompany(),
                 fetchJobSummary(application.getJobId(), application.getCompanyId()),
                 fetchResumeSummary(application.getResumeId(), application.getCandidateId()),
-                applicationNoteRepository.findByApplicationIdAndAuthorIdOrderByCreatedAtAscIdAsc(application.getId(), requesterId)
+                applicationNoteRepository.findByApplicationIdAndAuthorIdOrderByCreatedAtAscIdAsc(application.getId(), application.getCandidateId())
                         .stream()
                         .map(applicationNoteMapper::toResponse)
                         .toList()
@@ -213,17 +207,15 @@ public class ApplicationServiceImpl implements ApplicationService {
 
     @Override
     @Transactional(readOnly = true)
-    public ApplicationResponse getCompanyApplication(Long companyId, Long applicationId,
-                                                     Long requesterId, String requesterRole) {
-        CompanySummaryResponse company = requireInboxAccess(companyId, requesterRole);
+    public ApplicationResponse getCompanyApplication(Long companyId, Long applicationId) {
         Application application = requireCompanyApplication(companyId, applicationId);
         return applicationMapper.toDetail(
                 application,
                 fetchCandidateSummary(application.getCandidateId()),
-                company,
+                companyClient.getMyCompany(),
                 fetchJobSummary(application.getJobId(), application.getCompanyId()),
                 fetchResumeSummary(application.getResumeId(), application.getCandidateId()),
-                applicationNoteRepository.findByApplicationIdAndAuthorIdOrderByCreatedAtAscIdAsc(application.getId(), requesterId)
+                applicationNoteRepository.findByApplicationIdAndAuthorIdOrderByCreatedAtAscIdAsc(application.getId(), application.getCandidateId())
                         .stream()
                         .map(applicationNoteMapper::toResponse)
                         .toList());
@@ -231,18 +223,16 @@ public class ApplicationServiceImpl implements ApplicationService {
 
     @Override
     @Transactional
-    public ApplicationResponse setStar(Long companyId, Long applicationId, boolean starred,
-                                       Long requesterId, String requesterRole) {
-        CompanySummaryResponse company = requireInboxAccess(companyId, requesterRole);
+    public ApplicationResponse setStar(Long companyId, Long applicationId, boolean starred) {
         Application application = requireCompanyApplication(companyId, applicationId);
         application.setStarred(starred);
         return applicationMapper.toDetail(
                 application,
                 fetchCandidateSummary(application.getCandidateId()),
-                company,
+                companyClient.getMyCompany(),
                 fetchJobSummary(application.getJobId(), application.getCompanyId()),
                 fetchResumeSummary(application.getResumeId(), application.getCandidateId()),
-                applicationNoteRepository.findByApplicationIdAndAuthorIdOrderByCreatedAtAscIdAsc(application.getId(), requesterId)
+                applicationNoteRepository.findByApplicationIdAndAuthorIdOrderByCreatedAtAscIdAsc(application.getId(), application.getCandidateId())
                         .stream()
                         .map(applicationNoteMapper::toResponse)
                         .toList());
@@ -250,9 +240,7 @@ public class ApplicationServiceImpl implements ApplicationService {
 
     @Override
     @Transactional
-    public ApplicationResponse updateStatus(Long companyId, Long applicationId, ApplicationStatus targetStatus,
-                                            Long requesterId, String requesterRole) {
-        CompanySummaryResponse company = requireInboxAccess(companyId, requesterRole);
+    public ApplicationResponse updateStatus(Long companyId, Long applicationId, ApplicationStatus targetStatus) {
         Application application = requireCompanyApplication(companyId, applicationId);
         ApplicationStatus oldStatus = application.getStatus();
         if (targetStatus == ApplicationStatus.WITHDRAWN) {
@@ -270,10 +258,10 @@ public class ApplicationServiceImpl implements ApplicationService {
         return applicationMapper.toDetail(
                 application,
                 fetchCandidateSummary(application.getCandidateId()),
-                company,
+                companyClient.getMyCompany(),
                 fetchJobSummary(application.getJobId(), application.getCompanyId()),
                 fetchResumeSummary(application.getResumeId(), application.getCandidateId()),
-                applicationNoteRepository.findByApplicationIdAndAuthorIdOrderByCreatedAtAscIdAsc(application.getId(), requesterId)
+                applicationNoteRepository.findByApplicationIdAndAuthorIdOrderByCreatedAtAscIdAsc(application.getId(), application.getCandidateId())
                         .stream()
                         .map(applicationNoteMapper::toResponse)
                         .toList());
@@ -282,11 +270,11 @@ public class ApplicationServiceImpl implements ApplicationService {
     // ---- helpers ----
 
 
-    private ResumeSummaryResponse fetchResumeSummary(
+    private ResumeResponse fetchResumeSummary(
             @NotNull(message = "resumeId is required") Long resumeId,
             Long candidateId) {
 
-        ResumeSummaryResponse resume = resumeClient.getResume(resumeId, candidateId);
+        ResumeResponse resume = resumeClient.getResume(resumeId, candidateId);
         if (resume == null || !resume.candidateId().equals(candidateId)) {
             throw ApiException.notFound("Resume not found with id: " + resumeId);
         }
@@ -330,29 +318,6 @@ public class ApplicationServiceImpl implements ApplicationService {
     private Application requireCompanyApplication(Long companyId, Long applicationId) {
         return applicationRepository.findByIdAndCompanyId(applicationId, companyId)
                 .orElseThrow(() -> ApiException.notFound("Application not found with id: " + applicationId));
-    }
-
-    /**
-     * Verifies the requester may open the given company's inbox. Employers must own
-     * the company — resolved inside company-service from the forwarded X-User-Id via
-     * my-company; ADMINs (and SUPER_ADMINs) may view any inbox. Fail-closed: tunnels
-     * a 503 when ownership cannot be verified, 403 on a mismatch. Returns the verified
-     * company so every row of the response carries the same, correct company.
-     */
-    private CompanySummaryResponse requireInboxAccess(Long companyId, String requesterRole) {
-        if ("ADMIN".equals(requesterRole) || "SUPER_ADMIN".equals(requesterRole)) {
-            return fetchCompanySummary(companyId);
-        }
-        CompanySummaryResponse myCompany = companyClient.getMyCompany();
-        if (myCompany == null || myCompany.id() == null) {
-            throw ApiException.serviceUnavailable(
-                    "Company ownership could not be verified right now. Please retry.");
-        }
-        if (!myCompany.id().equals(companyId)) {
-            throw ApiException.forbidden(
-                    "Company " + companyId + " does not belong to the requesting employer");
-        }
-        return myCompany;
     }
 
 

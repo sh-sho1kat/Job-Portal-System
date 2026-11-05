@@ -1,6 +1,9 @@
 package com.sho1kat.mapper;
 
-import com.sho1kat.dto.ResumeServiceDto.response.ResumeSummaryResponse;
+import com.sho1kat.client.CompanyClient;
+import com.sho1kat.client.JobClient;
+import com.sho1kat.client.UserClient;
+import com.sho1kat.dto.ResumeServiceDto.response.ResumeResponse;
 import com.sho1kat.dto.applicationServiceDto.request.ApplicationRequest;
 import com.sho1kat.dto.applicationServiceDto.response.ApplicationNoteResponse;
 import com.sho1kat.dto.applicationServiceDto.response.ApplicationResponse;
@@ -9,6 +12,7 @@ import com.sho1kat.dto.applicationServiceDto.response.WithdrawalResponse;
 import com.sho1kat.dto.companyServiceDto.response.CompanySummaryResponse;
 import com.sho1kat.dto.jobServiceDto.response.JobSummaryResponse;
 import com.sho1kat.dto.userServiceDto.response.CandidateSummaryResponse;
+import com.sho1kat.dto.userServiceDto.response.UserResponse;
 import com.sho1kat.entity.Application;
 import com.sho1kat.enums.ApplicationStatus;
 import lombok.RequiredArgsConstructor;
@@ -19,6 +23,10 @@ import java.util.List;
 @Component
 @RequiredArgsConstructor
 public class ApplicationMapper {
+
+    private final CompanyClient companyClient;
+    private final JobClient jobClient;
+    private final UserClient userClient;
 
     public Application toEntity(Long candidateId, ApplicationRequest request) {
         return Application.builder()
@@ -40,7 +48,7 @@ public class ApplicationMapper {
                                         CandidateSummaryResponse candidate,
                                         CompanySummaryResponse company,
                                         JobSummaryResponse job,
-                                        ResumeSummaryResponse resume,
+                                        ResumeResponse resume,
                                         List<ApplicationNoteResponse> notes) {
         boolean withdrawn = application.getStatus() == ApplicationStatus.WITHDRAWN;
         return new ApplicationResponse(

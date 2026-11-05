@@ -1,7 +1,7 @@
 package com.sho1kat.client.fallback;
 
 import com.sho1kat.client.ResumeClient;
-import com.sho1kat.dto.ResumeServiceDto.response.ResumeSummaryResponse;
+import com.sho1kat.dto.ResumeServiceDto.response.ResumeResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cloud.openfeign.FallbackFactory;
 import org.springframework.stereotype.Component;

@@ -12,7 +12,7 @@ public class ApplicationNoteMapper {
     public ApplicationNote toEntity(Application application, Long addedByUserId, ApplicationNoteRequest request) {
         return ApplicationNote.builder()
                 .application(application)
-                .authorId(addedByUserId)
+                .addedByUserId(addedByUserId)
                 .content(request.content().trim())
                 .build();
     }
@@ -20,7 +20,7 @@ public class ApplicationNoteMapper {
     public ApplicationNoteResponse toResponse(ApplicationNote note) {
         return new ApplicationNoteResponse(
                 note.getId(),
-                note.getAuthorId(),
+                note.getAddedByUserId(),
                 note.getContent(),
                 note.getCreatedAt()
         );
