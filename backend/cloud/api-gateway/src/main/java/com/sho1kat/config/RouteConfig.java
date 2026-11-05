@@ -7,6 +7,7 @@ import org.springframework.cloud.gateway.server.mvc.handler.HandlerFunctions;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.servlet.function.RequestPredicate;
 import org.springframework.web.servlet.function.RequestPredicates;
 import org.springframework.web.servlet.function.RouterFunction;
@@ -44,7 +45,21 @@ public class RouteConfig {
                 .build();
     }
 
-    // ----------------------------------------------------- specific routes first
+    // ----------------------------------------------------- refuse first: internal surface
+    /**
+     * /internal/** is service-to-service only: the gateway never routes it and
+     * every attempt is refused up front (regardless of who authenticated).
+     */
+    @Bean
+    @Order(0)
+    public RouterFunction<ServerResponse> internalRoutes_DENIED() {
+        return GatewayRouterFunctions.route("internal-routes-denied")
+                .route(RequestPredicates.path("/internal/**"),
+                        request -> ServerResponse.status(HttpStatus.FORBIDDEN).build())
+                .build();
+    }
+
+    // ----------------------------------------------------- specific routes
 
     /** /api/companies/{companyId}/applications  -> application-service */
     @Bean
