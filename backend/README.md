@@ -39,18 +39,18 @@ backend/
 
 | Module | Artifact | Description |
 |---|---|---|
-| `common-lib` | `job-portal-common` | Shared library: request/response DTOs, `UserRole`/`UserStatus`/`Company*` enums, `ApiException` base |
+| `common-lib` | `job-portal-common` | Shared library: request/response DTOs, `UserRole`/`UserStatus`/`Company*` enums, `ApiException` base, Kafka event records and util classes (`SlugUtils`, `RegexPatterns`, `PasswordGenerator`) |
 | `cloud/eureka-server` | `eureka-server` | Service discovery registry (dashboard: `http://localhost:8761`) |
 | `cloud/config-server` | `config-server` | Central configuration, backed by the repo's `config-repo/` folder on GitHub |
 | `cloud/api-gateway` | `api-gateway` | Single entry point for all clients: verifies JWTs, enforces the role-based access matrix, forwards the verified identity downstream |
-| `services/user-service` | `user-service` | User authentication (JWT access + refresh tokens) and user/role management |
+| `services/user-service` | `user-service` | User authentication (JWT access + refresh tokens), user/role management, admin & super-admin operations (generated+mailed credentials, super-admin bootstrap), internal candidate-summary feed |
 | `services/company-service` | `company-service` | Company profiles, offices, and admin verification workflow |
 | `services/job-service` | `job-service` | Job postings (search, employer CRUD, admin review) |
 | `services/resume-service` | `resume-service` | Candidate resumes (sections, skills, languages, completion score) |
 | `services/application-service` | `application-service` | Candidate applications, employer review inbox, internal notes |
 | `services/job-preference-service` | `job-preference-service` | Candidate saved jobs (bookmarks) with personal notes |
 | `services/ai-service` | `ai-service` | AI content generation: resume optimization, job auto-generation, cover letters & screening, natural-language search |
-| `services/notification-service` | `notification-service` | Email notifications: Kafka consumer over `application.status.change` turning candidate status moves into plain-text template mails (shortlisted / rejected / hired / generic update) |
+| `services/notification-service` | `notification-service` | Email notifications: Kafka consumer over `application.status.change` turning candidate status moves into plain-text template mails (shortlisted / rejected / hired / generic update); also serves general `mail/send` over synchronous Feign for caller services (admin credential + reset mails) |
 
 ## Requirements
 
@@ -61,6 +61,7 @@ backend/
 - **`GEMINI_API_KEY` (Google AI Studio) and/or `GROQ_API_KEY` (groq.com) for ai-service** — at least one; Gemini is preferred, Groq is the automatic fallback
 - **Apache Kafka reachable on `KAFKA_BOOTSTRAP_SERVERS` (default `localhost:9092`)** — application-service publishes application-status events, notification-service consumes them
 - **SMTP account for notification-service** (`MAIL_USERNAME` / `MAIL_PASSWORD`, default host `smtp.gmail.com` on port `587` with STARTTLS) — the address mails are sent from
+- **`INTERNAL_SERVICE_TOKEN` for the internal feeds** — one shared secret given to application-service (the caller) and user-service / resume-service (the guards), as an env var with a `${INTERNAL_SERVICE_TOKEN:}` fallback in the config repo; a blank value fails closed: every internal call answers `403` on both ends
 
 ### Ports
 
@@ -195,9 +196,9 @@ token; running the business workflows needs the matching *role*:
 |---|---|
 | `POST /api/auth/register` · `/api/auth/login` · `/api/auth/refresh` · `/api/auth/logout` | **public** (user-service rate-limits these) |
 | `GET /api/jobs/**`, `GET /api/companies/**`, `GET /api/job-categories/**`, `GET /api/job-skills/**`, `GET /api/job-tags/**` | **public** — catalog browsing |
-| `GET /api/job-categories/all`, `GET /api/job-skills/all`, `GET /api/job-tags/all` | any logged-in user (inactive entries included) |
+| `GET /api/job-categories/all`, `GET /api/job-skills/all` | any logged-in user (inactive entries included; job-tags has no `/all`) |
 | `POST/PUT/DELETE /api/job-categories/**`, `/api/job-skills/**`, `/api/job-tags/**` | `ADMIN`, `SUPER_ADMIN` — taxonomy CRUD |
-| `/api/admin/**` | `ADMIN`, `SUPER_ADMIN` — verification & moderation |
+| `/api/admin/**` | `ADMIN`, `SUPER_ADMIN` — verification & moderation; the `/api/admin/super/**` roster re-checks `SUPER_ADMIN` in user-service |
 | any write on `/api/jobs/**` (create, publish, close, delete) | `EMPLOYER`, `ADMIN`, `SUPER_ADMIN` |
 | any write on `/api/companies/**` (create, update, locations, delete) | `EMPLOYER`, `ADMIN`, `SUPER_ADMIN` |
 | `/api/companies/{id}/applications/**` (employer inbox, notes, status moves) | `EMPLOYER`, `ADMIN`, `SUPER_ADMIN` |
@@ -242,6 +243,9 @@ mvn spring-boot:run
 | `AUTH_RATE_LIMIT_MAX` | no | Max auth requests per client (default `30`) |
 | `AUTH_RATE_LIMIT_WINDOW` | no | Rate-limit window in seconds (default `60`) |
 | `REFRESH_TOKEN_CLEANUP_CRON` | no | Cron for expired refresh-token cleanup (default `0 0 3 * * *` — daily 03:00) |
+| `INTERNAL_SERVICE_TOKEN` | no | Shared secret guarding the internal `/internal/users/**` feed (same value as the calling services). Unset → the feed fails closed (`403`), service keeps running |
+| `SUPER_ADMIN_ENABLED` / `SUPER_ADMIN_EMAIL` / `SUPER_ADMIN_PASSWORD` | no | Super-admin bootstrap, runs on every boot (default `false`; see "Super-admin bootstrap" below) |
+| `SUPER_ADMIN_FIRST_NAME` / `SUPER_ADMIN_LAST_NAME` | no | Names for a freshly created super admin (default `Super` / `Admin`); existing accounts are promoted only, password never overwritten |
 
 ### Security configuration
 
@@ -251,6 +255,20 @@ mvn spring-boot:run
 - **Rate limiting** on all `/api/auth/**` endpoints, applied *before* the JWT filter.
 - **Method security** — role checks via `@PreAuthorize` (`ADMIN`, `SUPER_ADMIN`).
 - Passwords hashed with **BCrypt**.
+
+### Super-admin bootstrap
+
+`com.sho1kat.config.SuperAdminInitializer` runs on every user-service boot (`ApplicationRunner`) and is
+gated by `app.super-admin.enabled` (default `false`, wired to `SUPER_ADMIN_ENABLED`):
+
+- **Disabled or blank `SUPER_ADMIN_EMAIL`** → skips (debug log); **email set but password missing** → logs a warning and skips.
+- **An account already exists** with the configured email → promoted to `ROLE_SUPER_ADMIN` (only if it is
+  not one already). The existing password is **never overwritten** — the bootstrap is promote-only.
+- **No account** → a new `ROLE_SUPER_ADMIN` is created with the supplied password and the
+  `SUPER_ADMIN_FIRST_NAME`/`SUPER_ADMIN_LAST_NAME` defaults.
+
+Idempotent: safe to leave enabled locally; flip `SUPER_ADMIN_ENABLED` off in production once the first
+super admin exists.
 
 ## API — user-service
 
@@ -275,6 +293,45 @@ mvn spring-boot:run
 | `DELETE` | `/api/users/{id}` | `ADMIN`/`SUPER_ADMIN` |
 
 `GET /` on the service root serves as a lightweight welcome/health endpoint.
+
+### Admin (`/api/admin/users`) — non-admin accounts
+
+| Method | Path | Access |
+|---|---|---|
+| `POST` | `/api/admin/users/{userId}/password` | `ADMIN`/`SUPER_ADMIN` — replaces the password of a candidate/employer account with a **generated** one; no request body |
+| `PATCH` | `/api/admin/users/{userId}/status` | `ADMIN`/`SUPER_ADMIN` — same shared status logic as `PATCH /api/users/{id}/status`, but only for non-admin targets |
+
+The generated-password flow below (used by this reset and by the super-admin surfaces):
+
+- The password is **generated, not received** — an ambiguity-free 16-character `SecureRandom` string from
+  the shared `com.sho1kat.util.PasswordGenerator` in common-lib (unit-free of look-alikes, always covering
+  upper/lower/digit/special).
+- **Mail-first** — credentials go out via a synchronous Feign call to notification-service
+  (`POST /api/notifications/mail/send`) *before* anything is persisted; a mail outage answers `503` and
+  leaves the old password working.
+- Hash swap + session revocation share one transaction, so a failed mail rolls everything back
+  (nothing suspended, nothing revoked).
+- Responses never contain the generated password — it lands in the account owner's inbox only.
+
+Error contract here: `403` when the target is an admin account (`ADMIN`/`SUPER_ADMIN` are super-admin
+territory), `404` unknown/deleted user, `503` mail down.
+
+### Super admin (`/api/admin/super`) — the admin roster
+
+The gateway admits `ADMIN` to `/api/admin/**`, but every method here carries
+`@PreAuthorize("hasRole('SUPER_ADMIN')")` — an ADMIN calling these gets `403` from user-service.
+
+| Method | Path | Behavior |
+|---|---|---|
+| `POST` | `/api/admin/super/admins` | creates a `ROLE_ADMIN`; password generated + mailed first (`409` existing email, `503` mail down → no account created) |
+| `GET` | `/api/admin/super/admins` | paged `ROLE_ADMIN` list (newest first; `page` 0-based, `size` 1–100) |
+| `PATCH` | `/api/admin/super/admins/{adminId}/status` | shared status logic (`suspendedAt` stamping, session revocation) |
+| `POST` | `/api/admin/super/admins/{adminId}/password-reset` | regenerates + mails the admin's password (same fail-closed contract) |
+| `DELETE` | `/api/admin/super/admins/{adminId}` | soft delete (`204`); `ROLE_SUPER_ADMIN` targets refused (`403`) |
+
+Guard rules: only `ROLE_ADMIN` accounts are manageable inside `/api/admin/super/**`
+(`ROLE_SUPER_ADMIN` targets answer `403` "Only ROLE_ADMIN accounts are managed here"), and the
+`/api/admin/users/{id}/password` reset additionally refuses admin targets from plain admins.
 
 A ready-made Postman collection is available at
 `postman` — every request
@@ -694,8 +751,10 @@ the company inbox to `EMPLOYER`/`ADMIN`); direct local calls to port 5005
 supply it manually. Candidates act only on their own applications; note writes
 identify the author through `X-User-Id` and only the author may delete their
 own note. Payloads carry the caller's identity, so per-record ownership checks
-stay the service's job. `JobSummaryResponse` / `candidate` / `company` /
-`employerId` payloads still carry ids only until cross-service lookup exists.
+stay the service's job. Candidate contact fields and the embedded resume summary
+are resolved live from user-service / resume-service over the internal service
+feed described below, while job/company summaries ride the public endpoints
+with the requester's identity forwarded.
 
 ## API — application-service
 
@@ -778,6 +837,39 @@ python3 seed/seed.py [base_url] [first_candidate] [random_seed]
 All data goes through the real API surface and lands in `application_db`;
 re-runs stay idempotent (duplicate 409s recover ids from the inbox, existing
 statuses are tolerated, fresh candidate/job pairs add rows).
+
+## Internal service calls (`/internal/**`)
+
+Application views resolve cross-service payloads live instead of shipping raw
+ids. The gateway never routes these paths (`RouteConfig` refuses `/internal/**`
+at `@Order(0)`); peers reach them directly over Eureka/Feign with a shared secret:
+
+```
+application-service (candidate views + employer review inbox)
+  UserServiceClient →  GET user-service   /internal/users/{id}                       → CandidateSummaryResponse
+  ResumeClient      →  GET resume-service /internal/resumes/{resumeId}?candidateId=… → ResumeSummaryResponse
+                         (employer-safe summary; an unmatched candidateId answers 403)
+  JobClient / CompanyClient → public /api/jobs/{id}, /api/companies/{id},
+                         /api/companies/my-company — these keep forwarding the
+                         requester's own identity for owner checks
+```
+
+Token contract:
+
+- Every affected service reads `app.internal.service-token: ${INTERNAL_SERVICE_TOKEN:}` from the config
+  repo, so the env var outranks the yaml and an unset value fails closed.
+- Callers attach `X-Internal-Token: <shared token>`; in application-service the
+  `InternalTokenFeignConfig` Feign interceptor applies to the two internal clients only and never
+  forwards the user identity — `RequesterForwardFeignConfig` keeps doing exactly that for the
+  job/company lookups.
+- Guards: user-service `InternalTokenFilter` (valid header → `ROLE_SERVICE`
+  principal, context cleared in `finally`) and resume-service `InternalTokenFilterConfig`
+  (servlet filter, order 0, `/internal/*` pattern).
+- **Fail closed**: a blank `INTERNAL_SERVICE_TOKEN` on either side answers `403` for every internal
+  call without blocking startup — the feeds simply stay off until the secret is configured.
+
+Manual probe: call the service port directly with the same header
+(see the collection's *Internal Endpoints (dev)* folder and its `internalServiceToken` variable).
 
 ## Running the Job Preference Service
 
@@ -1035,6 +1127,14 @@ body as a plain text request body; the four event endpoints take the event JSON
 documented above. Delivery failures surface as `500` (SMTP misconfiguration,
 unreachable host, blank recipient guarded in `MailServiceImpl`).
 
+`mail/send` is also the delivery endpoint for user-service's credential mails:
+admin creation, admin password-reset and the user password-reset (both
+`/api/admin/**` reset flows) generate a temporary password and mail it here
+**synchronously** before persisting the new hash — mail-first, fail-closed,
+a `500`/unreachable SMTP surfaces as `503` to the caller and nothing changes.
+The service stays deliberately unrouted on the gateway: exposing `mail/send`
+publicly would make it a spam relay.
+
 
 ## Roadmap
 
@@ -1047,6 +1147,7 @@ unreachable host, blank recipient guarded in `MailServiceImpl`).
 - [x] Spring Cloud infrastructure in `cloud/` — eureka-server, config-server, api-gateway (JWT validation, role matrix, identity forwarding)
 - [x] AI service — resume optimization (summary, ATS bullets, improvement scoring, career feedback), job auto-generation (descriptions, requirements, benefits, skills/tags, salary band), application support (cover letters, screening scores, skills-gap), natural-language search (filter extraction, alert suggestions); dual-provider fallback Gemini → Groq
 - [x] Notification service — Kafka-driven application status emails on `application.status.change` (shortlisted / rejected / hired templates, plain-text SMTP out)
+- [x] Admin & super-admin user management — generated+mailed credentials over synchronous notification mails, super-admin bootstrap seeding, shared `INTERNAL_SERVICE_TOKEN` guarding the internal `/internal/**` summary feeds
 - [ ] Method-level role checks in the services — coarse role gating runs at the gateway today; per-record ownership is handled per service (job-service now also verifies the posting's `companyId` against company-service at creation)
 - [ ] Per-service JWT re-verification for defense in depth (services currently trust gateway-injected `X-User-*` headers)
 - [ ] Cross-service data resolution finishing touches — job cards already embed live company summaries over Feign; pending: application-count wiring from application-service, AI screening integration in the inbox, and real candidate contact data in status events (currently demo placeholders)

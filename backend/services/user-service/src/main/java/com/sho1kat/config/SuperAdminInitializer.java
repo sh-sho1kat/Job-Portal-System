@@ -50,7 +50,6 @@ public class SuperAdminInitializer implements ApplicationRunner {
             log.warn("app.super-admin.email is set but password is missing; skipping bootstrap");
             return;
         }
-
         userRepository.findByEmailIgnoreCase(email.trim()).ifPresentOrElse(user -> {
             if (user.getUserRole() != UserRole.ROLE_SUPER_ADMIN) {
                 user.setUserRole(UserRole.ROLE_SUPER_ADMIN);

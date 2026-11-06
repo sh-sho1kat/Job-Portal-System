@@ -2,7 +2,7 @@
   "info": {
     "_postman_id": "b1e2c3d4-5a6b-4c8d-9e0f-1a2b3c4d5e6f",
     "name": "Job Portal System API",
-    "description": "Postman collection for all Job Portal System backend services.\n\n## Everything flows through the API gateway by default\nAll `*BaseUrl` collection variables default to the gateway (`http://localhost:5000`) — the single public entry point that validates every JWT, enforces role rules and injects `X-User-Id` / `X-User-Email` / `X-User-Role` for the services. You never need to send the `X-User-*` headers yourself while pointing at the gateway.\nTo debug one service directly (bypassing the gateway), override that service's variable back to its internal port (`user-service` 5001, `company-service` 5002, `job-service` 5003, `resume-service` 5004, `application-service` 5005, `job-preference-service` 5006, `ai-service` 5007) — then root/owner requests need a manual `X-User-Id: {{userId}}` header.\n\n## Conventions\n- **One top-level folder per microservice** (e.g. `User Service`, `Job Service`, ...), one subfolder per controller.\n- **Collection variables** (see `Variables` tab):\n  - every `*BaseUrl` — defaults to the gateway `http://localhost:5000`\n  - `accessToken` / `refreshToken` — auto-saved by the `Login` and `Refresh` test scripts\n  - `userId` — the record used by `GET/PUT/PATCH/DELETE /api/users/{id}` requests\n  - `companyId` / `locationId` — ids used by the Company Service requests\n  - `resumeId` / section ids — resumes + their sub-sections (`workExperienceId`, `educationId`, `resumeSkillId`, `languageId`, `projectId`, `certificationId`, `awardId`)\n- **Auth**: collection-level Bearer auth using `{{accessToken}}`; public requests override it with `No Auth`.\n- **Gateway errors**: 401/403 from the gateway return `{\"success\":false,\"message\":\"...\"}`.\n- **Service errors**: every non-2xx response (except empty-body 401s from the security layer) is\n  `{\"status\":int,\"error\":str,\"message\":str,\"details\":array|null,\"timestamp\":str}`.\n\n## Extending\nWhen a new service/API is added, add a new top-level folder and follow the same conventions.\nSee `postman/README.md` in `common-lib`.",
+    "description": "Postman collection for all Job Portal System backend services.\n\n## Everything flows through the API gateway by default\nAll `*BaseUrl` collection variables default to the gateway (`http://localhost:5000`) — the single public entry point that validates every JWT, enforces role rules and injects `X-User-Id` / `X-User-Email` / `X-User-Role` for the services. You never need to send the `X-User-*` headers yourself while pointing at the gateway.\nTo debug one service directly (bypassing the gateway), override that service's variable back to its internal port (`user-service` 5001, `company-service` 5002, `job-service` 5003, `resume-service` 5004, `application-service` 5005, `job-preference-service` 5006, `ai-service` 5007) — then root/owner requests need a manual `X-User-Id: {{userId}}` header.\n\n## Conventions\n- **One top-level folder per microservice** (e.g. `User Service`, `Job Service`, ...), one subfolder per controller.\n- **Collection variables** (see `Variables` tab):\n  - every `*BaseUrl` — defaults to the gateway `http://localhost:5000`\n  - `accessToken` / `refreshToken` — auto-saved by the `Login` and `Refresh` test scripts\n  - `userId` — the record used by `GET/PUT/PATCH/DELETE /api/users/{id}` requests\n  - `companyId` / `locationId` — ids used by the Company Service requests\n  - `resumeId` / section ids — resumes + their sub-sections (`workExperienceId`, `educationId`, `resumeSkillId`, `languageId`, `projectId`, `certificationId`, `awardId`)\n- **Auth**: collection-level Bearer auth using `{{accessToken}}`; public requests override it with `No Auth`.\n- **Gateway errors**: 401/403 from the gateway return `{\"success\":false,\"message\":\"...\"}`.\n- **Service errors**: every non-2xx response (except empty-body 401s from the security layer) is\n  `{\"status\":int,\"error\":str,\"message\":str,\"details\":array|null,\"timestamp\":str}`.\n\n## Extending\nWhen a new service/API is added, add a new top-level folder and follow the same conventions.\nSee `postman/README.md` in `common-lib`.\n\n## Internal Endpoints (dev)\nThe last folder probes the services' `/internal/**` data feeds directly on their local ports with the shared `X-Internal-Token` header. The gateway refuses `/internal/**` outright, so those two requests never use `{{baseUrl}}`.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "auth": {
@@ -159,6 +159,26 @@
     {
       "key": "notificationBaseUrl",
       "value": "http://localhost:5008",
+      "type": "string"
+    },
+    {
+      "key": "adminId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "userServiceDirect",
+      "value": "http://localhost:5001",
+      "type": "string"
+    },
+    {
+      "key": "resumeServiceDirect",
+      "value": "http://localhost:5004",
+      "type": "string"
+    },
+    {
+      "key": "internalServiceToken",
+      "value": "",
       "type": "string"
     }
   ],
@@ -546,6 +566,252 @@
                   ]
                 },
                 "description": "Soft-delete a user (admin only): sets status to `DELETED` and revokes all refresh tokens.\n\n**Responses**\n- `204` → deleted\n- `403` → not ADMIN / SUPER_ADMIN\n- `404` → no such user"
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "Admin",
+          "description": "Platform-staff operations on ordinary (candidate/employer) accounts: generated+mailed password resets and status changes. Gateway rule: `/api/admin/**` = `ADMIN` or `SUPER_ADMIN`.",
+          "item": [
+            {
+              "name": "Reset User Password (generated + mailed)",
+              "request": {
+                "method": "POST",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/admin/users/{{userId}}/password",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "admin",
+                    "users",
+                    "{{userId}}",
+                    "password"
+                  ]
+                },
+                "description": "**A generated password replaces the user's current one.** The request takes no body: user-service generates an ambiguity-free 16-character password, delivers it to the user's email via notification-service over a synchronous Feign call (mail-first), then swaps the BCrypt hash and revokes every active session. If the mail service is down the call fails `503` and nothing changes — the old password still works.\n\nThe response is a `UserResponse`; the generated password is **not** in the response — check the user's inbox (or the mail service log).\n\n**Responses**\n- `200` → updated `UserResponse` (`ROLE_JOB_SEEKER` / `ROLE_EMPLOYER` targets only)\n- `401` → missing/invalid bearer token at the gateway\n- `403` → caller is not an admin, or the target is an admin account (\"Admin accounts are managed by super admins only\")\n- `404` → unknown or deleted user\n- `503` → notification-service unavailable; old password still valid"
+              },
+              "response": []
+            },
+            {
+              "name": "Change User Status (admin)",
+              "request": {
+                "method": "PATCH",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/admin/users/{{userId}}/status",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "admin",
+                    "users",
+                    "{{userId}}",
+                    "status"
+                  ]
+                },
+                "description": "Same shared status logic as the `/api/users/{{userId}}/status` variant (suspending stamps `suspendedAt` and revokes refresh tokens), exposed under the admin prefix — but **admin accounts are refused here**: `ROLE_ADMIN` / `ROLE_SUPER_ADMIN` targets answer `403`.\n\n**Body**: `status` = `ACTIVE` | `INACTIVE` | `SUSPENDED` | `DELETED`\n\n**Responses**\n- `200` → updated `UserResponse`\n- `400` → unknown status / null body\n- `403` → non-admin caller, or admin target\n- `404` → unknown or deleted user",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"status\": \"SUSPENDED\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "Super Admin",
+          "description": "Exclusively `ROLE_SUPER_ADMIN`. The gateway admits ADMIN to `/api/admin/**`, but every request here carries `@PreAuthorize(\"hasRole('SUPER_ADMIN')\")` — an ADMIN gets `403` from user-service. Admin accounts are created without a body password: credentials are generated and mailed (mail-first, fail-closed).",
+          "item": [
+            {
+              "name": "Create Admin (password mailed)",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/admin/super/admins",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "admin",
+                    "super",
+                    "admins"
+                  ]
+                },
+                "description": "Creates a `ROLE_ADMIN` account **without receiving a password**: user-service generates an ambiguity-free 16-character password and mails it to the new admin (synchronous Feign to notification-service, mail-first). If the mail call fails the request answers `503` and no account is created. Duplicate emails answer `409`.\n\n**Body**: `firstName`/`lastName`/`email` required; `middleName` optional; `phoneNumber` optional (`+?[0-9]{7,15}`).\n\n**Responses**\n- `200` → `UserResponse`; the test script saves `adminId`\n- `400` → validation errors\n- `403` → caller is not SUPER_ADMIN\n- `409` → email already registered\n- `503` → mail down; admin not created",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"firstName\": \"Nadia\",\n  \"middleName\": null,\n  \"lastName\": \"Islam\",\n  \"email\": \"admin.nadia@example.com\",\n  \"phoneNumber\": \"+8801700000001\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('200 OK - admin created (password was mailed)', () => pm.response.to.have.status(200));",
+                      "const body = pm.response.json();",
+                      "if (body && body.id) pm.collectionVariables.set('adminId', String(body.id));",
+                      "console.log('Admin created:', body && body.email, '- the generated temporary password was emailed to that address.');"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "List Admins (paged)",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/admin/super/admins?page=0&size=20",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "admin",
+                    "super",
+                    "admins"
+                  ],
+                  "query": [
+                    {
+                      "key": "page",
+                      "value": "0"
+                    },
+                    {
+                      "key": "size",
+                      "value": "20"
+                    }
+                  ]
+                },
+                "description": "Paged `ROLE_ADMIN` list, newest first (`createdAt`, `id`); `page` is 0-based, `size` max 100.\n\n**Responses**\n- `200` → Spring `Page<UserResponse>`; the script saves the first admin's id into `adminId` as a fallback\n- `403` → caller is not SUPER_ADMIN"
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('200 OK - admin page', () => pm.response.to.have.status(200));",
+                      "const body = pm.response.json();",
+                      "const first = body && Array.isArray(body.content) && body.content[0];",
+                      "if (first && first.id) pm.collectionVariables.set('adminId', String(first.id));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Change Admin Status",
+              "request": {
+                "method": "PATCH",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/admin/super/admins/{{adminId}}/status",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "admin",
+                    "super",
+                    "admins",
+                    "{{adminId}}",
+                    "status"
+                  ]
+                },
+                "description": "Reuses the shared status logic: `SUSPENDED` stamps `suspendedAt` and revokes the admin's sessions.\n\n**Body**: `status` = `ACTIVE` | `INACTIVE` | `SUSPENDED` | `DELETED`\n\n**Responses**\n- `200` → updated `UserResponse`\n- `403` → caller is not SUPER_ADMIN, or the target is not a `ROLE_ADMIN` account (super admins are never managed here and never fall through to the UIs below)\n- `404` → unknown or deleted admin",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"status\": \"SUSPENDED\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Reset Admin Password (generated + mailed)",
+              "request": {
+                "method": "POST",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/admin/super/admins/{{adminId}}/password-reset",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "admin",
+                    "super",
+                    "admins",
+                    "{{adminId}}",
+                    "password-reset"
+                  ]
+                },
+                "description": "Regenerates the admin's password (16 chars, mailed first — same fail-closed contract as Create Admin), swaps the hash and revokes every active session. Use this to recover an admin whose invite mail got lost even though the account was created.\n\n**Responses**\n- `200` → updated `UserResponse` (new password only in the mail)\n- `403` → not SUPER_ADMIN, or target is not ROLE_ADMIN\n- `404` → unknown or deleted admin\n- `503` → mail down; password unchanged"
+              },
+              "response": []
+            },
+            {
+              "name": "Delete Admin (soft)",
+              "request": {
+                "method": "DELETE",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/admin/super/admins/{{adminId}}",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "admin",
+                    "super",
+                    "admins",
+                    "{{adminId}}"
+                  ]
+                },
+                "description": "Soft-deletes a `ROLE_ADMIN` account and revokes its sessions. `ROLE_SUPER_ADMIN` accounts are refused — only peers in the admin roster are managed.\n\n**Responses**\n- `204` → deleted\n- `403` → not SUPER_ADMIN, or target is SUPER_ADMIN\n- `404` → unknown admin"
               },
               "response": []
             }
@@ -5405,6 +5671,74 @@
               ]
             }
           ]
+        }
+      ]
+    },
+    {
+      "name": "Internal Endpoints (dev)",
+      "description": "Direct, gateway-free probes of the `/internal/**` service-to-service surfaces. Nothing here works through the gateway — it refuses every `/internal/**` path with `403`. Point `{{userServiceDirect}}` / `{{resumeServiceDirect}}` at the direct ports (5001 / 5004) and set `{{internalServiceToken}}` to the shared `INTERNAL_SERVICE_TOKEN` value both sides were started with; a blank or wrong token fails closed (`403`).",
+      "item": [
+        {
+          "name": "Get Candidate Summary (internal)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Internal-Token",
+                "value": "{{internalServiceToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{userServiceDirect}}/internal/users/{{userId}}",
+              "host": [
+                "{{userServiceDirect}}"
+              ],
+              "path": [
+                "internal",
+                "users",
+                "{{userId}}"
+              ]
+            },
+            "description": "What application-service calls over service-to-service Feign to resolve candidate contact fields inside application views.\n\n**Responses**\n- `200` → `CandidateSummaryResponse` (`id`, names, `email`, `phoneNumber`, `profilePictureUrl`)\n- `403` → missing/invalid `X-Internal-Token`, or the service runs with a blank `INTERNAL_SERVICE_TOKEN` (fail-closed)\n- `404` → unknown candidate",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Resume Summary (internal)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Internal-Token",
+                "value": "{{internalServiceToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{resumeServiceDirect}}/internal/resumes/{{resumeId}}?candidateId={{userId}}",
+              "host": [
+                "{{resumeServiceDirect}}"
+              ],
+              "path": [
+                "internal",
+                "resumes",
+                "{{resumeId}}"
+              ],
+              "query": [
+                {
+                  "key": "candidateId",
+                  "value": "{{userId}}"
+                }
+              ]
+            },
+            "description": "The employer-safe resume summary application-service embeds when a company inbox viewer opens an application: requires matching `candidateId`.\n\n**Responses**\n- `200` → `ResumeSummaryResponse` (personal info, summary, work/education/skills/projects/certifications/awards/languages)\n- `403` → token invalid, or the resume does not belong to `candidateId`\n- `404` → unknown resume",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": []
         }
       ]
     }
