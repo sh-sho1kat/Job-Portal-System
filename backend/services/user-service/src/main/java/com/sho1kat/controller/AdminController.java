@@ -16,7 +16,6 @@ public class AdminController {
 
     private final AdminService adminService;
 
-    /** 200 OK — a generated password was mailed; every session was revoked. */
     @PostMapping("/{userId}/password")
     @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
     public ResponseEntity<UserResponse> resetUserPassword(@PathVariable Long userId) {

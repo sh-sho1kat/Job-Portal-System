@@ -2,12 +2,6 @@ package com.sho1kat.util;
 
 import java.security.SecureRandom;
 
-/**
- * Cryptographically random temporary passwords. Always contains at least one
- * uppercase letter, one lowercase letter, one digit and one special character —
- * so generated passwords also satisfy the registration password policy
- * (look-alike chars I/l/1 and O/0 are excluded).
- */
 public final class PasswordGenerator {
 
     private static final String UPPER = "ABCDEFGHJKLMNPQRSTUVWXYZ";
@@ -19,7 +13,7 @@ public final class PasswordGenerator {
     private PasswordGenerator() {
     }
 
-    /** @return a 16-character password with guaranteed character-class coverage. */
+    /** return a 16-character password with guaranteed character-class coverage. */
     public static String generate() {
         return generate(16);
     }
