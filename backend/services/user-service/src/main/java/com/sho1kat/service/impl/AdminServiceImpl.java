@@ -1,6 +1,5 @@
 package com.sho1kat.service.impl;
 
-import com.sho1kat.dto.userServiceDto.request.ResetUserPasswordRequest;
 import com.sho1kat.dto.userServiceDto.request.UpdateUserStatusRequest;
 import com.sho1kat.dto.userServiceDto.response.UserResponse;
 import com.sho1kat.entity.User;
