@@ -13,6 +13,7 @@ import com.sho1kat.repository.RefreshTokenRepository;
 import com.sho1kat.repository.UserRepository;
 import com.sho1kat.service.SuperAdminService;
 import com.sho1kat.service.UserService;
+import com.sho1kat.util.PasswordGenerator;
 import feign.FeignException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -24,17 +25,10 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.security.SecureRandom;
-
 @Service
 @RequiredArgsConstructor
 @Slf4j
 public class SuperAdminServiceImpl implements SuperAdminService {
-
-    private static final String GENERATED_PASSWORD_CHARS =
-            "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789@$!%*?&";
-    private static final int GENERATED_PASSWORD_LENGTH = 16;
-    private static final SecureRandom RANDOM = new SecureRandom();
 
     private final UserRepository userRepository;
     private final RefreshTokenRepository refreshTokenRepository;
@@ -51,7 +45,7 @@ public class SuperAdminServiceImpl implements SuperAdminService {
         }
 
         // Mail goes first: a mail outage must not strand an admin with an unknown password
-        String generatedPassword = generatePassword();
+        String generatedPassword = PasswordGenerator.generate();
         sendAdminCredentials(email, request.firstName(), generatedPassword);
 
         User saved = userRepository.save(User.builder()
@@ -82,7 +76,7 @@ public class SuperAdminServiceImpl implements SuperAdminService {
         User admin = requireAdminTarget(adminId);
 
         // Mail goes first: the old password must stay valid until delivery succeeds
-        String generatedPassword = generatePassword();
+        String generatedPassword = PasswordGenerator.generate();
         sendAdminCredentials(admin.getEmail(), admin.getFirstName(), generatedPassword);
 
         admin.setPasswordHash(passwordEncoder.encode(generatedPassword));
@@ -143,14 +137,6 @@ public class SuperAdminServiceImpl implements SuperAdminService {
             throw ApiException.serviceUnavailable(
                     "Mail service is unavailable; the admin credentials could not be delivered. Please retry.");
         }
-    }
-
-    private String generatePassword() {
-        var password = new StringBuilder(GENERATED_PASSWORD_LENGTH);
-        for (int i = 0; i < GENERATED_PASSWORD_LENGTH; i++) {
-            password.append(GENERATED_PASSWORD_CHARS.charAt(RANDOM.nextInt(GENERATED_PASSWORD_CHARS.length())));
-        }
-        return password.toString();
     }
 
     private String trimToNull(String value) {
