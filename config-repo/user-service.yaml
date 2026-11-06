@@ -28,6 +28,13 @@ app:
     auth-max-requests: ${AUTH_RATE_LIMIT_MAX:30}       # max requests per client
     auth-window-seconds: ${AUTH_RATE_LIMIT_WINDOW:60}  # per this many seconds
 
+  super-admin:
+    enabled: ${SUPER_ADMIN_ENABLED:false}
+    email: ${SUPER_ADMIN_EMAIL:}
+    password: ${SUPER_ADMIN_PASSWORD:}
+    first-name: ${SUPER_ADMIN_FIRST_NAME:Super}
+    last-name: ${SUPER_ADMIN_LAST_NAME:Admin}
+
   internal:
     service-token: ${INTERNAL_SERVICE_TOKEN:}
 
