@@ -86,6 +86,16 @@ public class RouteConfig {
                         "/api/admin/jobs/**"));
     }
 
+    /** /api/admin/users/** and /api/admin/super/** -> user-service */
+    @Bean
+    @Order(4)
+    public RouterFunction<ServerResponse> adminUserRoutes() {
+        return proxy("admin-user-routes", "user-service",
+                paths("/api/admin/users",
+                        "/api/admin/users/**",
+                        "/api/admin/super/**"));
+    }
+
     // ------------------------------------------------------------ general routes
 
     /** login, register, refresh, /me, /me/password ... all live in user-service. */
