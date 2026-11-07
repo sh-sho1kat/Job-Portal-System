@@ -1,6 +1,6 @@
 # Postman Collection — Job Portal System API
 
-Lives in `common-lib` so every service team shares one source of truth.
+Lives in `backend/postman/` so every service team shares one source of truth.
 Import file: [`job-portal-system.postman_collection.json`](job-portal-system.postman_collection.json)
 (Postman → *Import* → *File*, or drag it into a workspace).
 
@@ -25,6 +25,9 @@ Import file: [`job-portal-system.postman_collection.json`](job-portal-system.pos
 5. For the **Application Service** folder, run **Apply For Job** once — it
    reuses `{{jobId}}` + `{{companyId}}` from the Job/Company Service
    variables, saves `applicationId`, and the note requests save `noteId`.
+6. **User Service → Super Admin → Create Admin** saves `adminId` for its sibling
+   requests (`List Admins` re-saves it as a fallback). The generated temporary
+   password appears in no response — it lands in the created admin's inbox.
 
 ## Who to log in as, per folder
 
@@ -33,6 +36,8 @@ Import file: [`job-portal-system.postman_collection.json`](job-portal-system.pos
 | User Service → Auth (`register`/`login`/`refresh`/`logout`) | anybody | public |
 | User Service → Users — your own record | any account | any logged-in user |
 | User Service → Users — other people | `ROLE_ADMIN` / `ROLE_SUPER_ADMIN` | self vs admin decided downstream |
+| User Service → Admin | `ROLE_ADMIN` / `ROLE_SUPER_ADMIN` (target: non-admin account) | `/api/admin/users/**`, `/api/admin/**` |
+| User Service → Super Admin | `ROLE_SUPER_ADMIN` only | `/api/admin/super/**` re-checks the role in user-service |
 | Company Service → Companies / Locations | `ROLE_EMPLOYER` (owner actions) | writes need `EMPLOYER` or `ADMIN` |
 | Company Service → Company Admin | `ROLE_ADMIN` / `ROLE_SUPER_ADMIN` | `/api/admin/**` |
 | Job Service → Jobs - Public | anybody | public |
@@ -43,6 +48,7 @@ Import file: [`job-portal-system.postman_collection.json`](job-portal-system.pos
 | Application Service → Applications (candidate side) | `ROLE_JOB_SEEKER` that owns the applications | any logged-in user, ownership enforced downstream |
 | Application Service → Company Applications / Notes | `ROLE_EMPLOYER` (or admin) | employer inbox rule |
 | AI Service | any account | `/api/ai/**` authenticated; nothing owner-scoped (generation only) — needs `GEMINI_API_KEY`/`GROQ_API_KEY` in the service, a missing key answers `503` |
+| Internal Endpoints (dev) | any account + `X-Internal-Token` | gateway refuses `/internal/**`; direct ports + shared service token |
 
 Demo accounts are listed at the bottom of this file.
 
@@ -57,6 +63,12 @@ carry the stand-in
 the **last logged-in** account — services do not parse the JWT themselves.
 Never bypass the gateway in production: the service ports are internal and the
 gateway is the only public entry point.
+
+**Internal Endpoints (dev)** is the one folder that never goes through the
+gateway (it refuses every `/internal/**` path): point `{{userServiceDirect}}` /
+`{{resumeServiceDirect}}` at the direct ports (5001 / 5004) and set
+`{{internalServiceToken}}` to the shared `INTERNAL_SERVICE_TOKEN` value the
+services run with — a blank or wrong token fails closed with `403`.
 
 ## Collection variables
 
@@ -82,6 +94,9 @@ gateway is the only public entry point.
 | `applicationId`     | Apply For Job script   | `{applicationId}` used by the Application Service requests |
 | `noteId`            | Add Application Note script | `{noteId}` used by the notes requests     |
 | `savedJobId`        | Save Job script        | `{savedJobId}` used by the Saved Jobs requests |
+| `adminId`           | Create Admin / List Admins script | `{adminId}` used by the Super Admin requests |
+| `userServiceDirect` / `resumeServiceDirect` | you | direct service ports (5001 / 5004) for the Internal Endpoints (dev) folder |
+| `internalServiceToken` | you | the shared `INTERNAL_SERVICE_TOKEN` value the services run with |
 
 ## Demo data currently in the local DB (`user_db`)
 
@@ -90,6 +105,12 @@ gateway is the only public entry point.
 - 50 demo accounts: `demo01.akter41@example.com`, `demo02.akter85@example.com`,
   … `demo50.begum77@example.com` (alternating `ROLE_JOB_SEEKER` / `ROLE_EMPLOYER`).
   Each demo password is in `/tmp/opencode/apitest/batch.jsonl` (not committed).
+
+Super-admin login options: the seeded `tanvir.chowdhury@example.com` above, or
+bootstrap your own — start user-service with `SUPER_ADMIN_ENABLED=true
+SUPER_ADMIN_EMAIL=… SUPER_ADMIN_PASSWORD=…` (runs on every boot, promote-only,
+never overwrites an existing password; see the backend README's "Super-admin
+bootstrap").
 
 ## Conventions for adding new services / APIs
 
