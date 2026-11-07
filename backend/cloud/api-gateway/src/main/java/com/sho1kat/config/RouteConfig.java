@@ -96,6 +96,15 @@ public class RouteConfig {
                         "/api/admin/super/**"));
     }
 
+    /** /api/notifications/** -> notification-service; ADMIN/SUPER_ADMIN only (SecurityConfig) */
+    @Bean
+    @Order(5)
+    public RouterFunction<ServerResponse> notificationRoutes() {
+        return proxy("notification-routes", "notification-service",
+                paths("/api/notifications",
+                        "/api/notifications/**"));
+    }
+
     // ------------------------------------------------------------ general routes
 
     /** login, register, refresh, /me, /me/password ... all live in user-service. */

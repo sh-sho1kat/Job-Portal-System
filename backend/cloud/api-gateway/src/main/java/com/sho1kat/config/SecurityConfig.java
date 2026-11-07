@@ -88,6 +88,15 @@ public class SecurityConfig {
                                 "/api/admin/**"
                         ).hasAnyRole(ADMIN, SUPER_ADMIN)
 
+                        // ---------- MAIL RELAY: admins only ----------
+                        // The notification-service mail surface is a plain relay; no
+                        // end-user role gets it. user-service's Feign credential mail
+                        // bypasses the gateway, so the admin gate changes nothing there.
+
+                        .requestMatchers(
+                                "/api/notifications/**"
+                        ).hasAnyRole(ADMIN, SUPER_ADMIN)
+
                         // ---------- EMPLOYERS (admins too) ----------
                         // The employer's application inbox; must sit ABOVE the public
                         // GET /api/companies/** rule below.
