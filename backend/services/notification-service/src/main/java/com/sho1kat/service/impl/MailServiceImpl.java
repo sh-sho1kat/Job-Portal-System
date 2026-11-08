@@ -27,6 +27,37 @@ public class MailServiceImpl implements MailService {
     }
 
     @Override
+    public void sendApplicationReceivedMail(ApplicationStatusUpdateEvent event) {
+        String to = event.email();
+        String CandidateName = event.FirstName() + " " + event.MiddleName() + " " + event.LastName();
+        String CompanyName = event.companyName();
+
+        String body = """
+                Dear %s,
+
+                Thank you for your application.
+
+                We have received your application for the position of %s at %s.
+
+                Our recruitment team will review your application and get back to you soon.
+
+                Best regards,
+                HR, %s
+                """.formatted(
+                CandidateName,
+                event.jobTitle(),
+                CompanyName,
+                CompanyName
+        );
+        String subject = "Application Received";
+        sendPlainTextMail(
+                to,
+                subject,
+                body
+        );
+    }
+
+    @Override
     public void sendStatusChangeMail(ApplicationStatusUpdateEvent event) {
         String to = event.email();
         String oldStatus = event.oldStatus().toString();

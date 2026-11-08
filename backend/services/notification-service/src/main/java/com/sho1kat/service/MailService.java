@@ -9,4 +9,5 @@ public interface MailService {
     void sendShortListedMail(ApplicationStatusUpdateEvent event);
     void sendRejectionMail(ApplicationStatusUpdateEvent event);
     void sendHiringMail(ApplicationStatusUpdateEvent event);
+    void sendApplicationReceivedMail(ApplicationStatusUpdateEvent event);
 }

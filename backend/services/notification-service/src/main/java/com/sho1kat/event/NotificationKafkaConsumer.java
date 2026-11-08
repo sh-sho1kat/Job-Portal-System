@@ -31,6 +31,9 @@ public class NotificationKafkaConsumer {
 
         switch (event.newStatus().name()) {
 
+            case "PENDING" ->
+                    mailService.sendApplicationReceivedMail(event);
+
             case "SHORTLISTED" ->
                     mailService.sendShortListedMail(event);
 
