@@ -6,6 +6,8 @@ import com.sho1kat.client.JobClient;
 import com.sho1kat.client.UserClient;
 import com.sho1kat.dto.companyServiceDto.response.CompanySummaryResponse;
 import com.sho1kat.dto.jobServiceDto.response.JobSummaryResponse;
+import com.sho1kat.dto.userServiceDto.response.CandidateSummaryResponse;
+import com.sho1kat.dto.userServiceDto.response.UserResponse;
 import com.sho1kat.entity.Application;
 import com.sho1kat.enums.ApplicationStatus;
 import lombok.RequiredArgsConstructor;
@@ -30,8 +32,8 @@ public class ApplicationEventPublisher {
             ApplicationStatus oldStatus,
             ApplicationStatus newStatus
     ) {
-        // Enable when interservice authentication is configured.
-        // UserResponse candidate = userClient.getUserById(application.getCandidateId());
+         CandidateSummaryResponse candidate =
+                 userClient.getUserSummary(application.getCandidateId());
 
         CompanySummaryResponse company =
                 companyClient.getCompanyById(application.getCompanyId());
@@ -42,10 +44,10 @@ public class ApplicationEventPublisher {
         ApplicationStatusUpdateEvent event = new ApplicationStatusUpdateEvent(
                 oldStatus,
                 newStatus,
-                "Demo",
-                "Demo",
-                "Demo",
-                "example.kafka@email.com",
+                candidate.firstName(),
+                candidate.middleName(),
+                candidate.lastName(),
+                candidate.email(),
                 job.title(),
                 company.name()
         );
