@@ -5399,7 +5399,7 @@
     },
     {
       "name": "Notification Service",
-      "description": "Mail-out service behind `notificationBaseUrl`. It has **no database** and no auth checks of its own today: the api-gateway does not route `/api/notifications/**` yet (`RouteConfig`), so requests default to the direct port `http://localhost:5008` — switch `notificationBaseUrl` to the gateway once a route lands. Mails leave as plain-text SMTP configured via `config-repo/notification-service.yaml` (`spring.mail.username`/`password`, `MAIL_USERNAME` / `MAIL_PASSWORD` env). The Kafka consumer (`application.status.change`, group `notification-service`) fires these mails automatically from the application-service status moves; the manual requests below exist for trying templates on demand.",
+      "description": "Mail-out service behind `notificationBaseUrl`. It has **no database** and no auth checks of its own; the api-gateway routes `/api/notifications/**` and admits only `ADMIN`/`SUPER_ADMIN` (`RouteConfig` + `SecurityConfig`). The folder defaults to the direct port `http://localhost:5008` (dev mode — skips the gate); to test through the route, log in as an admin and set `notificationBaseUrl` to `{{baseUrl}}`. Mails leave as plain-text SMTP configured via `config-repo/notification-service.yaml` (`spring.mail.username`/`password`, `MAIL_USERNAME` / `MAIL_PASSWORD` env). The Kafka consumer (`application.status.change`, group `notification-service`) fires these mails automatically from the application-service status moves; the manual requests below exist for trying templates on demand.",
       "item": [
         {
           "name": "Welcome",

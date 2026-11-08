@@ -128,8 +128,10 @@ JWT_SECRET=$(openssl rand -base64 32) mvn spring-boot:run
 Every HTTP request goes to the gateway (`http://localhost:5000/api/...`); it
 looks the destination up in Eureka by service name and proxies the response.
 The routing table (`com.sho1kat.config.RouteConfig`) covers the API prefixes of
-the routed services — notification-service has no route yet, so it is called on
-its own port for now (see its run section below).
+the routed services. `/api/notifications/**` is routed to notification-service
+and gated to `ADMIN` / `SUPER_ADMIN` in `SecurityConfig` — other roles answer
+`403`. user-service's credential-mail Feign call bypasses the gateway, so admin
+password mails are unaffected by the gate.
 
 ### Environment variables
 
@@ -199,6 +201,7 @@ token; running the business workflows needs the matching *role*:
 | `GET /api/job-categories/all`, `GET /api/job-skills/all` | any logged-in user (inactive entries included; job-tags has no `/all`) |
 | `POST/PUT/DELETE /api/job-categories/**`, `/api/job-skills/**`, `/api/job-tags/**` | `ADMIN`, `SUPER_ADMIN` — taxonomy CRUD |
 | `/api/admin/**` | `ADMIN`, `SUPER_ADMIN` — verification & moderation; the `/api/admin/super/**` roster re-checks `SUPER_ADMIN` in user-service |
+| `/api/notifications/**` | `ADMIN`, `SUPER_ADMIN` — mail relay for manual testing; user-service's Feign credential mail bypasses the gateway and needs no role |
 | any write on `/api/jobs/**` (create, publish, close, delete) | `EMPLOYER`, `ADMIN`, `SUPER_ADMIN` |
 | any write on `/api/companies/**` (create, update, locations, delete) | `EMPLOYER`, `ADMIN`, `SUPER_ADMIN` |
 | `/api/companies/{id}/applications/**` (employer inbox, notes, status moves) | `EMPLOYER`, `ADMIN`, `SUPER_ADMIN` |
@@ -337,8 +340,9 @@ A ready-made Postman collection is available at
 `postman` — every request
 in it targets the gateway (`http://localhost:5000`) by default; the only
 exception is the Notification Service folder, whose `notificationBaseUrl`
-defaults to the direct port `http://localhost:5008` because the gateway has no
-route for `/api/notifications/**` yet.
+defaults to the direct port `http://localhost:5008`. The gateway route for
+`/api/notifications/**` is `ADMIN`/`SUPER_ADMIN`-gated — to test through the
+route, log in as an admin and set `notificationBaseUrl` to `{{baseUrl}}`.
 
 ## Running the Company Service
 
@@ -1096,12 +1100,16 @@ recipient only once user-service lookups are wired in.
 
 ### Authentication note
 
-Through the API gateway the service is not routed yet (`RouteConfig` has no
-`/api/notifications/**` entry), so local development calls port 5008 directly.
-None of the endpoints read `X-User-Id` today and there is no per-record
-ownership at all — nothing is stored, and the mail content comes entirely from
-the caller-provided event. When a gateway route lands, lock the write endpoints
-down (only backends / trusted roles should send mail) before exposing them.
+The api-gateway routes `/api/notifications/**` (`RouteConfig`, `@Order(5)`) and
+`SecurityConfig` admits only `ADMIN` and `SUPER_ADMIN`; any other role answers
+`403`. The service itself still has no security layer — a direct call to port
+5008 bypasses the gate, acceptable in development where the port is not
+exposed (in production only the gateway is public). None of the endpoints read
+`X-User-Id` and there is no per-record ownership — nothing is stored, and the
+mail content comes entirely from the caller-provided event. user-service's
+credential-mail Feign client resolves notification-service straight from
+Eureka (not via the gateway), so the admin gate changes nothing for
+password mails and account mails.
 
 ## API — notification-service
 
@@ -1115,11 +1123,11 @@ down (only backends / trusted roles should send mail) before exposing them.
 
 | Method | Path | Access |
 |---|---|---|
-| `POST` | `/api/notifications/mail/send?to=…&subject=…` | unauthenticated today — plain-text general mail |
-| `POST` | `/api/notifications/mail/status` | unauthenticated today — `ApplicationStatusUpdateEvent` body, generic status-update mail |
-| `POST` | `/api/notifications/mail/shortlisted` | unauthenticated today — shortlist congratulations mail |
-| `POST` | `/api/notifications/mail/rejection` | unauthenticated today — rejection mail |
-| `POST` | `/api/notifications/mail/hiring` | unauthenticated today — hiring congratulations mail |
+| `POST` | `/api/notifications/mail/send?to=…&subject=…` | `ADMIN`/`SUPER_ADMIN` via gateway — plain-text general mail |
+| `POST` | `/api/notifications/mail/status` | `ADMIN`/`SUPER_ADMIN` via gateway — `ApplicationStatusUpdateEvent` body, generic status-update mail |
+| `POST` | `/api/notifications/mail/shortlisted` | `ADMIN`/`SUPER_ADMIN` via gateway — shortlist congratulations mail |
+| `POST` | `/api/notifications/mail/rejection` | `ADMIN`/`SUPER_ADMIN` via gateway — rejection mail |
+| `POST` | `/api/notifications/mail/hiring` | `ADMIN`/`SUPER_ADMIN` via gateway — hiring congratulations mail |
 
 All mail bodies are plain text (`MimeMessageHelper`, no HTML — TODO in code for
 templates). `POST /send` takes `to`/`subject` as query params and the message
