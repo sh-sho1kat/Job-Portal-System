@@ -1,23 +1,38 @@
 package com.sho1kat;
 
+import com.sho1kat.client.CompanyClient;
+import com.sho1kat.client.JobClient;
+import com.sho1kat.client.ResumeClient;
+import com.sho1kat.client.UserClient;
 import com.sho1kat.dto.applicationServiceDto.request.ApplicationNoteRequest;
 import com.sho1kat.dto.applicationServiceDto.request.ApplicationRequest;
 import com.sho1kat.dto.applicationServiceDto.request.CompanyApplicationFilterRequest;
 import com.sho1kat.dto.applicationServiceDto.request.WithdrawApplicationRequest;
 import com.sho1kat.dto.applicationServiceDto.response.ApplicationNoteResponse;
 import com.sho1kat.dto.applicationServiceDto.response.ApplicationResponse;
+import com.sho1kat.dto.companyServiceDto.response.CompanySummaryResponse;
+import com.sho1kat.dto.jobServiceDto.response.JobSummaryResponse;
+import com.sho1kat.dto.ResumeServiceDto.response.ResumeSummaryResponse;
+import com.sho1kat.dto.userServiceDto.response.CandidateSummaryResponse;
 import com.sho1kat.entity.Application;
 import com.sho1kat.enums.AiShortListStatus;
 import com.sho1kat.enums.ApplicationStatus;
+import com.sho1kat.enums.EmploymentType;
+import com.sho1kat.enums.IndustryType;
+import com.sho1kat.enums.WorkMode;
+import com.sho1kat.event.ApplicationCountEventPublisher;
+import com.sho1kat.event.ApplicationEventPublisher;
 import com.sho1kat.exception.ApiException;
 import com.sho1kat.repository.ApplicationNoteRepository;
 import com.sho1kat.repository.ApplicationRepository;
 import com.sho1kat.service.ApplicationNoteService;
 import com.sho1kat.service.ApplicationService;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -25,6 +40,7 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.when;
 
 /**
  * H2-backed lifecycle checks for the application flows (same approach as the
@@ -39,7 +55,10 @@ class ApplicationServiceLifecycleTest {
     private static final long OTHER_COMPANY = 8802L;
     private static final long JOB = 9901L;
     private static final long RESUME = 2201L;
+    private static final long RESUME_OTHER = 2202L;
     private static final long EMPLOYER = 5101L;
+    private static final String EMPLOYER_ROLE = "EMPLOYER";
+    private static final String ADMIN_ROLE = "ADMIN";
 
     @Autowired
     private ApplicationService applicationService;
@@ -52,6 +71,54 @@ class ApplicationServiceLifecycleTest {
 
     @Autowired
     private ApplicationNoteRepository applicationNoteRepository;
+
+    @MockitoBean
+    private JobClient jobClient;
+
+    @MockitoBean
+    private CompanyClient companyClient;
+
+    @MockitoBean
+    private UserClient userClient;
+
+    @MockitoBean
+    private ResumeClient resumeClient;
+
+    @MockitoBean
+    private ApplicationEventPublisher applicationEventPublisher;
+
+    @MockitoBean
+    private ApplicationCountEventPublisher applicationCountEventPublisher;
+
+    @BeforeEach
+    void stubCrossServiceClients() {
+        JobSummaryResponse job = new JobSummaryResponse(
+                JOB, COMPANY, "Backend Engineer", "backend-engineer",
+                EmploymentType.FULL_TIME, WorkMode.HYBRID);
+        CompanySummaryResponse company = new CompanySummaryResponse(
+                COMPANY, "Syntex AI Labs", "syntex-ai-labs", null, IndustryType.TECHNOLOGY);
+        CompanySummaryResponse otherCompany = new CompanySummaryResponse(
+                OTHER_COMPANY, "Other Org", "other-org", null, IndustryType.OTHER);
+        CandidateSummaryResponse candidate = new CandidateSummaryResponse(
+                CANDIDATE, "Mitu", null, "Hoque", "mitu@example.com", null, null);
+        CandidateSummaryResponse otherCandidate = new CandidateSummaryResponse(
+                OTHER_CANDIDATE, "Nabila", null, "Rahman", "nabila@example.com", null, null);
+        ResumeSummaryResponse resume = new ResumeSummaryResponse(
+                RESUME, CANDIDATE, "Backend CV", null, null,
+                List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of());
+        ResumeSummaryResponse otherResume = new ResumeSummaryResponse(
+                RESUME_OTHER, OTHER_CANDIDATE, "Backend CV Two", null, null,
+                List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of());
+
+        when(jobClient.getJobById(JOB)).thenReturn(job);
+        when(companyClient.getCompanyById(COMPANY)).thenReturn(company);
+        when(companyClient.getCompanyById(OTHER_COMPANY)).thenReturn(otherCompany);
+        when(companyClient.getMyCompany()).thenReturn(company);
+        when(userClient.getUserSummary(CANDIDATE)).thenReturn(candidate);
+        when(userClient.getUserSummary(OTHER_CANDIDATE)).thenReturn(otherCandidate);
+        when(resumeClient.getResume(RESUME, CANDIDATE)).thenReturn(resume);
+        when(resumeClient.getResume(RESUME_OTHER, OTHER_CANDIDATE)).thenReturn(otherResume);
+    }
 
     @AfterEach
     void cleanUp() {
@@ -80,7 +147,7 @@ class ApplicationServiceLifecycleTest {
         assertThat(created.candidate().id()).isEqualTo(CANDIDATE);
         assertThat(created.company().id()).isEqualTo(COMPANY);
         assertThat(created.job().id()).isEqualTo(JOB);
-        assertThat(created.resumeId()).isEqualTo(RESUME);
+        assertThat(created.resume().id()).isEqualTo(RESUME);
         assertThat(created.screening()).isEqualTo(new com.sho1kat.dto.applicationServiceDto.response.ApplicationScreeningResponse(
                 AiShortListStatus.NOT_SCREENED, null));
         assertThat(created.withdrawal()).isNull();
@@ -122,48 +189,59 @@ class ApplicationServiceLifecycleTest {
         ApplicationResponse first = applicationService.createApplication(
                 CANDIDATE, applyRequest(JOB, COMPANY, RESUME));
         ApplicationResponse second = applicationService.createApplication(
-                OTHER_CANDIDATE, applyRequest(JOB, COMPANY, RESUME));
+                OTHER_CANDIDATE, applyRequest(JOB, COMPANY, RESUME_OTHER));
 
         CompanyApplicationFilterRequest emptyCriteria =
                 new CompanyApplicationFilterRequest(null, null, null, null, null, null);
-        assertThat(applicationService.getCompanyApplications(COMPANY, emptyCriteria, 0, 50).getTotalElements())
+        assertThat(applicationService.getCompanyApplications(
+                COMPANY, emptyCriteria, EMPLOYER, EMPLOYER_ROLE, 0, 50).getTotalElements())
                 .isEqualTo(2);
-        withStatus(() -> applicationService.getCompanyApplication(OTHER_COMPANY, first.id()),
+        withStatus(() -> applicationService.getCompanyApplication(
+                        OTHER_COMPANY, first.id(), EMPLOYER, ADMIN_ROLE),
                 ApiException.NOT_FOUND);
 
         // star toggle selectability in the filter
-        applicationService.setStar(COMPANY, first.id(), true);
+        applicationService.setStar(COMPANY, first.id(), true, EMPLOYER, EMPLOYER_ROLE);
         List<ApplicationResponse> starred = applicationService
                 .getCompanyApplications(COMPANY,
-                        new CompanyApplicationFilterRequest(null, null, true, null, null, null), 0, 50)
+                        new CompanyApplicationFilterRequest(null, null, true, null, null, null),
+                        EMPLOYER, EMPLOYER_ROLE, 0, 50)
                 .getContent();
         assertThat(starred).extracting(ApplicationResponse::id).containsExactly(first.id());
         assertThat(starred.getFirst().isStarred()).isTrue();
-        applicationService.setStar(COMPANY, first.id(), false);
+        applicationService.setStar(COMPANY, first.id(), false, EMPLOYER, EMPLOYER_ROLE);
         assertThat(applicationService
                 .getCompanyApplications(COMPANY,
-                        new CompanyApplicationFilterRequest(null, null, true, null, null, null), 0, 50))
+                        new CompanyApplicationFilterRequest(null, null, true, null, null, null),
+                        EMPLOYER, EMPLOYER_ROLE, 0, 50))
                 .isEmpty();
 
         // status ladder REVIEWING -> SHORTLISTED -> HIRED
-        ApplicationResponse reviewing = applicationService.updateStatus(COMPANY, second.id(), ApplicationStatus.REVIEWING);
+        ApplicationResponse reviewing = applicationService.updateStatus(
+                COMPANY, second.id(), ApplicationStatus.REVIEWING, EMPLOYER, EMPLOYER_ROLE);
         assertThat(reviewing.status()).isEqualTo(ApplicationStatus.REVIEWING);
-        applicationService.updateStatus(COMPANY, second.id(), ApplicationStatus.SHORTLISTED);
-        ApplicationResponse hired = applicationService.updateStatus(COMPANY, second.id(), ApplicationStatus.HIRED);
+        applicationService.updateStatus(
+                COMPANY, second.id(), ApplicationStatus.SHORTLISTED, EMPLOYER, EMPLOYER_ROLE);
+        ApplicationResponse hired = applicationService.updateStatus(
+                COMPANY, second.id(), ApplicationStatus.HIRED, EMPLOYER, EMPLOYER_ROLE);
         assertThat(hired.status()).isEqualTo(ApplicationStatus.HIRED);
 
         // terminal, skip, no-op and candidate-only moves are rejected
-        withStatus(() -> applicationService.updateStatus(COMPANY, second.id(), ApplicationStatus.REJECTED),
+        withStatus(() -> applicationService.updateStatus(
+                        COMPANY, second.id(), ApplicationStatus.REJECTED, EMPLOYER, EMPLOYER_ROLE),
                 ApiException.CONFLICT);
-        withStatus(() -> applicationService.updateStatus(COMPANY, second.id(), ApplicationStatus.WITHDRAWN),
+        withStatus(() -> applicationService.updateStatus(
+                        COMPANY, second.id(), ApplicationStatus.WITHDRAWN, EMPLOYER, EMPLOYER_ROLE),
                 ApiException.BAD_REQUEST);
-        withStatus(() -> applicationService.updateStatus(COMPANY, second.id(), ApplicationStatus.HIRED),
+        withStatus(() -> applicationService.updateStatus(
+                        COMPANY, second.id(), ApplicationStatus.HIRED, EMPLOYER, EMPLOYER_ROLE),
                 ApiException.BAD_REQUEST);
         withStatus(() -> applicationService.withdrawApplication(second.id(), OTHER_CANDIDATE, null),
                 ApiException.CONFLICT);
 
         // the company detail view embeds the notes (none exist yet)
-        assertThat(applicationService.getCompanyApplication(COMPANY, first.id()).notes())
+        assertThat(applicationService.getCompanyApplication(
+                COMPANY, first.id(), EMPLOYER, EMPLOYER_ROLE).notes())
                 .isEmpty();
 
         // aiScore sort: scored first (developed manually; screening lives elsewhere)
@@ -172,7 +250,8 @@ class ApplicationServiceLifecycleTest {
         applicationRepository.save(scored);
         List<ApplicationResponse> byAiScore = applicationService
                 .getCompanyApplications(COMPANY,
-                        new CompanyApplicationFilterRequest(null, null, null, null, null, "aiScore"), 0, 50)
+                        new CompanyApplicationFilterRequest(null, null, null, null, null, "aiScore"),
+                        EMPLOYER, EMPLOYER_ROLE, 0, 50)
                 .getContent();
         assertThat(byAiScore).extracting(ApplicationResponse::id).containsExactly(second.id(), first.id());
         assertThat(byAiScore.getFirst().screening().aiScore()).isEqualTo(92);
@@ -180,23 +259,27 @@ class ApplicationServiceLifecycleTest {
         // aiScoreAsc: weakest first (the only scored row), unscreened sink to the bottom
         List<ApplicationResponse> byAiScoreAsc = applicationService
                 .getCompanyApplications(COMPANY,
-                        new CompanyApplicationFilterRequest(null, null, null, null, null, "aiScoreAsc"), 0, 50)
+                        new CompanyApplicationFilterRequest(null, null, null, null, null, "aiScoreAsc"),
+                        EMPLOYER, EMPLOYER_ROLE, 0, 50)
                 .getContent();
         assertThat(byAiScoreAsc).extracting(ApplicationResponse::id).containsExactly(second.id(), first.id());
 
         // score filter drops the unscreened row
         List<ApplicationResponse> highScoreOnly = applicationService
                 .getCompanyApplications(COMPANY,
-                        new CompanyApplicationFilterRequest(null, null, null, null, 80, null), 0, 50)
+                        new CompanyApplicationFilterRequest(null, null, null, null, 80, null),
+                        EMPLOYER, EMPLOYER_ROLE, 0, 50)
                 .getContent();
         assertThat(highScoreOnly).extracting(ApplicationResponse::id).containsExactly(second.id());
 
         // unknown sort keys fall back to the newest-first default; scores stay 0-100
         assertThat(applicationService.getCompanyApplications(COMPANY,
-                new CompanyApplicationFilterRequest(null, null, null, null, null, "bogus"), 0, 20)
+                new CompanyApplicationFilterRequest(null, null, null, null, null, "bogus"),
+                EMPLOYER, EMPLOYER_ROLE, 0, 20)
                 .getContent()).hasSize(2);
         withStatus(() -> applicationService.getCompanyApplications(COMPANY,
-                new CompanyApplicationFilterRequest(null, null, null, null, 150, null), 0, 20),
+                new CompanyApplicationFilterRequest(null, null, null, null, 150, null),
+                EMPLOYER, EMPLOYER_ROLE, 0, 20),
                 ApiException.BAD_REQUEST);
     }
 
@@ -220,7 +303,7 @@ class ApplicationServiceLifecycleTest {
         assertThat(applicationNoteService.getNote(applicationId, note.id(), EMPLOYER).id())
                 .isEqualTo(note.id());
         withStatus(() -> applicationNoteService.deleteNote(applicationId, note.id(), 9999L),
-                ApiException.FORBIDDEN);
+                ApiException.NOT_FOUND);
 
         applicationNoteService.deleteNote(applicationId, note.id(), EMPLOYER);
         assertThat(applicationNoteService.getNotesByApplication(applicationId, EMPLOYER)).isEmpty();
