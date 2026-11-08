@@ -11,6 +11,8 @@ import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
 
 import java.nio.charset.StandardCharsets;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Service
 @RequiredArgsConstructor
@@ -29,7 +31,7 @@ public class MailServiceImpl implements MailService {
     @Override
     public void sendApplicationReceivedMail(ApplicationStatusUpdateEvent event) {
         String to = event.email();
-        String CandidateName = event.FirstName() + " " + event.MiddleName() + " " + event.LastName();
+        String CandidateName = fullName(event);
         String CompanyName = event.companyName();
 
         String body = """
@@ -62,7 +64,7 @@ public class MailServiceImpl implements MailService {
         String to = event.email();
         String oldStatus = event.oldStatus().toString();
         String newStatus = event.newStatus().toString();
-        String CandidateName = event.FirstName() + " " + event.MiddleName() + " " + event.LastName();
+        String CandidateName = fullName(event);
         String CompanyName = event.companyName();
 
         String body = """
@@ -88,7 +90,7 @@ public class MailServiceImpl implements MailService {
     @Override
     public void sendShortListedMail(ApplicationStatusUpdateEvent event) {
         String to = event.email();
-        String CandidateName = event.FirstName() + " " + event.MiddleName() + " " + event.LastName();
+        String CandidateName = fullName(event);
         String CompanyName = event.companyName();
 
         String body = """
@@ -119,7 +121,7 @@ public class MailServiceImpl implements MailService {
     @Override
     public void sendRejectionMail(ApplicationStatusUpdateEvent event) {
         String to = event.email();
-        String CandidateName = event.FirstName() + " " + event.MiddleName() + " " + event.LastName();
+        String CandidateName = fullName(event);
         String CompanyName = event.companyName();
 
         String body = """
@@ -152,7 +154,7 @@ public class MailServiceImpl implements MailService {
     @Override
     public void sendHiringMail(ApplicationStatusUpdateEvent event) {
         String to = event.email();
-        String CandidateName = event.FirstName() + " " + event.MiddleName() + " " + event.LastName();
+        String CandidateName = fullName(event);
         String CompanyName = event.companyName();
 
         String body = """
@@ -215,5 +217,12 @@ public class MailServiceImpl implements MailService {
         return name == null || name.isBlank()
                 ? "there"
                 : name.trim();
+    }
+
+    private String fullName(ApplicationStatusUpdateEvent event) {
+        String name = Stream.of(event.FirstName(), event.MiddleName(), event.LastName())
+                .filter(part -> part != null && !part.isBlank())
+                .collect(Collectors.joining(" "));
+        return name.isBlank() ? "Candidate" : name;
     }
 }
