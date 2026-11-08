@@ -91,7 +91,7 @@ public class ApplicationServiceImpl implements ApplicationService {
         CandidateSummaryResponse candidate = fetchCandidateSummary(candidateId);
         ResumeSummaryResponse resume = fetchResumeSummary(request.resumeId(), candidateId);
         Application application = applicationRepository.save(applicationMapper.toEntity(candidateId, request));
-        applicationEventPublisher.publishApplicationStatusUpdateEvent(application, ApplicationStatus.PENDING, ApplicationStatus.PENDING);
+        applicationEventPublisher.publishApplicationStatusUpdateEvent(candidate, job, company, ApplicationStatus.PENDING, ApplicationStatus.PENDING);
         applicationCountEventPublisher.publishApplicationCountIncreaseEvent(request.jobId());
         return applicationMapper.toDetail(
                 application,
@@ -256,6 +256,8 @@ public class ApplicationServiceImpl implements ApplicationService {
                                             Long requesterId, String requesterRole) {
         CompanySummaryResponse company = requireInboxAccess(companyId, requesterRole);
         Application application = requireCompanyApplication(companyId, applicationId);
+        JobSummaryResponse job = fetchJobSummary(application.getJobId(), companyId);
+        CandidateSummaryResponse candidate = fetchCandidateSummary(application.getCandidateId());
         ApplicationStatus oldStatus = application.getStatus();
         if (targetStatus == ApplicationStatus.WITHDRAWN) {
             throw ApiException.badRequest("Only candidates withdraw their own applications");
@@ -268,7 +270,13 @@ public class ApplicationServiceImpl implements ApplicationService {
                     "Status change from " + oldStatus + " to " + targetStatus + " is not allowed");
         }
         application.setStatus(targetStatus);
-        applicationEventPublisher.publishApplicationStatusUpdateEvent(application, oldStatus, targetStatus);
+        applicationEventPublisher.publishApplicationStatusUpdateEvent(
+                candidate,
+                job,
+                company,
+                oldStatus,
+                targetStatus
+        );
         return applicationMapper.toDetail(
                 application,
                 fetchCandidateSummary(application.getCandidateId()),
