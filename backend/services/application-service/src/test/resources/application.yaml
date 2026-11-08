@@ -15,6 +15,9 @@ spring:
   jpa:
     hibernate:
       ddl-auto: create-drop
+
+  kafka:
+    bootstrap-servers: localhost:9092
 eureka:
   client:
     enabled: false     # no discovery server is running during tests
