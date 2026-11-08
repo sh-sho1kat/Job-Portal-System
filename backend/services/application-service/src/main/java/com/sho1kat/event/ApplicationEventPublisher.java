@@ -28,19 +28,12 @@ public class ApplicationEventPublisher {
     private final JobClient jobClient;
 
     public void publishApplicationStatusUpdateEvent(
-            Application application,
+            CandidateSummaryResponse candidate,
+            JobSummaryResponse job,
+            CompanySummaryResponse company,
             ApplicationStatus oldStatus,
             ApplicationStatus newStatus
     ) {
-         CandidateSummaryResponse candidate =
-                 userClient.getUserSummary(application.getCandidateId());
-
-        CompanySummaryResponse company =
-                companyClient.getCompanyById(application.getCompanyId());
-
-        JobSummaryResponse job =
-                jobClient.getJobById(application.getJobId());
-
         ApplicationStatusUpdateEvent event = new ApplicationStatusUpdateEvent(
                 oldStatus,
                 newStatus,
