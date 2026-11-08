@@ -50,7 +50,7 @@ backend/
 | `services/application-service` | `application-service` | Candidate applications, employer review inbox, internal notes |
 | `services/job-preference-service` | `job-preference-service` | Candidate saved jobs (bookmarks) with personal notes |
 | `services/ai-service` | `ai-service` | AI content generation: resume optimization, job auto-generation, cover letters & screening, natural-language search |
-| `services/notification-service` | `notification-service` | Email notifications: Kafka consumer over `application.status.change` turning candidate status moves into plain-text template mails (shortlisted / rejected / hired / generic update); also serves general `mail/send` over synchronous Feign for caller services (admin credential + reset mails) |
+| `services/notification-service` | `notification-service` | Email notifications: Kafka consumer over `application.status.change` turning candidate status moves into plain-text template mails (received-ack / shortlisted / rejected / hired / generic update); also serves general `mail/send` over synchronous Feign for caller services (admin credential + reset mails) |
 
 ## Requirements
 
@@ -569,9 +569,11 @@ Employment types: `FULL_TIME`, `PART_TIME`, `CONTRACT`, `INTERNSHIP`, `TEMPORARY
   failed lookups (company-service down or unknown/deactivated company) trip the
   circuit breaker and the card degrades to the id-only summary.
 - `DetailedJobResponse` carries real `viewCount`/`applicationCount` counters:
-  views increment atomically on every public `GET /api/jobs/{id}`, application
-  count is an integration point for the application flow (`incrementApplicationCount`,
-  active postings only).
+  views increment atomically on every public `GET /api/jobs/{id}`; the
+  application count is maintained by a Kafka consumer over
+  `application-count-increase` (published by application-service on every
+  created application; group `job-service`, atomic `UPDATE … +1` on ACTIVE,
+  non-deleted jobs).
 
 ## Running the Resume Service
 
@@ -823,8 +825,9 @@ withdrawn/rejected applications stay in the inbox history.
 
 Screening (`aiShortListStatus`, `aiScore`) is read-only plumbing until any
 scoring service exists (every application starts `NOT_SCREENED`/unrated), and
-the job-service `applicationCount` increment is a pending cross-service
-integration point (TODO: service discovery).
+the job-service `applicationCount` is bumped asynchronously: creating an
+application publishes `application-count-increase` on Kafka and job-service's
+`ApplicationCountKafkaConsumer` (group `job-service`) increments the counter.
 
 ### Seeding sample data
 
@@ -1083,6 +1086,8 @@ employer moves a status in application-service
         │  NotificationKafkaConsumer (group: notification-service)
         ▼
   newStatus routing:
+    PENDING       → sendApplicationReceivedMail "Application Received" (thank-you ack —
+                    only fired by creation, which publishes PENDING→PENDING)
     SHORTLISTED   → sendShortListedMail   "Congratulations! Your CV has been shortlisted"
     REJECTED      → sendRejectionMail     "Update Regarding Your Application"
     HIRED         → sendHiringMail        "Congratulations! You Have Been Selected"
@@ -1092,11 +1097,13 @@ employer moves a status in application-service
 The event (`com.sho1kat.event.ApplicationStatusUpdateEvent` in common-lib)
 carries `oldStatus`, `newStatus`, the candidate's name (`FirstName`,
 `MiddleName`, `LastName`), `email` and the `jobTitle`/`companyName` pair for
-the letter body. One caveat while cross-service identity lookup is still
-pending: the publisher fills the candidate contact fields with demo
-placeholders (see the `// Enable when interservice authentication is
-configured.` comment in `ApplicationEventPublisher`), so mails name the
-recipient only once user-service lookups are wired in.
+the letter body. Before publishing, the publisher resolves real candidate
+contact data — `userClient.getUserSummary(candidateId)` reads user-service's
+internal summary feed (`GET /internal/users/{id}`, guarded by
+`INTERNAL_SERVICE_TOKEN`), so mails name the actual recipient. If user-service
+is unreachable, the Feign fallback publishes the event with null contact
+fields (a null-safe name join renders `Candidate`) instead of failing the
+workflow.
 
 ### Authentication note
 
@@ -1158,6 +1165,8 @@ publicly would make it a spam relay.
 - [x] Admin & super-admin user management — generated+mailed credentials over synchronous notification mails, super-admin bootstrap seeding, shared `INTERNAL_SERVICE_TOKEN` guarding the internal `/internal/**` summary feeds
 - [ ] Method-level role checks in the services — coarse role gating runs at the gateway today; per-record ownership is handled per service (job-service now also verifies the posting's `companyId` against company-service at creation)
 - [ ] Per-service JWT re-verification for defense in depth (services currently trust gateway-injected `X-User-*` headers)
-- [ ] Cross-service data resolution finishing touches — job cards already embed live company summaries over Feign; pending: application-count wiring from application-service, AI screening integration in the inbox, and real candidate contact data in status events (currently demo placeholders)
+- [x] Application-count wiring — application-service publishes `application-count-increase` on every created application; job-service consumes it and bumps the posting counter (`ApplicationCountKafkaConsumer`)
+- [x] Real candidate contact in status events — the publisher resolves candidate name/email via user-service's internal summary feed before publishing
+- [ ] Cross-service data resolution finishing touches — job cards already embed live company summaries over Feign; pending: AI screening integration in the inbox
 - [ ] AI-powered features (matching, recommendations) — beyond the ai-service generation suite: per-candidate job matching/recommendations
 - [ ] Container images via Jib for each service
