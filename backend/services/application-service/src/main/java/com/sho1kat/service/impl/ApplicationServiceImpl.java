@@ -14,6 +14,7 @@ import com.sho1kat.dto.jobServiceDto.response.JobSummaryResponse;
 import com.sho1kat.dto.userServiceDto.response.CandidateSummaryResponse;
 import com.sho1kat.entity.Application;
 import com.sho1kat.enums.ApplicationStatus;
+import com.sho1kat.event.ApplicationCountEventPublisher;
 import com.sho1kat.event.ApplicationEventPublisher;
 import com.sho1kat.exception.ApiException;
 import com.sho1kat.mapper.ApplicationMapper;
@@ -69,6 +70,7 @@ public class ApplicationServiceImpl implements ApplicationService {
     private final ApplicationMapper applicationMapper;
     private final ApplicationNoteMapper applicationNoteMapper;
     private final ApplicationEventPublisher applicationEventPublisher;
+    private final ApplicationCountEventPublisher applicationCountEventPublisher;
     private final ResumeClient resumeClient;
     private final JobClient jobClient;
     private final UserClient userClient;
@@ -89,8 +91,8 @@ public class ApplicationServiceImpl implements ApplicationService {
         CandidateSummaryResponse candidate = fetchCandidateSummary(candidateId);
         ResumeSummaryResponse resume = fetchResumeSummary(request.resumeId(), candidateId);
         Application application = applicationRepository.save(applicationMapper.toEntity(candidateId, request));
-        // TODO: ask job-service to bump its applicationCount for this posting
-        //  (JobService.incrementApplicationCount) once service discovery exists.
+        applicationEventPublisher.publishApplicationStatusUpdateEvent(application, ApplicationStatus.PENDING, ApplicationStatus.PENDING);
+        applicationCountEventPublisher.publishApplicationCountIncreaseEvent(request.jobId());
         return applicationMapper.toDetail(
                 application,
                 candidate,
