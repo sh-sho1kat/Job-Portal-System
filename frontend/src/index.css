@@ -56,6 +56,7 @@
   --neu-duration: 120ms;
   --neu-fill-raised: linear-gradient(135deg, color-mix(in srgb, #f1f3f5 12%, #e6e8eb), #e6e8eb);
   --neu-fill-primary: linear-gradient(135deg, #3f536f, color-mix(in srgb, #3f536f 94%, black));
+  --neu-fill-knob: linear-gradient(135deg, #ffffff, color-mix(in srgb, #f4f7fc 94%, #e9edf4));
   --neu-selected: color-mix(in srgb, #3f536f 8%, #e6e8eb);
   --neu-selected-border: color-mix(in srgb, #3f536f 44%, rgb(98 107 118 / 0.22));
   --neu-error-text: color-mix(in srgb, #c8545f 76%, #1d232b);
@@ -126,6 +127,7 @@
   --neu-duration: 120ms;
   --neu-fill-raised: linear-gradient(135deg, color-mix(in srgb, #222831 12%, #181c22), #181c22);
   --neu-fill-primary: linear-gradient(135deg, color-mix(in srgb, #b2c2d8 94%, white), #b2c2d8);
+  --neu-fill-knob: linear-gradient(135deg, color-mix(in srgb, #b2c2d8 94%, white), #b2c2d8);
   --neu-selected: color-mix(in srgb, #b2c2d8 8%, #181c22);
   --neu-selected-border: color-mix(in srgb, #b2c2d8 44%, rgb(255 255 255 / 0.10));
   --neu-error-text: #ff7885;
@@ -187,6 +189,46 @@
   --radius-2xl: calc(var(--radius) * 1.8);
   --radius-3xl: calc(var(--radius) * 2.2);
   --radius-4xl: calc(var(--radius) * 2.6);
+}
+
+@layer components {
+  /* Shared slide duration — the knob and the full-page crossfade move in
+     step. One value to tune. */
+  :root {
+    --theme-switch-duration: 600ms;
+  }
+
+  /* Theme-switch slide — plain CSS so speed is deterministic. */
+  .theme-switch-track {
+    transition: box-shadow var(--theme-switch-duration) ease-out;
+  }
+  .theme-switch-knob {
+    /* Tailwind v4 drives translate-x-* via the CSS `translate` property
+       (individual transforms) — transition THAT, not `transform`. */
+    transition:
+      translate var(--theme-switch-duration) ease-out,
+      background-color var(--theme-switch-duration) ease-out,
+      box-shadow var(--theme-switch-duration) ease-out;
+  }
+
+  /* Full-page crossfade while switching: the hook puts .theme-transition on
+     <html> for the duration of the slide and removes it afterwards, so only
+     the flip is eased — everyday hover/focus transitions keep their own
+     timings. The switch itself opts out (it has its own choreography). */
+  .theme-transition,
+  .theme-transition *:not(.theme-switch-knob):not(.theme-switch-track) {
+    transition-property: background-color, border-color, color, fill, stroke;
+    transition-duration: var(--theme-switch-duration);
+    transition-timing-function: ease-out;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    /* Reduced, not removed: an instant teleport reads as a broken control.
+       Shorten instead of disabling — 150ms keeps feedback perceptible. */
+    :root {
+      --theme-switch-duration: 150ms;
+    }
+  }
 }
 
 @layer base {
