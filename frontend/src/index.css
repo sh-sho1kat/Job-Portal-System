@@ -7,9 +7,9 @@
 
 /* Neumorphism UI theme — Graphite · deep · top-left */
 :root {
-  --neu-font-sans: "Pretendard Variable", Pretendard, sans-serif;
-  --neu-font-mono: Consolas, monospace;
-  --background: oklch(1 0 0);
+  --neu-font-sans: "Figtree Variable", sans-serif;
+  --neu-font-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --background: var(--neu-surface);
   --foreground: oklch(0.145 0 0);
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.145 0 0);
@@ -20,7 +20,7 @@
   --secondary: oklch(0.97 0 0);
   --secondary-foreground: oklch(0.205 0 0);
   --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
+  --muted-foreground: oklch(0.48 0 0);
   --neu-select-arrow: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%2355606b%22%20stroke-width%3D%221.8%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22m6%209%206%206%206-6%22%2F%3E%3C%2Fsvg%3E");
   --accent: oklch(0.97 0 0);
   --accent-foreground: oklch(0.205 0 0);
@@ -77,9 +77,9 @@
 }
 
 .dark {
-  --neu-font-sans: "Pretendard Variable", Pretendard, sans-serif;
-  --neu-font-mono: Consolas, monospace;
-  --background: oklch(0.145 0 0);
+  --neu-font-sans: "Figtree Variable", sans-serif;
+  --neu-font-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --background: var(--neu-surface);
   --foreground: oklch(0.985 0 0);
   --card: oklch(0.205 0 0);
   --card-foreground: oklch(0.985 0 0);
@@ -190,6 +190,12 @@
 }
 
 @layer base {
+  html {
+    color-scheme: light;
+  }
+  .dark {
+    color-scheme: dark;
+  }
   * {
     @apply border-border outline-ring/50;
   }
@@ -197,6 +203,6 @@
     @apply bg-background text-foreground;
   }
   html {
-    @apply font-sans;
+    @apply font-sans antialiased;
   }
 }
