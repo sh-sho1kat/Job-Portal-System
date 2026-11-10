@@ -1,36 +1,36 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
-@import "@fontsource-variable/figtree";
 
 @custom-variant dark (&:is(.dark *));
 
-/* Neumorphism UI theme — Graphite · deep · top-left */
+/* Neumorphism UI theme — Graphite · deep · top-left
+   (Pretendard loads via CDN link in index.html — no fontsource package.) */
 :root {
-  --neu-font-sans: "Figtree Variable", sans-serif;
-  --neu-font-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-  --background: var(--neu-surface);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.48 0 0);
+  --neu-font-sans: "Pretendard Variable", Pretendard, sans-serif;
+  --neu-font-mono: Consolas, monospace;
+  --background: #e6e8eb;
+  --foreground: #1d232b;
+  --card: #e6e8eb;
+  --card-foreground: #1d232b;
+  --popover: #edf0f2;
+  --popover-foreground: #1d232b;
+  --primary: #3f536f;
+  --primary-foreground: #ffffff;
+  --secondary: #d9dde1;
+  --secondary-foreground: #1d232b;
+  --muted: #d5d9de;
+  --muted-foreground: #55606b;
   --neu-select-arrow: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%2355606b%22%20stroke-width%3D%221.8%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22m6%209%206%206%206-6%22%2F%3E%3C%2Fsvg%3E");
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
+  --accent: #f1f3f5;
+  --accent-foreground: #3f536f;
+  --destructive: #c8545f;
   --destructive-foreground: #000000;
   --success: #0a9b78;
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --radius: 0.625rem;
+  --border: rgb(98 107 118 / 0.22);
+  --input: rgb(98 107 118 / 0.18);
+  --ring: #3f536f;
+  --radius: 14px;
   --neu-surface: #e6e8eb;
   --neu-surface-soft: #f1f3f5;
   --neu-surface-low: #d5d9de;
@@ -51,12 +51,11 @@
   --neu-radius-control: 8px;
   --neu-radius-small: 4px;
   --neu-accent-ink: #3f536f;
-  --neu-radius-surface: 18px;
-  --neu-radius-overlay: 18px;
-  --neu-duration: 120ms;
+  --neu-radius-surface: 14px;
+  --neu-radius-overlay: 14px;
+  --neu-duration: 180ms;
   --neu-fill-raised: linear-gradient(135deg, color-mix(in srgb, #f1f3f5 12%, #e6e8eb), #e6e8eb);
   --neu-fill-primary: linear-gradient(135deg, #3f536f, color-mix(in srgb, #3f536f 94%, black));
-  --neu-fill-knob: linear-gradient(135deg, #ffffff, color-mix(in srgb, #f4f7fc 94%, #e9edf4));
   --neu-selected: color-mix(in srgb, #3f536f 8%, #e6e8eb);
   --neu-selected-border: color-mix(in srgb, #3f536f 44%, rgb(98 107 118 / 0.22));
   --neu-error-text: color-mix(in srgb, #c8545f 76%, #1d232b);
@@ -78,30 +77,30 @@
 }
 
 .dark {
-  --neu-font-sans: "Figtree Variable", sans-serif;
-  --neu-font-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-  --background: var(--neu-surface);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
+  --neu-font-sans: "Pretendard Variable", Pretendard, sans-serif;
+  --neu-font-mono: Consolas, monospace;
+  --background: #111419;
+  --foreground: #edf1f6;
+  --card: #181c22;
+  --card-foreground: #edf1f6;
+  --popover: #181c22;
+  --popover-foreground: #edf1f6;
+  --primary: #b2c2d8;
+  --primary-foreground: #11161d;
+  --secondary: #20262e;
+  --secondary-foreground: #edf1f6;
+  --muted: #0d1014;
+  --muted-foreground: #929ca9;
   --neu-select-arrow: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%23929ca9%22%20stroke-width%3D%221.8%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22m6%209%206%206%206-6%22%2F%3E%3C%2Fsvg%3E");
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
+  --accent: #222831;
+  --accent-foreground: #b2c2d8;
+  --destructive: #ff7885;
   --destructive-foreground: #111827;
   --success: #40d6ad;
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --radius: 18px;
+  --border: rgb(255 255 255 / 0.10);
+  --input: rgb(255 255 255 / 0.12);
+  --ring: #b2c2d8;
+  --radius: 14px;
   --neu-surface: #181c22;
   --neu-surface-soft: #222831;
   --neu-surface-low: #0d1014;
@@ -122,12 +121,11 @@
   --neu-radius-control: 8px;
   --neu-radius-small: 4px;
   --neu-accent-ink: #b2c2d8;
-  --neu-radius-surface: 18px;
-  --neu-radius-overlay: 18px;
-  --neu-duration: 120ms;
+  --neu-radius-surface: 14px;
+  --neu-radius-overlay: 14px;
+  --neu-duration: 180ms;
   --neu-fill-raised: linear-gradient(135deg, color-mix(in srgb, #222831 12%, #181c22), #181c22);
   --neu-fill-primary: linear-gradient(135deg, color-mix(in srgb, #b2c2d8 94%, white), #b2c2d8);
-  --neu-fill-knob: linear-gradient(135deg, color-mix(in srgb, #b2c2d8 94%, white), #b2c2d8);
   --neu-selected: color-mix(in srgb, #b2c2d8 8%, #181c22);
   --neu-selected-border: color-mix(in srgb, #b2c2d8 44%, rgb(255 255 255 / 0.10));
   --neu-error-text: #ff7885;
@@ -150,7 +148,7 @@
 
 @theme inline {
   --font-heading: var(--font-sans);
-  --font-sans: 'Figtree Variable', sans-serif;
+  --font-sans: 'Pretendard Variable', Pretendard, sans-serif;
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);

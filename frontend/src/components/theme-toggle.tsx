@@ -11,7 +11,7 @@ import { cn } from '@/lib/utils'
  * the active one prints on the knob, the idle one rests in the deep well.
  * Dark mode = knob right.
  */
-export function ThemeToggle() {
+export function ThemeToggle({ className }: { className?: string }) {
   const { theme, toggleTheme } = useTheme()
   const isDark = theme === 'dark'
   const label = isDark ? 'Switch to light mode' : 'Switch to dark mode'
@@ -33,7 +33,7 @@ export function ThemeToggle() {
     : 'shadow-[inset_0_0.25rem_0.25rem_rgb(255_255_255_/_0.65),inset_0_-0.25rem_0.25rem_rgb(0_0_0_/_0.15),0_0.6rem_0.4rem_rgb(0_0_0_/_0.25),0_1.25rem_1rem_rgb(0_0_0_/_0.25)]'
 
   return (
-    <span className="relative inline-block h-28 w-64 shrink-0 align-middle">
+    <span className={cn('relative inline-block h-28 w-64 shrink-0 align-middle', className)}>
       {/* visually hidden input keeps native switch semantics + keyboard use.
           z-10 keeps it above the icons so clicks always land on the control. */}
       <input

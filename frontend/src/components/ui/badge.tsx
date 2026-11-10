@@ -11,6 +11,8 @@ const badgeVariants = {
   outline: "border-[color:var(--border)] bg-transparent text-[var(--foreground)]",
   destructive:
     "border-transparent bg-[color:var(--destructive)]/12 text-[var(--neu-error-text)]",
+  success:
+    "border-[color:var(--success)]/25 bg-[color:var(--success)]/10 text-[color:var(--success)]",
 } as const;
 
 type BadgeVariant = keyof typeof badgeVariants;
