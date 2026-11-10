@@ -1,18 +1,18 @@
 import * as React from 'react'
 import { HugeiconsIcon } from '@hugeicons/react'
-import { Search02Icon } from '@hugeicons/core-free-icons'
+import { Location01Icon, Search02Icon } from '@hugeicons/core-free-icons'
 import { useNavigate } from 'react-router-dom'
 
-import { Button } from '@/components/ui/button'
-import { Card } from '@/components/ui/card'
-import { Input } from '@/components/ui/input'
+import heroImage from '@/assets/Modern 3D Job Search Workspace-1.png'
 
 /** Terms that return real results from the current job data. */
 const POPULAR_SEARCHES = ['Remote', 'Developer', 'React', 'Analyst']
 
 /**
- * The landing page's one bold element: the brand navy gradient (fixed in both
- * themes, like the jobs-page hero band) with the search card as the centerpiece.
+ * The illustration is the hero: its left side is open space, so the headline
+ * and search sit inside the artwork (like the reference). The image is a fixed
+ * brand visual — same treatment the navy band had — so everything on top uses
+ * fixed ink, not theme tokens, and reads identically in both themes.
  */
 export function LandingHero() {
   const navigate = useNavigate()
@@ -35,68 +35,77 @@ export function LandingHero() {
   }
 
   return (
-    <section className="relative flex flex-1 flex-col overflow-hidden bg-[linear-gradient(165deg,#2e3d72_0%,#1e2a52_45%,#121a38_100%)] px-4">
-      {/* One soft highlight above the card — draws the eye to the search. */}
-      <div
+    <section className="relative overflow-hidden bg-[#e0e4f6] px-4 py-14 md:px-10 md:py-20 lg:px-16">
+      {/* Stacks under the text on phones; full-bleed artwork from sm up. */}
+      <img
         aria-hidden="true"
-        className="pointer-events-none absolute inset-0 bg-[radial-gradient(56%_44%_at_50%_0%,rgba(255,255,255,0.09),transparent)]"
+        src={heroImage}
+        className="mt-10 w-full rounded-[var(--neu-radius-surface)] shadow-[0_18px_44px_rgba(29,35,43,0.18)] sm:absolute sm:inset-0 sm:mt-0 sm:h-full sm:w-full sm:rounded-none sm:object-cover sm:shadow-none"
       />
-      <div className="relative mx-auto flex w-full max-w-3xl flex-1 flex-col items-center justify-center gap-6 py-16 text-center">
-        <h1 className="text-4xl font-bold tracking-tight text-white [text-wrap:balance] md:text-5xl lg:text-6xl">
-          Find work that works for you
+
+      <div className="relative z-10 max-w-xl">
+        <h1 className="text-3xl font-bold leading-[1.12] tracking-tight text-[#1d232b] [text-wrap:balance] sm:text-4xl lg:text-[2.6rem]">
+          Find a job that aligns with your interests and skills
         </h1>
-        <p className="max-w-xl text-sm text-white/70 md:text-base">
-          Search open roles from verified companies — remote, hybrid, or on-site —
-          and apply in minutes.
+        <p className="mt-3 text-sm text-[#4d5670] md:text-base">
+          Thousands of jobs across leading sectors are waiting for you.
         </p>
 
-        <Card variant="raised" className="mt-2 w-full p-4 text-left md:p-5">
-          <form className="flex flex-col gap-3 md:flex-row" onSubmit={handleSubmit}>
-            <div className="relative md:flex-1">
-              <HugeiconsIcon
-                icon={Search02Icon}
-                strokeWidth={1.8}
-                aria-hidden="true"
-                className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-[var(--muted-foreground)]"
-              />
-              <Input
-                value={query}
-                onChange={(event) => setQuery(event.target.value)}
-                placeholder="Job title or keyword"
-                aria-label="Job title or keyword"
-                className="pl-9"
-              />
-            </div>
-            <Input
+        <form
+          className="mt-7 flex flex-col gap-2 rounded-[var(--radius)] bg-white p-2 shadow-[0_14px_36px_rgba(29,35,43,0.16)] sm:flex-row sm:items-center"
+          onSubmit={handleSubmit}
+        >
+          <div className="relative flex-1">
+            <HugeiconsIcon
+              icon={Search02Icon}
+              strokeWidth={1.8}
+              aria-hidden="true"
+              className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-[#8a90a4]"
+            />
+            <input
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              placeholder="Job title, keyword"
+              aria-label="Job title or keyword"
+              className="h-11 w-full rounded-[var(--neu-radius-control)] border border-[rgb(29_35_43_/_0.14)] bg-transparent pl-9 pr-3 text-sm text-[#1d232b] placeholder:text-[#8a90a4] focus-visible:outline-2 focus-visible:outline-[#3f536f]"
+            />
+          </div>
+          <div className="relative sm:w-40">
+            <HugeiconsIcon
+              icon={Location01Icon}
+              strokeWidth={1.8}
+              aria-hidden="true"
+              className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-[#8a90a4]"
+            />
+            <input
               value={location}
               onChange={(event) => setLocation(event.target.value)}
               placeholder="Location"
               aria-label="Location"
-              className="md:w-44"
+              className="h-11 w-full rounded-[var(--neu-radius-control)] border border-[rgb(29_35_43_/_0.14)] bg-transparent pl-9 pr-3 text-sm text-[#1d232b] placeholder:text-[#8a90a4] focus-visible:outline-2 focus-visible:outline-[#3f536f]"
             />
-            <Button
-              type="submit"
-              variant="primary"
-              className="shrink-0 [background-image:var(--neu-fill-primary)] text-[var(--primary-foreground)]"
-            >
-              Search
-            </Button>
-          </form>
-        </Card>
+          </div>
+          <button
+            type="submit"
+            className="inline-flex h-11 shrink-0 cursor-pointer items-center justify-center rounded-[var(--neu-radius-control)] bg-[#3f536f] px-5 text-sm font-semibold text-white transition-colors duration-[var(--neu-duration)] hover:bg-[#35465e] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#3f536f]"
+          >
+            Find Job
+          </button>
+        </form>
 
-        <div className="flex flex-wrap items-center justify-center gap-2">
-          <span className="text-xs text-white/60">Popular:</span>
+        <p className="mt-5 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-sm text-[#6a7390]">
+          Popular:
           {POPULAR_SEARCHES.map((term) => (
             <button
               key={term}
               type="button"
               onClick={() => search(term)}
-              className="cursor-pointer rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-medium text-white/85 transition-colors duration-[var(--neu-duration)] hover:bg-white/15"
+              className="cursor-pointer font-medium text-[#3f536f] underline decoration-[rgb(63_83_111_/_0.35)] underline-offset-4 transition-colors duration-[var(--neu-duration)] hover:decoration-[#3f536f]"
             >
               {term}
             </button>
           ))}
-        </div>
+        </p>
       </div>
     </section>
   )

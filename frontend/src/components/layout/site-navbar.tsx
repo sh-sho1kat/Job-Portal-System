@@ -39,7 +39,7 @@ export function SiteNavbar({ query, location, onQueryChange, onLocationChange }:
   return (
     <header className="sticky top-0 z-40 border-b border-[color:var(--neu-edge)] bg-[var(--neu-surface)] [background-image:var(--neu-fill-raised)] shadow-[var(--neu-shadow-raised-sm)]">
       <div className="mx-auto flex h-16 w-full max-w-7xl flex-wrap items-center gap-x-4 gap-y-2 px-4 md:px-6">
-        <Link to="/" className="flex items-center gap-2.5" aria-label="ZOSHIRE home">
+        <Link to="/" className="flex items-center gap-2.5" aria-label="Hirely home">
           <span
             aria-hidden="true"
             className="flex size-9 shrink-0 items-center justify-center rounded-full [background-image:var(--neu-fill-primary)]"
@@ -51,7 +51,7 @@ export function SiteNavbar({ query, location, onQueryChange, onLocationChange }:
               className="size-4.5 text-[var(--primary-foreground)]"
             />
           </span>
-          <span className="text-lg font-bold tracking-tight text-[var(--foreground)]">ZOSHIRE</span>
+          <span className="text-lg font-bold tracking-tight text-[var(--foreground)]">Hirely</span>
         </Link>
 
         <form

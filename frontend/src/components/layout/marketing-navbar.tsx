@@ -16,7 +16,7 @@ export function MarketingNavbar() {
   return (
     <header className="sticky top-0 z-40 border-b border-[color:var(--neu-edge)] bg-[var(--neu-surface)] [background-image:var(--neu-fill-raised)] shadow-[var(--neu-shadow-raised-sm)]">
       <div className="mx-auto flex h-16 w-full max-w-7xl items-center justify-between gap-4 px-4 md:px-6">
-        <Link to="/" className="flex items-center gap-2.5" aria-label="ZOSHIRE home">
+        <Link to="/" className="flex items-center gap-2.5" aria-label="Hirely home">
           <span
             aria-hidden="true"
             className="flex size-9 shrink-0 items-center justify-center rounded-full [background-image:var(--neu-fill-primary)]"
@@ -28,7 +28,7 @@ export function MarketingNavbar() {
               className="size-4.5 text-[var(--primary-foreground)]"
             />
           </span>
-          <span className="text-lg font-bold tracking-tight text-[var(--foreground)]">ZOSHIRE</span>
+          <span className="text-lg font-bold tracking-tight text-[var(--foreground)]">Hirely</span>
         </Link>
 
         <nav aria-label="Primary" className="hidden items-center gap-1 sm:flex">
@@ -47,8 +47,9 @@ export function MarketingNavbar() {
               beside it so the switch reads as part of the row, not a patch. */}
           <ThemeToggle className="shrink-0 [zoom:0.35]" />
           {/* Auth pages don't exist yet — the action lands on the jobs page.
-              Sign in hides on phones so the cluster can't overflow. */}
-          <Button variant="ghost" className="hidden sm:inline-flex" onClick={() => navigate('/jobs')}>
+              max-sm:hidden beats the base display utility regardless of CSS
+              order, so the cluster can't overflow on phones. */}
+          <Button variant="ghost" className="max-sm:hidden" onClick={() => navigate('/jobs')}>
             Sign in
           </Button>
           <Button
