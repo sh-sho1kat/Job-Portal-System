@@ -105,7 +105,13 @@ function FeaturedCard({ job }: { job: Job }) {
 
       {/* Job details and applications don't exist yet — both land on the jobs page. */}
       <div className="mt-auto grid grid-cols-2 gap-3 pt-1.5">
-        <Button variant="default" onClick={() => navigate('/jobs')}>
+        {/* Same raised fill as the card face, so it gets a darker step of its
+            own to read as a control, not a card patch. */}
+        <Button
+          variant="default"
+          className="bg-[#a0a8b5] [background-image:none] text-[var(--foreground)] active:bg-[#99a2b0]"
+          onClick={() => navigate('/jobs')}
+        >
           View details
         </Button>
         <Button
