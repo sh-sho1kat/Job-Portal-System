@@ -18,7 +18,8 @@ export function MarketingNavbar() {
 
   return (
     <header className="sticky top-0 z-40 border-b border-[color:var(--neu-edge)] bg-[var(--neu-surface)] [background-image:var(--neu-fill-raised)] shadow-[var(--neu-shadow-raised-sm)]">
-      <div className="mx-auto flex h-16 w-full max-w-7xl items-center justify-between gap-4 px-4 md:px-6">
+      {/* Full-bleed: brand at the screen edge, actions at the other — no max-width cap. */}
+      <div className="flex h-16 w-full items-center justify-between gap-4 px-4 md:px-6">
         <Link to="/" className="flex items-center gap-2.5" aria-label="Hirely home">
           <span
             aria-hidden="true"
@@ -40,6 +41,9 @@ export function MarketingNavbar() {
           </button>
           <a href="#featured-jobs" className={navLinkClass}>
             Featured Jobs
+          </a>
+          <a href="#about" className={navLinkClass}>
+            About Us
           </a>
         </nav>
 

@@ -1,10 +1,11 @@
 import { MarketingNavbar } from '@/components/layout/marketing-navbar'
 
+import { AboutSection } from './components/about-section'
 import { FeaturedJobs } from './components/featured-jobs'
 import { LandingHero } from './components/landing-hero'
 import { SiteFooter } from './components/site-footer'
 
-/** Public entry page — hero with search, featured roles, footer. Signing in lands users on /jobs. */
+/** Public entry page — hero with search, featured roles, about, footer. Signing in lands users on /jobs. */
 export function LandingPage() {
   return (
     <div className="flex min-h-dvh flex-col">
@@ -12,6 +13,7 @@ export function LandingPage() {
       <main className="flex-1">
         <LandingHero />
         <FeaturedJobs />
+        <AboutSection />
       </main>
       <SiteFooter />
     </div>
