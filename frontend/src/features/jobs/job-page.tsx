@@ -1,4 +1,5 @@
 import * as React from 'react'
+import { useSearchParams } from 'react-router-dom'
 
 import { SiteNavbar } from '@/components/layout/site-navbar'
 import { AiHero } from './components/ai-hero'
@@ -34,8 +35,10 @@ const comparators: Record<SortId, (a: Job, b: Job) => number> = {
 
 /** Static placeholders + client filtering for now; swap in the job service call here. */
 export function JobPage() {
-  const [query, setQuery] = React.useState('')
-  const [location, setLocation] = React.useState('')
+  // The landing search hands off via /jobs?q=…&l=… — read once on mount.
+  const [searchParams] = useSearchParams()
+  const [query, setQuery] = React.useState(() => searchParams.get('q') ?? '')
+  const [location, setLocation] = React.useState(() => searchParams.get('l') ?? '')
   const [aiQuery, setAiQuery] = React.useState('')
   const [selected, setSelected] = React.useState<ActiveFilters>({})
   const [salary, setSalary] = React.useState<SalaryRangeValue>(DEFAULT_SALARY)
@@ -76,7 +79,16 @@ export function JobPage() {
 
     return JOBS.filter((job) => {
       if (needle) {
-        const haystack = [job.title, job.company, job.industry, job.category, job.tagline ?? '', ...job.skills]
+        // workMode so a "remote" search finds remote roles.
+        const haystack = [
+          job.title,
+          job.company,
+          job.industry,
+          job.category,
+          job.workMode,
+          job.tagline ?? '',
+          ...job.skills,
+        ]
         if (!haystack.some((text) => text.toLowerCase().includes(needle))) return false
       }
       if (where && !job.location.toLowerCase().includes(where)) return false

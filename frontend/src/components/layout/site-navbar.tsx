@@ -7,6 +7,7 @@ import {
   Target02Icon,
   UserAccountIcon,
 } from '@hugeicons/core-free-icons'
+import { Link } from 'react-router-dom'
 
 import { ThemeToggle } from '@/components/theme-toggle'
 import { Button } from '@/components/ui/button'
@@ -24,10 +25,11 @@ interface NavLink {
   label: string
   icon?: typeof SparklesIcon
   active?: boolean
+  to?: string
 }
 
 const NAV_LINKS: NavLink[] = [
-  { label: 'Jobs', active: true },
+  { label: 'Jobs', active: true, to: '/jobs' },
   { label: 'AI Tools', icon: SparklesIcon },
   { label: 'AI Match', icon: Target02Icon },
 ]
@@ -37,7 +39,7 @@ export function SiteNavbar({ query, location, onQueryChange, onLocationChange }:
   return (
     <header className="sticky top-0 z-40 border-b border-[color:var(--neu-edge)] bg-[var(--neu-surface)] [background-image:var(--neu-fill-raised)] shadow-[var(--neu-shadow-raised-sm)]">
       <div className="mx-auto flex h-16 w-full max-w-7xl flex-wrap items-center gap-x-4 gap-y-2 px-4 md:px-6">
-        <div className="flex items-center gap-2.5">
+        <Link to="/" className="flex items-center gap-2.5" aria-label="ZOSHIRE home">
           <span
             aria-hidden="true"
             className="flex size-9 shrink-0 items-center justify-center rounded-full [background-image:var(--neu-fill-primary)]"
@@ -50,7 +52,7 @@ export function SiteNavbar({ query, location, onQueryChange, onLocationChange }:
             />
           </span>
           <span className="text-lg font-bold tracking-tight text-[var(--foreground)]">ZOSHIRE</span>
-        </div>
+        </Link>
 
         <form
           className="hidden min-w-0 flex-1 items-center gap-2.5 md:flex"
@@ -88,24 +90,31 @@ export function SiteNavbar({ query, location, onQueryChange, onLocationChange }:
         </form>
 
         <nav aria-label="Primary" className="hidden items-center gap-1 sm:flex">
-          {NAV_LINKS.map((link) => (
-            <button
-              key={link.label}
-              type="button"
-              aria-current={link.active ? 'page' : undefined}
-              className={cn(
-                'inline-flex items-center gap-1.5 rounded-[var(--neu-radius-control)] px-3 py-2 text-sm transition-colors duration-[var(--neu-duration)] hover:bg-[var(--neu-surface-soft)]',
-                link.active
-                  ? 'font-semibold text-[var(--foreground)]'
-                  : 'font-medium text-[var(--muted-foreground)] hover:text-[var(--foreground)]',
-              )}
-            >
-              {link.icon && (
-                <HugeiconsIcon icon={link.icon} strokeWidth={1.8} aria-hidden="true" className="size-4.5" />
-              )}
-              {link.label}
-            </button>
-          ))}
+          {NAV_LINKS.map((link) => {
+            const className = cn(
+              'inline-flex items-center gap-1.5 rounded-[var(--neu-radius-control)] px-3 py-2 text-sm transition-colors duration-[var(--neu-duration)] hover:bg-[var(--neu-surface-soft)]',
+              link.active
+                ? 'font-semibold text-[var(--foreground)]'
+                : 'font-medium text-[var(--muted-foreground)] hover:text-[var(--foreground)]',
+            )
+            const content = (
+              <>
+                {link.icon && (
+                  <HugeiconsIcon icon={link.icon} strokeWidth={1.8} aria-hidden="true" className="size-4.5" />
+                )}
+                {link.label}
+              </>
+            )
+            return link.to ? (
+              <Link key={link.label} to={link.to} aria-current={link.active ? 'page' : undefined} className={className}>
+                {content}
+              </Link>
+            ) : (
+              <button key={link.label} type="button" aria-current={link.active ? 'page' : undefined} className={className}>
+                {content}
+              </button>
+            )
+          })}
         </nav>
 
         <div className="flex items-center gap-1.5">
@@ -127,8 +136,9 @@ export function SiteNavbar({ query, location, onQueryChange, onLocationChange }:
             <HugeiconsIcon icon={UserAccountIcon} strokeWidth={1.8} aria-hidden="true" className="size-4.5" />
           </button>
           {/* zoom (not transform-scale) shrinks the real layout box — the switch
-              stays a normal flex item, aligned and in place at every width. */}
-          <ThemeToggle className="shrink-0 [zoom:0.4]" />
+              stays a normal flex item, aligned and in place at every width.
+              0.35 ≈ 90×39px, matching the h-10 controls beside it. */}
+          <ThemeToggle className="shrink-0 [zoom:0.35]" />
         </div>
       </div>
     </header>
