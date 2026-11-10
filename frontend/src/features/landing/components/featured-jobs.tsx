@@ -122,7 +122,11 @@ function FeaturedCard({ job }: { job: Job }) {
 
 export function FeaturedJobs() {
   return (
-    <section aria-labelledby="featured-jobs-heading" className="mx-auto w-full max-w-7xl px-4 pb-16 pt-14 md:px-6">
+    <section
+      id="featured-jobs"
+      aria-labelledby="featured-jobs-heading"
+      className="scroll-mt-20 mx-auto w-full max-w-7xl px-4 pb-16 pt-14 md:px-6"
+    >
       <div className="mx-auto max-w-2xl text-center">
         <h2 id="featured-jobs-heading" className="text-3xl font-bold tracking-tight text-[var(--foreground)] md:text-4xl">
           Featured Jobs

@@ -5,6 +5,9 @@ import { Link, useNavigate } from 'react-router-dom'
 import { ThemeToggle } from '@/components/theme-toggle'
 import { Button } from '@/components/ui/button'
 
+const navLinkClass =
+  'inline-flex cursor-pointer items-center rounded-[var(--neu-radius-control)] px-3 py-2 text-sm font-medium text-[var(--muted-foreground)] transition-colors duration-[var(--neu-duration)] hover:bg-[var(--neu-surface-soft)] hover:text-[var(--foreground)]'
+
 /**
  * Landing-page navbar — lighter than the app bar: brand, one link, and the
  * auth actions. Sign in / Get Started go to the jobs page until the auth
@@ -32,20 +35,19 @@ export function MarketingNavbar() {
         </Link>
 
         <nav aria-label="Primary" className="hidden items-center gap-1 sm:flex">
-          <button
-            type="button"
-            onClick={() => navigate('/jobs')}
-            className="inline-flex items-center rounded-[var(--neu-radius-control)] px-3 py-2 text-sm font-medium text-[var(--muted-foreground)] transition-colors duration-[var(--neu-duration)] hover:bg-[var(--neu-surface-soft)] hover:text-[var(--foreground)]"
-          >
+          <button type="button" onClick={() => navigate('/jobs')} className={navLinkClass}>
             Find Jobs
           </button>
+          <a href="#featured-jobs" className={navLinkClass}>
+            Featured Jobs
+          </a>
         </nav>
 
         <div className="flex items-center gap-2.5">
           {/* zoom (not transform-scale) shrinks the real layout box — same fix
-              as the app navbar; 0.35 ≈ 90×39px, matching the h-10 controls
-              beside it so the switch reads as part of the row, not a patch. */}
-          <ThemeToggle className="shrink-0 [zoom:0.35]" />
+              as the app navbar; 0.25 ≈ 64×28px — visibly smaller than the
+              controls beside it. */}
+          <ThemeToggle className="shrink-0 [zoom:0.25]" />
           {/* Auth pages don't exist yet — the action lands on the jobs page.
               max-sm:hidden beats the base display utility regardless of CSS
               order, so the cluster can't overflow on phones. */}

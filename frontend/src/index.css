@@ -11,7 +11,7 @@
   --neu-font-mono: Consolas, monospace;
   --background: #e6e8eb;
   --foreground: #1d232b;
-  --card: #e6e8eb;
+  --card: #aeb6c2;
   --card-foreground: #1d232b;
   --popover: #edf0f2;
   --popover-foreground: #1d232b;
@@ -20,8 +20,8 @@
   --secondary: #d9dde1;
   --secondary-foreground: #1d232b;
   --muted: #d5d9de;
-  --muted-foreground: #55606b;
-  --neu-select-arrow: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%2355606b%22%20stroke-width%3D%221.8%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22m6%209%206%206%206-6%22%2F%3E%3C%2Fsvg%3E");
+  --muted-foreground: #3f4750;
+  --neu-select-arrow: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%233f4750%22%20stroke-width%3D%221.8%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22m6%209%206%206%206-6%22%2F%3E%3C%2Fsvg%3E");
   --accent: #f1f3f5;
   --accent-foreground: #3f536f;
   --destructive: #c8545f;
@@ -32,7 +32,7 @@
   --ring: #3f536f;
   --radius: 14px;
   --neu-surface: #e6e8eb;
-  --neu-surface-soft: #f1f3f5;
+  --neu-surface-soft: #b8c0cc;
   --neu-surface-low: #d5d9de;
   --neu-edge: transparent;
   --neu-shadow-dark: rgb(31 39 50 / 0.17);
@@ -54,7 +54,9 @@
   --neu-radius-surface: 14px;
   --neu-radius-overlay: 14px;
   --neu-duration: 180ms;
-  --neu-fill-raised: linear-gradient(135deg, color-mix(in srgb, #f1f3f5 12%, #e6e8eb), #e6e8eb);
+  /* Card surface sits clearly BELOW the page tone (#e6e8eb) per the client's
+     provided hex (#AEB6C2) — overrides the pasted theme (was #e6e8eb). */
+  --neu-fill-raised: linear-gradient(135deg, color-mix(in srgb, #e6e8eb 18%, #aeb6c2), #aeb6c2);
   --neu-fill-primary: linear-gradient(135deg, #3f536f, color-mix(in srgb, #3f536f 94%, black));
   --neu-selected: color-mix(in srgb, #3f536f 8%, #e6e8eb);
   --neu-selected-border: color-mix(in srgb, #3f536f 44%, rgb(98 107 118 / 0.22));
@@ -193,7 +195,7 @@
   /* Shared slide duration — the knob and the full-page crossfade move in
      step. One value to tune. */
   :root {
-    --theme-switch-duration: 600ms;
+    --theme-switch-duration: 400ms;
   }
 
   /* Theme-switch slide — plain CSS so speed is deterministic. */
@@ -235,6 +237,12 @@
   }
   .dark {
     color-scheme: dark;
+  }
+  /* Only smooth-scroll for people who haven't asked the OS to calm motion. */
+  @media (prefers-reduced-motion: no-preference) {
+    html {
+      scroll-behavior: smooth;
+    }
   }
   * {
     @apply border-border outline-ring/50;

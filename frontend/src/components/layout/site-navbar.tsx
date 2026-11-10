@@ -137,8 +137,8 @@ export function SiteNavbar({ query, location, onQueryChange, onLocationChange }:
           </button>
           {/* zoom (not transform-scale) shrinks the real layout box — the switch
               stays a normal flex item, aligned and in place at every width.
-              0.35 ≈ 90×39px, matching the h-10 controls beside it. */}
-          <ThemeToggle className="shrink-0 [zoom:0.35]" />
+              0.25 ≈ 64×28px — visibly smaller than the icons beside it. */}
+          <ThemeToggle className="shrink-0 [zoom:0.25]" />
         </div>
       </div>
     </header>
