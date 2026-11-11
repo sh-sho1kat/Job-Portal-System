@@ -103,21 +103,22 @@ function FeaturedCard({ job }: { job: Job }) {
         </span>
       </div>
 
-      {/* Job details and applications don't exist yet — both land on the jobs page. */}
+      {/* Job details exist (/jobs/:id); the application flow doesn't yet —
+          both actions land on the posting for now. */}
       <div className="mt-auto grid grid-cols-2 gap-3 pt-1.5">
         {/* Same raised fill as the card face, so it gets a darker step of its
             own to read as a control, not a card patch. */}
         <Button
           variant="default"
           className="bg-[#a0a8b5] [background-image:none] text-[var(--foreground)] active:bg-[#99a2b0]"
-          onClick={() => navigate('/jobs')}
+          onClick={() => navigate(`/jobs/${job.id}`)}
         >
           View details
         </Button>
         <Button
           variant="primary"
           className="[background-image:var(--neu-fill-primary)] text-[var(--primary-foreground)]"
-          onClick={() => navigate('/jobs')}
+          onClick={() => navigate(`/jobs/${job.id}`)}
         >
           Apply now
         </Button>

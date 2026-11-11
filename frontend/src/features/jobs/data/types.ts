@@ -17,6 +17,9 @@ export type ExperienceLevel =
 
 export type CompanySize = 'Small' | 'Medium' | 'Large'
 
+/** Mirrors the backend's SalaryPeriod enum. */
+export type SalaryPeriod = 'Hourly' | 'Monthly' | 'Yearly'
+
 export type FilterGroupId = 'jobType' | 'workMode' | 'level'
 
 export interface Job {
@@ -44,6 +47,22 @@ export interface Job {
   postedDaysAgo: number
   applicants: number
   openings: number
+
+  // --- Detail-page content, mirroring the backend's public JobResponse DTO ---
+  /** Full posting text. */
+  description?: string
+  responsibilities?: string[]
+  requirements?: string[]
+  benefits?: string[]
+  /** Structured location, flattened like the DTO's JobLocation. */
+  address?: string
+  city?: string
+  state?: string
+  country?: string
+  zipCode?: string
+  salaryPeriod?: SalaryPeriod
+  /** ISO date (yyyy-mm-dd); formatted at render. */
+  applicationDeadline?: string
 }
 
 export interface FilterOption {

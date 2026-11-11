@@ -19,6 +19,9 @@ interface SiteNavbarProps {
   location: string
   onQueryChange: (value: string) => void
   onLocationChange: (value: string) => void
+  /** Called on submit when provided — pages without live filtering hand the
+   *  query off to /jobs this way. */
+  onSearch?: (query: string, location: string) => void
 }
 
 interface NavLink {
@@ -36,7 +39,7 @@ const NAV_LINKS: NavLink[] = [
 
 /** Sticky top bar: brand, inline search, primary links, alerts, account, theme.
  *  Full-bleed like the landing navbar — no max-width cap. */
-export function SiteNavbar({ query, location, onQueryChange, onLocationChange }: SiteNavbarProps) {
+export function SiteNavbar({ query, location, onQueryChange, onLocationChange, onSearch }: SiteNavbarProps) {
   return (
     <header className="sticky top-0 z-40 border-b border-[color:var(--neu-edge)] bg-[var(--neu-surface)] [background-image:var(--neu-fill-raised)] shadow-[var(--neu-shadow-raised-sm)]">
       {/* Full-bleed: brand at the screen edge, actions at the other — no max-width cap. */}
@@ -58,7 +61,10 @@ export function SiteNavbar({ query, location, onQueryChange, onLocationChange }:
 
         <form
           className="hidden min-w-0 flex-1 items-center gap-2.5 md:flex"
-          onSubmit={(event) => event.preventDefault()}
+          onSubmit={(event) => {
+            event.preventDefault()
+            onSearch?.(query, location)
+          }}
         >
           <div className="relative min-w-0 w-full max-w-72">
             <HugeiconsIcon

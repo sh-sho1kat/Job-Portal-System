@@ -9,6 +9,7 @@ import {
   Location01Icon,
   UserMultipleIcon,
 } from '@hugeicons/core-free-icons'
+import { Link } from 'react-router-dom'
 
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -31,7 +32,14 @@ export function JobCard({ job }: { job: Job }) {
   const [saved, setSaved] = React.useState(false)
 
   return (
-    <Card variant="raised" className="p-0 transition-shadow hover:shadow-[var(--neu-shadow-raised)]">
+    <Card variant="raised" className="relative p-0 transition-shadow hover:shadow-[var(--neu-shadow-raised)]">
+      {/* Stretched link — the whole card navigates to the detail page; the
+          save button sits above it (z-10) and keeps its own click. */}
+      <Link
+        to={`/jobs/${job.id}`}
+        aria-label={`View ${job.title} at ${job.company}`}
+        className="absolute inset-0 z-0 rounded-[var(--neu-radius-surface)] focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-2 focus-visible:outline-[color:var(--ring)]"
+      />
       <div className="flex flex-col gap-3.5 p-5 md:p-6">
         <div className="flex items-start gap-4">
           <span
@@ -67,6 +75,7 @@ export function JobCard({ job }: { job: Job }) {
             aria-pressed={saved}
             aria-label={saved ? 'Remove from saved jobs' : 'Save job'}
             onClick={() => setSaved((current) => !current)}
+            className="relative z-10"
           >
             <HugeiconsIcon
               icon={Bookmark02Icon}
