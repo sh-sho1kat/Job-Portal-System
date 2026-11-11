@@ -16,6 +16,7 @@ import { Card } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
 import { cn } from '@/lib/utils'
 import type { Job } from '../data/types'
+import { useNavigate } from 'react-router-dom'
 
 function companyInitials(company: string) {
   return company
@@ -28,6 +29,7 @@ function companyInitials(company: string) {
 
 /** Listing card: logo plate, title block, meta row, badges, applicants footer. */
 export function JobCard({ job }: { job: Job }) {
+  const navigate = useNavigate()
   const [saved, setSaved] = React.useState(false)
 
   return (
@@ -115,6 +117,27 @@ export function JobCard({ job }: { job: Job }) {
           <span aria-hidden="true">·</span>
           {job.openings} opening{job.openings === 1 ? '' : 's'}
         </p>
+
+        {/* Job details and applications don't exist yet — same seams as the
+            featured cards until those pages land. */}
+        <div className="mt-auto grid grid-cols-2 gap-3">
+          {/* Same raised fill as the card face, so it gets a darker step of its
+              own to read as a control, not a card patch. */}
+          <Button
+            variant="default"
+            className="bg-[#a0a8b5] [background-image:none] text-[var(--foreground)] active:bg-[#99a2b0]"
+            onClick={() => navigate('/jobs')}
+          >
+            View details
+          </Button>
+          <Button
+            variant="primary"
+            className="[background-image:var(--neu-fill-primary)] text-[var(--primary-foreground)]"
+            onClick={() => navigate('/jobs')}
+          >
+            Apply now
+          </Button>
+        </div>
       </div>
     </Card>
   )
