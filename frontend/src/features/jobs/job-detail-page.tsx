@@ -300,56 +300,57 @@ export function JobDetailPage() {
           </div>
 
           <aside className="flex flex-col gap-4 lg:sticky lg:top-24">
-            {/* Actions sit on the page surface, above the overview card. */}
+            {/* Actions + overview in one card: apply, then the key facts. */}
             {/* The application service isn't wired yet — the button is the
                 seam until it exists. */}
-            <div className="flex flex-col gap-2.5">
-              <Button
-                variant="primary"
-                className="h-11 w-full text-[15px] [background-image:var(--neu-fill-primary)] text-[var(--primary-foreground)]"
-              >
-                Apply now
-              </Button>
-              {/* Carved-in wells (same treatment as inputs) so both read as
-                  real controls on the page surface — --neu-edge is
-                  transparent in light mode, so borders can't carry them.
-                  Hover keeps the soft fill-in they had as ghost buttons. */}
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="ghost"
-                  aria-pressed={saved}
-                  aria-label={saved ? 'Remove from saved jobs' : 'Save job'}
-                  onClick={() => setSaved((current) => !current)}
-                  className="h-10 flex-1 bg-[var(--neu-surface)] [background-image:var(--neu-fill-inset)] shadow-[var(--neu-shadow-inset)] hover:bg-[var(--neu-surface-soft)] hover:[background-image:none] hover:shadow-none"
-                >
-                  <HugeiconsIcon
-                    icon={Bookmark02Icon}
-                    strokeWidth={1.8}
-                    aria-hidden="true"
-                    className={cn('size-4.5', saved && 'text-[var(--neu-accent-ink)]')}
-                  />
-                  {saved ? 'Saved' : 'Save job'}
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  aria-label={copied ? 'Link copied' : 'Copy link to this job'}
-                  onClick={copyLink}
-                  className="size-10 bg-[var(--neu-surface)] [background-image:var(--neu-fill-inset)] shadow-[var(--neu-shadow-inset)] hover:bg-[var(--neu-surface-soft)] hover:[background-image:none] hover:shadow-none"
-                >
-                  <HugeiconsIcon
-                    icon={copied ? TickIcon : Share01Icon}
-                    strokeWidth={1.8}
-                    aria-hidden="true"
-                    className={cn('size-4.5', copied && 'text-[var(--neu-accent-ink)]')}
-                  />
-                </Button>
-              </div>
-            </div>
-
             <Card variant="raised" className="p-5 md:p-6">
-              <h2 className="text-lg font-semibold tracking-tight text-[var(--foreground)]">Job overview</h2>
-              <dl className="mt-3">
+              <div className="flex flex-col gap-2.5">
+                <Button
+                  variant="primary"
+                  className="h-11 w-full text-[15px] [background-image:var(--neu-fill-primary)] text-[var(--primary-foreground)]"
+                >
+                  Apply now
+                </Button>
+                {/* Carved-in wells (same treatment as inputs) so both read as
+                    real controls on the page surface — --neu-edge is
+                    transparent in light mode, so borders can't carry them.
+                    Hover keeps the soft fill-in they had as ghost buttons. */}
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="ghost"
+                    aria-pressed={saved}
+                    aria-label={saved ? 'Remove from saved jobs' : 'Save job'}
+                    onClick={() => setSaved((current) => !current)}
+                    className="h-10 flex-1 bg-[var(--neu-surface)] [background-image:var(--neu-fill-inset)] shadow-[var(--neu-shadow-inset)] hover:bg-[var(--neu-surface-soft)] hover:[background-image:none] hover:shadow-none"
+                  >
+                    <HugeiconsIcon
+                      icon={Bookmark02Icon}
+                      strokeWidth={1.8}
+                      aria-hidden="true"
+                      className={cn('size-4.5', saved && 'text-[var(--neu-accent-ink)]')}
+                    />
+                    {saved ? 'Saved' : 'Save job'}
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    aria-label={copied ? 'Link copied' : 'Copy link to this job'}
+                    onClick={copyLink}
+                    className="size-10 bg-[var(--neu-surface)] [background-image:var(--neu-fill-inset)] shadow-[var(--neu-shadow-inset)] hover:bg-[var(--neu-surface-soft)] hover:[background-image:none] hover:shadow-none"
+                  >
+                    <HugeiconsIcon
+                      icon={copied ? TickIcon : Share01Icon}
+                      strokeWidth={1.8}
+                      aria-hidden="true"
+                      className={cn('size-4.5', copied && 'text-[var(--neu-accent-ink)]')}
+                    />
+                  </Button>
+                </div>
+              </div>
+
+              <Separator />
+
+              <dl>
                 <OverviewRow label="Job type" value={job.employmentType} />
                 <OverviewRow label="Work mode" value={job.workMode} />
                 <OverviewRow label="Experience" value={job.level} />
@@ -365,7 +366,8 @@ export function JobDetailPage() {
                 {deadline && <OverviewRow label="Deadline" value={deadline} />}
                 <OverviewRow label="Posted" value={job.postedLabel} />
               </dl>
-              <p className="mt-3 flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-xs tabular-nums text-[var(--muted-foreground)]">
+
+              <p className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-xs tabular-nums text-[var(--muted-foreground)]">
                 <span className="inline-flex items-center gap-1">
                   <HugeiconsIcon icon={UserMultipleIcon} strokeWidth={1.8} aria-hidden="true" className="size-3.5" />
                   {job.applicants} applicant{job.applicants === 1 ? '' : 's'}

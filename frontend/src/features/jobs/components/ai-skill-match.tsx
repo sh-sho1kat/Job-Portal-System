@@ -91,7 +91,7 @@ export function AiSkillMatch({ job }: { job: Job }) {
           variant="primary"
           disabled={!resumeId}
           onClick={runAnalysis}
-          className="shrink-0 [background-image:var(--neu-fill-primary)] text-[var(--primary-foreground)] disabled:bg-[var(--neu-surface-soft)] disabled:opacity-100 disabled:text-[var(--muted-foreground)] disabled:[background-image:none] disabled:shadow-[var(--neu-shadow-inset)]"
+          className="shrink-0 [background-image:var(--neu-fill-primary)] text-[var(--primary-foreground)] disabled:bg-[color-mix(in_srgb,var(--neu-surface-soft)_45%,var(--neu-surface))] disabled:opacity-100 disabled:text-[var(--muted-foreground)] disabled:[background-image:none] disabled:shadow-[var(--neu-shadow-inset)]"
         >
           <HugeiconsIcon icon={MagicWand01Icon} strokeWidth={1.8} aria-hidden="true" className="size-4.5" />
           Analyze
