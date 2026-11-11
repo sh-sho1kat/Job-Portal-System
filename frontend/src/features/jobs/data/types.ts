@@ -47,6 +47,10 @@ export interface Job {
   postedDaysAgo: number
   applicants: number
   openings: number
+  /** DTO viewCount — the counter increments on the service side. */
+  views?: number
+  /** Tag names — the backend DTO carries tagIds resolved by the taxonomy service. */
+  tags?: string[]
 
   // --- Detail-page content, mirroring the backend's public JobResponse DTO ---
   /** Full posting text. */

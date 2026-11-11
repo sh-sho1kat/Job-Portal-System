@@ -2,12 +2,15 @@ import * as React from 'react'
 import { HugeiconsIcon } from '@hugeicons/react'
 import {
   Bookmark02Icon,
-  Building01Icon,
+  Briefcase01Icon,
   CheckmarkBadge04Icon,
   ChevronLeftIcon,
   Clock01Icon,
   DollarSignIcon,
+  EyeIcon,
   Location01Icon,
+  Share01Icon,
+  TickIcon,
   UserMultipleIcon,
 } from '@hugeicons/core-free-icons'
 import { Link, useNavigate, useParams } from 'react-router-dom'
@@ -19,6 +22,7 @@ import { Card } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
 import { SiteNavbar } from '@/components/layout/site-navbar'
 import { cn } from '@/lib/utils'
+import { AiSkillMatch } from './components/ai-skill-match'
 import { JOBS } from './data/jobs'
 
 const TYPE_VARIANT: Record<EmploymentType, 'primary' | 'success' | 'soft'> = {
@@ -60,13 +64,11 @@ function fullLocation(job: Job) {
   return parts.length > 0 ? parts.join(', ') : job.location
 }
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
-  return (
-    <Card variant="raised" className="p-5 md:p-6">
-      <h2 className="text-lg font-semibold tracking-tight text-[var(--foreground)]">{title}</h2>
-      {children}
-    </Card>
-  )
+/** Two address lines like a mailing block: street, then "City, State, Country - Zip". */
+function locationLines(job: Job) {
+  const second = [job.city, job.state, job.country].filter(Boolean).join(', ')
+  const withZip = job.zipCode ? `${second} - ${job.zipCode}` : second
+  return [job.address ?? (withZip ? undefined : 'Remote'), withZip].filter(Boolean)
 }
 
 function Bullets({ items }: { items: string[] }) {
@@ -76,6 +78,15 @@ function Bullets({ items }: { items: string[] }) {
         <li key={item}>{item}</li>
       ))}
     </ul>
+  )
+}
+
+function Section({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <Card variant="raised" className="p-5 md:p-6">
+      <h2 className="text-lg font-semibold tracking-tight text-[var(--foreground)]">{title}</h2>
+      {children}
+    </Card>
   )
 }
 
@@ -91,13 +102,16 @@ function OverviewRow({ label, value }: { label: string; value: React.ReactNode }
   )
 }
 
-/** Public job posting — mirrors the backend's JobResponse DTO fields. */
+/** Public job posting — mirrors the backend's JobResponse DTO fields.
+ *  Left column: the posting itself plus the AI skills-gap band. Right
+ *  column: apply actions, overview, tags, and the mailing-block address. */
 export function JobDetailPage() {
   const { id } = useParams()
   const navigate = useNavigate()
   const [query, setQuery] = React.useState('')
   const [location, setLocation] = React.useState('')
   const [saved, setSaved] = React.useState(false)
+  const [copied, setCopied] = React.useState(false)
 
   React.useEffect(() => {
     window.scrollTo(0, 0)
@@ -113,6 +127,16 @@ export function JobDetailPage() {
     },
     [navigate],
   )
+
+  const copyLink = React.useCallback(() => {
+    navigator.clipboard?.writeText(window.location.href).then(
+      () => {
+        setCopied(true)
+        window.setTimeout(() => setCopied(false), 2000)
+      },
+      () => {},
+    )
+  }, [])
 
   const job = JOBS.find((candidate) => candidate.id === id)
 
@@ -144,6 +168,7 @@ export function JobDetailPage() {
   }
 
   const deadline = job.applicationDeadline ? formatDate(job.applicationDeadline) : undefined
+  const addressLines = locationLines(job)
 
   return (
     <div className="min-h-dvh">
@@ -166,7 +191,7 @@ export function JobDetailPage() {
 
         <div className="mt-4 grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_20rem]">
           <div className="flex min-w-0 flex-col gap-4">
-            {/* Header card — identity, badges, meta, actions. */}
+            {/* Header card — identity, badges, meta. Actions live in the sidebar. */}
             <Card variant="raised" className="p-5 md:p-6">
               <div className="flex items-start gap-4">
                 <span
@@ -202,7 +227,10 @@ export function JobDetailPage() {
               </div>
 
               <div className="mt-4 flex flex-wrap gap-1.5">
-                <Badge variant={TYPE_VARIANT[job.employmentType]} className="uppercase sm:hidden">
+                <Badge variant="success" className="rounded-full px-3 py-1 uppercase">
+                  Open
+                </Badge>
+                <Badge variant={TYPE_VARIANT[job.employmentType]} className="rounded-full uppercase sm:hidden">
                   {job.employmentType}
                 </Badge>
                 <Badge variant="soft" className="rounded-full px-3 py-1">
@@ -210,6 +238,9 @@ export function JobDetailPage() {
                 </Badge>
                 <Badge variant="soft" className="rounded-full px-3 py-1">
                   {job.level}
+                </Badge>
+                <Badge variant="soft" className="rounded-full px-3 py-1">
+                  {job.category}
                 </Badge>
                 {job.skills.map((skill) => (
                   <Badge key={skill} variant="soft" className="rounded-full px-3 py-1">
@@ -223,6 +254,10 @@ export function JobDetailPage() {
                   <HugeiconsIcon icon={Location01Icon} strokeWidth={1.8} aria-hidden="true" className="size-4" />
                   {fullLocation(job)}
                 </li>
+                <li className="inline-flex items-center gap-1.5 whitespace-nowrap">
+                  <HugeiconsIcon icon={Briefcase01Icon} strokeWidth={1.8} aria-hidden="true" className="size-4" />
+                  {job.employmentType}
+                </li>
                 <li className="inline-flex items-center gap-1.5 whitespace-nowrap font-medium tabular-nums text-[var(--foreground)]">
                   <HugeiconsIcon icon={DollarSignIcon} strokeWidth={1.8} aria-hidden="true" className="size-4" />
                   {job.salaryLabel}
@@ -234,43 +269,13 @@ export function JobDetailPage() {
                   <HugeiconsIcon icon={Clock01Icon} strokeWidth={1.8} aria-hidden="true" className="size-4" />
                   {job.postedLabel}
                 </li>
-                <li className="inline-flex items-center gap-1.5 whitespace-nowrap">
-                  <HugeiconsIcon icon={UserMultipleIcon} strokeWidth={1.8} aria-hidden="true" className="size-4" />
-                  {job.applicants} applicant{job.applicants === 1 ? '' : 's'}
-                </li>
               </ul>
-
-              {/* The application service isn't wired yet — the button is the
-                  seam until it exists. */}
-              <div className="mt-5 flex flex-wrap items-center gap-3">
-                <Button
-                  variant="primary"
-                  className="[background-image:var(--neu-fill-primary)] text-[var(--primary-foreground)]"
-                >
-                  Apply now
-                </Button>
-                <Button
-                  variant="ghost"
-                  aria-pressed={saved}
-                  aria-label={saved ? 'Remove from saved jobs' : 'Save job'}
-                  onClick={() => setSaved((current) => !current)}
-                >
-                  <HugeiconsIcon
-                    icon={Bookmark02Icon}
-                    strokeWidth={1.8}
-                    aria-hidden="true"
-                    className={cn('size-4.5', saved && 'text-[var(--neu-accent-ink)]')}
-                  />
-                  {saved ? 'Saved' : 'Save job'}
-                </Button>
-                {deadline && (
-                  <span className="text-xs text-[var(--muted-foreground)]">Apply before {deadline}</span>
-                )}
-              </div>
             </Card>
 
+            <AiSkillMatch job={job} />
+
             {job.description && (
-              <Section title="Job description">
+              <Section title="About the role">
                 <p className="mt-3.5 text-sm leading-relaxed text-[var(--muted-foreground)]">{job.description}</p>
               </Section>
             )}
@@ -295,12 +300,55 @@ export function JobDetailPage() {
           </div>
 
           <aside className="flex flex-col gap-4 lg:sticky lg:top-24">
+            {/* Actions sit on the page surface, above the overview card. */}
+            {/* The application service isn't wired yet — the button is the
+                seam until it exists. */}
+            <div className="flex flex-col gap-2.5">
+              <Button
+                variant="primary"
+                className="h-11 w-full text-[15px] [background-image:var(--neu-fill-primary)] text-[var(--primary-foreground)]"
+              >
+                Apply now
+              </Button>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="ghost"
+                  aria-pressed={saved}
+                  aria-label={saved ? 'Remove from saved jobs' : 'Save job'}
+                  onClick={() => setSaved((current) => !current)}
+                  className="h-10 flex-1 border border-[color:var(--neu-edge)]"
+                >
+                  <HugeiconsIcon
+                    icon={Bookmark02Icon}
+                    strokeWidth={1.8}
+                    aria-hidden="true"
+                    className={cn('size-4.5', saved && 'text-[var(--neu-accent-ink)]')}
+                  />
+                  {saved ? 'Saved' : 'Save job'}
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  aria-label={copied ? 'Link copied' : 'Copy link to this job'}
+                  onClick={copyLink}
+                  className="size-10 border border-[color:var(--neu-edge)]"
+                >
+                  <HugeiconsIcon
+                    icon={copied ? TickIcon : Share01Icon}
+                    strokeWidth={1.8}
+                    aria-hidden="true"
+                    className={cn('size-4.5', copied && 'text-[var(--neu-accent-ink)]')}
+                  />
+                </Button>
+              </div>
+            </div>
+
             <Card variant="raised" className="p-5 md:p-6">
               <h2 className="text-lg font-semibold tracking-tight text-[var(--foreground)]">Job overview</h2>
               <dl className="mt-3">
-                <OverviewRow label="Employment type" value={job.employmentType} />
+                <OverviewRow label="Job type" value={job.employmentType} />
                 <OverviewRow label="Work mode" value={job.workMode} />
-                <OverviewRow label="Experience level" value={job.level} />
+                <OverviewRow label="Experience" value={job.level} />
                 <OverviewRow
                   label="Salary"
                   value={
@@ -309,36 +357,45 @@ export function JobDetailPage() {
                     </span>
                   }
                 />
-                <OverviewRow label="Vacancies" value={job.openings} />
-                {deadline && <OverviewRow label="Application deadline" value={deadline} />}
+                <OverviewRow label="Openings" value={job.openings} />
+                {deadline && <OverviewRow label="Deadline" value={deadline} />}
                 <OverviewRow label="Posted" value={job.postedLabel} />
               </dl>
+              <p className="mt-3 flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-xs tabular-nums text-[var(--muted-foreground)]">
+                <span className="inline-flex items-center gap-1">
+                  <HugeiconsIcon icon={UserMultipleIcon} strokeWidth={1.8} aria-hidden="true" className="size-3.5" />
+                  {job.applicants} applicant{job.applicants === 1 ? '' : 's'}
+                </span>
+                <span className="inline-flex items-center gap-1">
+                  <HugeiconsIcon icon={EyeIcon} strokeWidth={1.8} aria-hidden="true" className="size-3.5" />
+                  {job.views ?? 0} views
+                </span>
+              </p>
             </Card>
 
-            <Card variant="raised" className="p-5 md:p-6">
-              <h2 className="text-lg font-semibold tracking-tight text-[var(--foreground)]">About the company</h2>
-              <div className="mt-3.5 flex items-center gap-3">
-                <span
-                  aria-hidden="true"
-                  className="flex size-10 shrink-0 items-center justify-center rounded-full [background-image:var(--neu-fill-primary)]"
-                >
-                  <HugeiconsIcon
-                    icon={Building01Icon}
-                    strokeWidth={1.8}
-                    aria-hidden="true"
-                    className="size-4.5 text-[var(--primary-foreground)]"
-                  />
-                </span>
-                <div className="min-w-0">
-                  <p className="truncate text-sm font-semibold text-[var(--foreground)]">{job.company}</p>
-                  <p className="text-xs text-[var(--muted-foreground)]">
-                    {job.industry} · {job.companySize} company
-                  </p>
+            {job.tags && job.tags.length > 0 && (
+              <Card variant="raised" className="p-5 md:p-6">
+                <h2 className="text-lg font-semibold tracking-tight text-[var(--foreground)]">Tags</h2>
+                <div className="mt-3 flex flex-wrap gap-1.5">
+                  {job.tags.map((tag) => (
+                    <Badge key={tag} variant="soft" className="rounded-full px-3 py-1">
+                      {tag}
+                    </Badge>
+                  ))}
                 </div>
-              </div>
-              {job.tagline && (
-                <p className="mt-3 text-[13px] leading-relaxed text-[var(--muted-foreground)]">{job.tagline}</p>
-              )}
+              </Card>
+            )}
+
+            <Card variant="raised" className="p-5 md:p-6">
+              <h2 className="text-lg font-semibold tracking-tight text-[var(--foreground)]">Location details</h2>
+              <address className="mt-3 flex flex-col gap-1 text-sm not-italic leading-relaxed text-[var(--muted-foreground)]">
+                {addressLines.map((line) => (
+                  <span key={line} className="inline-flex items-center gap-1.5">
+                    <HugeiconsIcon icon={Location01Icon} strokeWidth={1.8} aria-hidden="true" className="size-4 shrink-0" />
+                    {line}
+                  </span>
+                ))}
+              </address>
             </Card>
           </aside>
         </div>

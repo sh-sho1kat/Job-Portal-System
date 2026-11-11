@@ -27,6 +27,8 @@ export const JOBS: Job[] = [
     postedDaysAgo: 30,
     applicants: 0,
     openings: 3,
+    views: 128,
+    tags: ['Individual Contributor', 'Entry level', 'Healthcare'],
     description:
       'We are looking for a Junior Web Developer to join our product team in Austin. You will build and maintain customer-facing features across our web platform, working closely with senior engineers who review and pair on everything you ship.',
     responsibilities: [
@@ -76,6 +78,8 @@ export const JOBS: Job[] = [
     postedDaysAgo: 30,
     applicants: 0,
     openings: 1,
+    views: 214,
+    tags: ['Individual Contributor', 'Leadership', 'B2B'],
     description:
       'Own the brand for our marketplace payments suite. You will run campaigns end to end — positioning, creative, channels, and measurement — and report directly on how brand lifts move pipeline.',
     responsibilities: [
@@ -125,6 +129,8 @@ export const JOBS: Job[] = [
     postedDaysAgo: 30,
     applicants: 0,
     openings: 1,
+    views: 96,
+    tags: ['Individual Contributor', 'Regulatory'],
     description:
       'Join our compliance team to keep our marketplace in line with federal and state financial regulations. You will review policies, run internal audits, and act as the first point of contact for regulators.',
     responsibilities: [
@@ -174,6 +180,8 @@ export const JOBS: Job[] = [
     postedDaysAgo: 10,
     applicants: 6,
     openings: 2,
+    views: 342,
+    tags: ['Individual Contributor', 'Remote-first', 'Fintech'],
     description:
       'Build the interfaces merchants use to run their stores. You will work in a small remote team that ships weekly, owns features from design review to production, and keeps the bundle lean.',
     responsibilities: [
@@ -219,6 +227,8 @@ export const JOBS: Job[] = [
     postedDaysAgo: 5,
     applicants: 2,
     openings: 1,
+    views: 187,
+    tags: ['Individual Contributor', 'On-site', 'Analytics'],
     description:
       'Turn transaction data into decisions leadership actually makes. You will own dashboards, run ad hoc analyses for the risk team, and help define the metrics the company reports on.',
     responsibilities: [
@@ -268,6 +278,8 @@ export const JOBS: Job[] = [
     postedDaysAgo: 3,
     applicants: 1,
     openings: 1,
+    views: 126,
+    tags: ['Individual Contributor', 'Contract', 'E-commerce'],
     description:
       'Own the automated test suite for our storefront checkout. You will expand Playwright coverage, keep the CI pipeline green, and work with developers to make flaky tests a thing of the past.',
     responsibilities: [
