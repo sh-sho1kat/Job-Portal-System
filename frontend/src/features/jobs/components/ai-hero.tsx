@@ -18,6 +18,18 @@ interface AiHeroProps {
  * the card inside uses theme surfaces so dark mode still adapts.
  */
 export function AiHero({ value, onValueChange, onSubmit }: AiHeroProps) {
+  const textareaRef = React.useRef<HTMLTextAreaElement>(null)
+
+  // Auto-grow with content (chat-input style): re-measure on every change and
+  // stretch to fit, capped at max-h-60 (~9 rows) — past the cap it scrolls
+  // internally instead of pushing the page apart. Also shrinks back on delete.
+  React.useEffect(() => {
+    const el = textareaRef.current
+    if (!el) return
+    el.style.height = 'auto'
+    el.style.height = `${Math.min(el.scrollHeight, 240)}px`
+  }, [value])
+
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     onSubmit()
@@ -53,6 +65,7 @@ export function AiHero({ value, onValueChange, onSubmit }: AiHeroProps) {
                 className="pointer-events-none absolute left-3.5 top-3.5 size-4 text-[var(--muted-foreground)]"
               />
               <Textarea
+                ref={textareaRef}
                 rows={3}
                 value={value}
                 onChange={(event) => onValueChange(event.target.value)}
@@ -61,7 +74,7 @@ export function AiHero({ value, onValueChange, onSubmit }: AiHeroProps) {
                 placeholder={
                   "Describe the job you're looking for...\nE.g. Software Engineer with 5 years experience in React and Spring boot"
                 }
-                className="resize-none pl-10"
+                className="max-h-60 resize-none overflow-y-auto pl-10"
               />
             </div>
             <div className="flex flex-wrap items-center justify-between gap-3">
