@@ -189,7 +189,7 @@ export function JobDetailPage() {
           Back to all jobs
         </Link>
 
-        <div className="mt-4 grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_20rem]">
+        <div className="mt-4 grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_25rem]">
           <div className="flex min-w-0 flex-col gap-4">
             {/* Header card — identity, badges, meta. Actions live in the sidebar. */}
             <Card variant="raised" className="p-5 md:p-6">
@@ -310,13 +310,17 @@ export function JobDetailPage() {
               >
                 Apply now
               </Button>
+              {/* Carved-in wells (same treatment as inputs) so both read as
+                  real controls on the page surface — --neu-edge is
+                  transparent in light mode, so borders can't carry them.
+                  Hover keeps the soft fill-in they had as ghost buttons. */}
               <div className="flex items-center gap-2">
                 <Button
                   variant="ghost"
                   aria-pressed={saved}
                   aria-label={saved ? 'Remove from saved jobs' : 'Save job'}
                   onClick={() => setSaved((current) => !current)}
-                  className="h-10 flex-1 border border-[color:var(--neu-edge)]"
+                  className="h-10 flex-1 bg-[var(--neu-surface)] [background-image:var(--neu-fill-inset)] shadow-[var(--neu-shadow-inset)] hover:bg-[var(--neu-surface-soft)] hover:[background-image:none] hover:shadow-none"
                 >
                   <HugeiconsIcon
                     icon={Bookmark02Icon}
@@ -331,7 +335,7 @@ export function JobDetailPage() {
                   size="icon"
                   aria-label={copied ? 'Link copied' : 'Copy link to this job'}
                   onClick={copyLink}
-                  className="size-10 border border-[color:var(--neu-edge)]"
+                  className="size-10 bg-[var(--neu-surface)] [background-image:var(--neu-fill-inset)] shadow-[var(--neu-shadow-inset)] hover:bg-[var(--neu-surface-soft)] hover:[background-image:none] hover:shadow-none"
                 >
                   <HugeiconsIcon
                     icon={copied ? TickIcon : Share01Icon}
