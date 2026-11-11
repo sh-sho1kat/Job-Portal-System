@@ -41,7 +41,7 @@ export function SiteNavbar({ query, location, onQueryChange, onLocationChange }:
     <header className="sticky top-0 z-40 border-b border-[color:var(--neu-edge)] bg-[var(--neu-surface)] [background-image:var(--neu-fill-raised)] shadow-[var(--neu-shadow-raised-sm)]">
       {/* Full-bleed: brand at the screen edge, actions at the other — no max-width cap. */}
       <div className="mx-auto flex h-16 w-full flex-wrap items-center gap-x-4 gap-y-2 px-4 md:px-6">
-        <Link to="/" className="flex items-center gap-2.5" aria-label="Hirely home">
+        <Link to="/" className="flex shrink-0 items-center gap-2.5" aria-label="Hirely home">
           <span
             aria-hidden="true"
             className="flex size-9 shrink-0 items-center justify-center rounded-full [background-image:var(--neu-fill-primary)]"
@@ -60,7 +60,7 @@ export function SiteNavbar({ query, location, onQueryChange, onLocationChange }:
           className="hidden min-w-0 flex-1 items-center gap-2.5 md:flex"
           onSubmit={(event) => event.preventDefault()}
         >
-          <div className="relative w-full max-w-72">
+          <div className="relative min-w-0 w-full max-w-72">
             <HugeiconsIcon
               icon={Search02Icon}
               strokeWidth={1.8}
@@ -80,7 +80,7 @@ export function SiteNavbar({ query, location, onQueryChange, onLocationChange }:
             onChange={(event) => onLocationChange(event.target.value)}
             placeholder="Location"
             aria-label="Location"
-            className="w-44 shrink-0"
+            className="w-44 min-w-0"
           />
           <Button
             type="submit"
@@ -91,7 +91,7 @@ export function SiteNavbar({ query, location, onQueryChange, onLocationChange }:
           </Button>
         </form>
 
-        <nav aria-label="Primary" className="hidden items-center gap-1 sm:flex">
+        <nav aria-label="Primary" className="hidden items-center gap-1 lg:flex">
           {NAV_LINKS.map((link) => {
             const className = cn(
               'inline-flex items-center gap-1.5 rounded-[var(--neu-radius-control)] px-3 py-2 text-sm transition-colors duration-[var(--neu-duration)] hover:bg-[var(--neu-surface-soft)]',
@@ -119,7 +119,14 @@ export function SiteNavbar({ query, location, onQueryChange, onLocationChange }:
           })}
         </nav>
 
-        <div className="flex items-center gap-1.5">
+        {/* Right cluster, ordered from the edge inward: profile last (most
+            right), then notifications, then the theme switch. shrink-0 keeps
+            the icons from being squeezed into their neighbours. */}
+        <div className="flex shrink-0 items-center gap-1.5">
+          {/* zoom (not transform-scale) shrinks the real layout box — the switch
+              stays a normal flex item, aligned and in place at every width.
+              0.25 ≈ 64×28px — visibly smaller than the icons beside it. */}
+          <ThemeToggle className="shrink-0 [zoom:0.25]" />
           <button
             type="button"
             aria-label="Notifications, 3 unread"
@@ -137,10 +144,6 @@ export function SiteNavbar({ query, location, onQueryChange, onLocationChange }:
           >
             <HugeiconsIcon icon={UserAccountIcon} strokeWidth={1.8} aria-hidden="true" className="size-4.5" />
           </button>
-          {/* zoom (not transform-scale) shrinks the real layout box — the switch
-              stays a normal flex item, aligned and in place at every width.
-              0.25 ≈ 64×28px — visibly smaller than the icons beside it. */}
-          <ThemeToggle className="shrink-0 [zoom:0.25]" />
         </div>
       </div>
     </header>
