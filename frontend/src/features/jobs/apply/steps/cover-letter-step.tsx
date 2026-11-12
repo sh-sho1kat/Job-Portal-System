@@ -1,5 +1,6 @@
+import * as React from 'react'
 import { HugeiconsIcon } from '@hugeicons/react'
-import { SparklesIcon } from '@hugeicons/core-free-icons'
+import { Copy01Icon, EraserIcon, SparklesIcon, TickIcon } from '@hugeicons/core-free-icons'
 
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
@@ -26,10 +27,28 @@ const TIPS = [
 /** Step 2 — the cover letter. Optional per the DTO, capped at 5000 chars. */
 export function CoverLetterStep({ job, draft, onPatch }: CoverLetterStepProps) {
   const overLimit = draft.coverLetter.length > COVER_LETTER_MAX
+  const hasText = draft.coverLetter.trim().length > 0
+  const [copied, setCopied] = React.useState(false)
+  const copiedTimer = React.useRef<number | undefined>(undefined)
+  // Clear the pending "Copied" reset when the step unmounts.
+  React.useEffect(() => () => window.clearTimeout(copiedTimer.current), [])
 
   const writeWithAi = () => {
     const letter = generateCoverLetter(job, draft.resumeId)
     onPatch({ coverLetter: letter.slice(0, COVER_LETTER_MAX) })
+  }
+
+  const copyLetter = async () => {
+    if (!hasText) return
+    try {
+      await navigator.clipboard.writeText(draft.coverLetter)
+      setCopied(true)
+      window.clearTimeout(copiedTimer.current)
+      copiedTimer.current = window.setTimeout(() => setCopied(false), 1600)
+    } catch {
+      // Clipboard unavailable (permission denied, insecure context) — the
+      // letter itself is untouched; select-and-copy still works.
+    }
   }
 
   return (
@@ -59,15 +78,42 @@ export function CoverLetterStep({ job, draft, onPatch }: CoverLetterStepProps) {
           </span>
           {overLimit && <span className="ml-2 font-medium text-[var(--neu-error-text)]">Reduce the length to continue.</span>}
         </p>
-        <Button
-          variant="soft"
-          size="sm"
-          type="button"
-          onClick={writeWithAi}
-        >
-          <HugeiconsIcon icon={SparklesIcon} strokeWidth={1.8} data-icon="inline-start" />
-          {draft.coverLetter.trim() ? 'Rewrite with AI' : 'Write with AI'}
-        </Button>
+        <div className="flex flex-wrap items-center gap-2">
+          <Button
+            variant="soft"
+            size="sm"
+            type="button"
+            disabled={!hasText}
+            onClick={copyLetter}
+            aria-live="polite"
+          >
+            {copied ? (
+              <HugeiconsIcon icon={TickIcon} strokeWidth={2} data-icon="inline-start" />
+            ) : (
+              <HugeiconsIcon icon={Copy01Icon} strokeWidth={1.8} data-icon="inline-start" />
+            )}
+            {copied ? 'Copied' : 'Copy'}
+          </Button>
+          <Button
+            variant="soft"
+            size="sm"
+            type="button"
+            disabled={!hasText}
+            onClick={() => onPatch({ coverLetter: '' })}
+          >
+            <HugeiconsIcon icon={EraserIcon} strokeWidth={1.8} data-icon="inline-start" />
+            Clear
+          </Button>
+          <Button
+            variant="soft"
+            size="sm"
+            type="button"
+            onClick={writeWithAi}
+          >
+            <HugeiconsIcon icon={SparklesIcon} strokeWidth={1.8} data-icon="inline-start" />
+            {draft.coverLetter.trim() ? 'Rewrite with AI' : 'Write with AI'}
+          </Button>
+        </div>
       </div>
       <p className="text-xs leading-relaxed text-[var(--muted-foreground)]">
         This draft was generated from the job posting and your selected
