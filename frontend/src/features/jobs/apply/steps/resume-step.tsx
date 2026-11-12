@@ -68,16 +68,16 @@ function ResumeOption({
                 click from also selecting this resume. */}
             <Button
               variant="soft"
+              size="sm"
               type="button"
-              aria-label={`Preview ${name}`}
               onClick={(event) => {
                 event.preventDefault()
                 event.stopPropagation()
                 onPreview(resumeId)
               }}
-              className="size-7 rounded-full p-0"
             >
-              <HugeiconsIcon icon={EyeIcon} strokeWidth={1.8} aria-hidden="true" />
+              <HugeiconsIcon icon={EyeIcon} strokeWidth={1.8} data-icon="inline-start" />
+              Preview
             </Button>
           </span>
         </span>
