@@ -74,10 +74,16 @@ function ApplySuccess({ jobId }: { jobId: string }) {
         your submission and contact you regarding the next steps.
       </p>
       <div className="mt-2 flex flex-wrap items-center justify-center gap-3">
-        <Button variant="primary" onClick={() => navigate(`/jobs/${jobId}`)}>
+        <Button
+          variant="primary"
+          onClick={() => navigate(`/jobs/${jobId}`)}
+          className="[background-image:var(--neu-fill-primary)] text-[var(--primary-foreground)]"
+        >
           Back to job posting
         </Button>
-        <Button variant="ghost" onClick={() => navigate('/jobs')}>
+        {/* Soft well surface so the secondary action doesn't blend into
+            the card the way a ghost button does. */}
+        <Button variant="soft" onClick={() => navigate('/jobs')}>
           Browse more jobs
         </Button>
       </div>

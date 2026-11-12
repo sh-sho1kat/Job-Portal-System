@@ -1,3 +1,7 @@
+import { HugeiconsIcon } from '@hugeicons/react'
+import { AlertCircleIcon } from '@hugeicons/core-free-icons'
+
+import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
 import type { Job } from '../../data/types'
@@ -116,11 +120,14 @@ export function ReviewStep({ job, draft, onEdit }: ReviewStepProps) {
         </div>
       </section>
 
-      {/* Candidacy note — one line, no internal build talk. */}
-      <p className="text-xs leading-relaxed text-[var(--muted-foreground)]">
-        Once submitted, the application is sent to {job.company} and cannot be
-        edited.
-      </p>
+      {/* Candidacy note — one line, in the alert box it was before. */}
+      <Alert>
+        <HugeiconsIcon icon={AlertCircleIcon} strokeWidth={1.8} />
+        <AlertDescription>
+          Once submitted, the application is sent to {job.company} and cannot
+          be edited.
+        </AlertDescription>
+      </Alert>
     </div>
   )
 }
