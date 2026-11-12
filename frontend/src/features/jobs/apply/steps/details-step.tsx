@@ -33,8 +33,8 @@ export function DetailsStep({ job, draft, onPatch }: DetailsStepProps) {
           <FieldLabel htmlFor="expected-salary">Expected salary</FieldLabel>
           <InputGroup>
             <InputGroupAddon>
-              <span aria-hidden="true">$</span>
-              <span className="sr-only">US dollars per year</span>
+              <span aria-hidden="true">৳</span>
+              <span className="sr-only">Bangladeshi taka per year</span>
             </InputGroupAddon>
             <InputGroupInput
               id="expected-salary"

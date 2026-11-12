@@ -5,7 +5,6 @@ import {
   Briefcase01Icon,
   CheckmarkBadge04Icon,
   Clock01Icon,
-  DollarSignIcon,
   Location01Icon,
   UserMultipleIcon,
 } from '@hugeicons/core-free-icons'
@@ -15,6 +14,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
+import { TakaMark } from './currency'
 import { cn } from '@/lib/utils'
 import type { Job } from '../data/types'
 
@@ -96,7 +96,7 @@ export function JobCard({ job }: { job: Job }) {
             {job.employmentType}
           </li>
           <li className="inline-flex items-center gap-1.5 whitespace-nowrap font-medium tabular-nums text-[var(--foreground)]">
-            <HugeiconsIcon icon={DollarSignIcon} strokeWidth={1.8} aria-hidden="true" className="size-4" />
+            <TakaMark className="text-[15px]" />
             {job.salaryLabel}
           </li>
           <li className="inline-flex items-center gap-1.5 whitespace-nowrap">

@@ -20,7 +20,7 @@ const rangeInputClasses = [
   '[&::-webkit-slider-runnable-track]:bg-transparent [&::-moz-range-track]:bg-transparent',
 ].join(' ')
 
-/** Dual-thumb salary slider — values and bounds in $k. */
+/** Dual-thumb salary slider — values and bounds in thousands of taka. */
 export function SalaryRange({ value, bounds, onChange }: SalaryRangeProps) {
   const [minK, maxK] = value
   const span = bounds.max - bounds.min
@@ -34,7 +34,7 @@ export function SalaryRange({ value, bounds, onChange }: SalaryRangeProps) {
           Salary range
         </span>
         <span className="text-sm font-semibold tabular-nums text-[var(--foreground)]">
-          ${minK}k - ${maxK}k
+          ৳{minK}k - ৳{maxK}k
         </span>
       </div>
       <div className="relative h-5">
@@ -69,8 +69,8 @@ export function SalaryRange({ value, bounds, onChange }: SalaryRangeProps) {
         />
       </div>
       <div className="flex items-center justify-between text-xs text-[var(--muted-foreground)]">
-        <span>${bounds.min}</span>
-        <span>${bounds.max}k+</span>
+        <span>৳{bounds.min}</span>
+        <span>৳{bounds.max}k+</span>
       </div>
     </div>
   )

@@ -1,7 +1,6 @@
-import { HugeiconsIcon } from '@hugeicons/react'
-import { Building01Icon } from '@hugeicons/core-free-icons'
 import { Link, useNavigate } from 'react-router-dom'
 
+import { BrandLogo } from '@/components/layout/brand-logo'
 import { ThemeToggle } from '@/components/theme-toggle'
 import { Button } from '@/components/ui/button'
 
@@ -21,18 +20,7 @@ export function MarketingNavbar() {
       {/* Full-bleed: brand at the screen edge, actions at the other — no max-width cap. */}
       <div className="flex h-16 w-full items-center justify-between gap-4 px-4 md:px-6">
         <Link to="/" className="flex items-center gap-2.5" aria-label="Hirely home">
-          <span
-            aria-hidden="true"
-            className="flex size-9 shrink-0 items-center justify-center rounded-full [background-image:var(--neu-fill-primary)]"
-          >
-            <HugeiconsIcon
-              icon={Building01Icon}
-              strokeWidth={2}
-              aria-hidden="true"
-              className="size-4.5 text-[var(--primary-foreground)]"
-            />
-          </span>
-          <span className="text-lg font-bold tracking-tight text-[var(--foreground)]">Hirely</span>
+          <BrandLogo />
         </Link>
 
         <nav aria-label="Primary" className="hidden items-center gap-1 sm:flex">

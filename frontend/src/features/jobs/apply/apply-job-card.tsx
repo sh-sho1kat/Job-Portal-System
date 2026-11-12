@@ -2,7 +2,6 @@ import { HugeiconsIcon } from '@hugeicons/react'
 import {
   CheckmarkBadge04Icon,
   Clock01Icon,
-  DollarSignIcon,
   Location01Icon,
   UserMultipleIcon,
 } from '@hugeicons/core-free-icons'
@@ -31,10 +30,16 @@ function formatDate(iso: string) {
   }).format(new Date(`${iso}T00:00:00Z`))
 }
 
-function MetaItem({ icon, children }: { icon: IconSvgElement; children: React.ReactNode }) {
+function MetaItem({ icon, glyph, children }: { icon?: IconSvgElement; glyph?: string; children: React.ReactNode }) {
   return (
     <span className="inline-flex items-center gap-1.5 whitespace-nowrap text-[13px] text-[var(--muted-foreground)]">
-      <HugeiconsIcon icon={icon} strokeWidth={1.8} aria-hidden="true" className="size-4 shrink-0" />
+      {glyph ? (
+        <span aria-hidden="true" className="text-[15px] font-bold leading-none text-[var(--foreground)]">
+          {glyph}
+        </span>
+      ) : (
+        <HugeiconsIcon icon={icon!} strokeWidth={1.8} aria-hidden="true" className="size-4 shrink-0" />
+      )}
       {children}
     </span>
   )
@@ -94,7 +99,7 @@ export function ApplyJobCard({ job }: { job: Job }) {
 
       <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
         <MetaItem icon={Location01Icon}>{job.location}</MetaItem>
-        <MetaItem icon={DollarSignIcon}>
+        <MetaItem glyph="৳">
           <span className="font-medium tabular-nums text-[var(--foreground)]">{job.salaryLabel}</span>
           <span>{job.salaryPeriod === 'Monthly' ? 'a month' : job.salaryPeriod === 'Hourly' ? 'an hour' : 'a year'}</span>
         </MetaItem>

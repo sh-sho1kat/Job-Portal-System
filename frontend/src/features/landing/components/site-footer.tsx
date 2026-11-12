@@ -1,6 +1,6 @@
-import { HugeiconsIcon } from '@hugeicons/react'
-import { Building01Icon } from '@hugeicons/core-free-icons'
 import { Link } from 'react-router-dom'
+
+import { BrandLogo } from '@/components/layout/brand-logo'
 
 const POPULAR_SEARCHES = ['Remote', 'Developer', 'React', 'Analyst']
 
@@ -14,18 +14,7 @@ export function SiteFooter() {
       <div className="mx-auto grid w-full max-w-7xl gap-8 px-4 py-10 sm:grid-cols-2 md:grid-cols-[1.4fr_1fr_1fr] md:px-6">
         <div>
           <Link to="/" className="flex w-fit items-center gap-2.5" aria-label="Hirely home">
-            <span
-              aria-hidden="true"
-              className="flex size-9 shrink-0 items-center justify-center rounded-full [background-image:var(--neu-fill-primary)]"
-            >
-              <HugeiconsIcon
-                icon={Building01Icon}
-                strokeWidth={2}
-                aria-hidden="true"
-                className="size-4.5 text-[var(--primary-foreground)]"
-              />
-            </span>
-            <span className="text-lg font-bold tracking-tight text-[var(--foreground)]">Hirely</span>
+            <BrandLogo />
           </Link>
           <p className="mt-3 max-w-xs text-sm leading-relaxed text-[var(--muted-foreground)]">
             Find a job that aligns with your interests and skills — from verified companies worldwide.

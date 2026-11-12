@@ -102,7 +102,7 @@ export function ReviewStep({ job, draft, onEdit }: ReviewStepProps) {
               <p className="text-xs text-[var(--muted-foreground)]">Expected salary</p>
               <p className="mt-0.5 text-sm font-semibold tabular-nums text-[var(--foreground)]">
                 {salary && salary !== 'invalid'
-                  ? new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(salary)
+                  ? `৳${new Intl.NumberFormat('en-US', { maximumFractionDigits: 0 }).format(salary)}`
                   : 'Not provided'}
               </p>
             </div>

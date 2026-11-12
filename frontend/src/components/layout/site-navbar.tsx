@@ -1,6 +1,5 @@
 import { HugeiconsIcon } from '@hugeicons/react'
 import {
-  Building01Icon,
   Notification03Icon,
   Search02Icon,
   SparklesIcon,
@@ -9,6 +8,7 @@ import {
 } from '@hugeicons/core-free-icons'
 import { Link } from 'react-router-dom'
 
+import { BrandLogo } from '@/components/layout/brand-logo'
 import { ThemeToggle } from '@/components/theme-toggle'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -45,18 +45,7 @@ export function SiteNavbar({ query, location, onQueryChange, onLocationChange, o
       {/* Full-bleed: brand at the screen edge, actions at the other — no max-width cap. */}
       <div className="mx-auto flex h-16 w-full flex-wrap items-center gap-x-4 gap-y-2 px-4 md:px-6">
         <Link to="/" className="flex shrink-0 items-center gap-2.5" aria-label="Hirely home">
-          <span
-            aria-hidden="true"
-            className="flex size-9 shrink-0 items-center justify-center rounded-full [background-image:var(--neu-fill-primary)]"
-          >
-            <HugeiconsIcon
-              icon={Building01Icon}
-              strokeWidth={2}
-              aria-hidden="true"
-              className="size-4.5 text-[var(--primary-foreground)]"
-            />
-          </span>
-          <span className="text-lg font-bold tracking-tight text-[var(--foreground)]">Hirely</span>
+          <BrandLogo />
         </Link>
 
         <form

@@ -6,7 +6,6 @@ import {
   CheckmarkBadge04Icon,
   ChevronLeftIcon,
   Clock01Icon,
-  DollarSignIcon,
   EyeIcon,
   Location01Icon,
   Share01Icon,
@@ -23,6 +22,7 @@ import { Separator } from '@/components/ui/separator'
 import { SiteNavbar } from '@/components/layout/site-navbar'
 import { cn } from '@/lib/utils'
 import { AiSkillMatch } from './components/ai-skill-match'
+import { TakaMark } from './components/currency'
 import { JOBS } from './data/jobs'
 
 const TYPE_VARIANT: Record<EmploymentType, 'primary' | 'success' | 'soft'> = {
@@ -259,7 +259,7 @@ export function JobDetailPage() {
                   {job.employmentType}
                 </li>
                 <li className="inline-flex items-center gap-1.5 whitespace-nowrap font-medium tabular-nums text-[var(--foreground)]">
-                  <HugeiconsIcon icon={DollarSignIcon} strokeWidth={1.8} aria-hidden="true" className="size-4" />
+                  <TakaMark className="text-[15px]" />
                   {job.salaryLabel}
                   <span className="font-normal text-[var(--muted-foreground)]">
                     {PERIOD_SUFFIX[job.salaryPeriod ?? 'Yearly']}
@@ -359,6 +359,7 @@ export function JobDetailPage() {
                   label="Salary"
                   value={
                     <span className="tabular-nums">
+                      <TakaMark className="mr-1 text-[15px]" />
                       {job.salaryLabel} {PERIOD_SUFFIX[job.salaryPeriod ?? 'Yearly']}
                     </span>
                   }

@@ -5,6 +5,7 @@ import { Link, useNavigate } from 'react-router-dom'
 
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { TakaMark } from '@/features/jobs/components/currency'
 import { Card } from '@/components/ui/card'
 import { JOBS } from '@/features/jobs/data/jobs'
 import type { EmploymentType, Job } from '@/features/jobs/data/types'
@@ -65,7 +66,9 @@ function FeaturedCard({ job }: { job: Job }) {
         <Badge variant={TYPE_VARIANT[job.employmentType]} className="uppercase">
           {job.employmentType}
         </Badge>
-        <span className="text-sm text-[var(--muted-foreground)]">Salary: {job.salaryLabel}</span>
+        <span className="inline-flex items-center gap-1 text-sm tabular-nums text-[var(--muted-foreground)]">
+          Salary: <TakaMark className="text-[15px] font-semibold text-[var(--foreground)]" /> {job.salaryLabel}
+        </span>
       </div>
 
       <div className="flex items-center gap-3">

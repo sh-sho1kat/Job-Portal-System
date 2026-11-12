@@ -48,7 +48,7 @@ function stepError(index: number, draft: ApplicationDraft): string | null {
   }
   if (index === 2) {
     if (parseExpectedSalary(draft.expectedSalary) === 'invalid') {
-      return 'Enter a valid amount in dollars, for example 75,000.'
+      return 'Enter a valid amount in taka, for example 75,000.'
     }
     if (!isAvailableFromValid(draft.availableFrom)) {
       return 'The available-from date cannot be in the past.'
