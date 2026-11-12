@@ -166,11 +166,17 @@ export function ApplyPage() {
         availableFrom: draft.availableFrom
           ? `${draft.availableFrom.getFullYear()}-${String(draft.availableFrom.getMonth() + 1).padStart(2, '0')}-${String(draft.availableFrom.getDate()).padStart(2, '0')}`
           : null,
-      }).then(() => {
-        setSubmitting(false)
-        setSubmitted(true)
-        window.scrollTo(0, 0)
       })
+        .then(() => {
+          setSubmitted(true)
+          window.scrollTo(0, 0)
+        })
+        .catch(() => {
+          // The gateway call can fail (offline, 5xx) — the draft stays intact
+          // so the candidate only has to press submit again.
+          setError('Sending failed. Your application is still here — try again.')
+        })
+        .finally(() => setSubmitting(false))
       return
     }
     goToStep(step + 1)

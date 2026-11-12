@@ -38,10 +38,12 @@ export function DetailsStep({ job, draft, onPatch }: DetailsStepProps) {
             </InputGroupAddon>
             <InputGroupInput
               id="expected-salary"
-              type="number"
+              // Text + decimal keypad rather than type="number": the browser
+              // strips commas from number inputs, and "75,000" is the format
+              // this field's placeholder and error message both promise.
+              type="text"
               inputMode="decimal"
-              min={0}
-              step={1000}
+              autoComplete="off"
               placeholder={`${Math.round(job.salaryMin / 1000).toLocaleString('en-US')},000`}
               value={draft.expectedSalary}
               onChange={(event) => onPatch({ expectedSalary: event.target.value })}

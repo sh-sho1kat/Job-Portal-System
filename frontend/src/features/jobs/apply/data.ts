@@ -45,9 +45,13 @@ export function submitApplication(payload: ApplicationPayload): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, 900))
 }
 
-/** Salary input → BigDecimal-shaped value, or null when left blank. */
+/**
+ * Salary input → BigDecimal-shaped value, or null when left blank.
+ * Commas are accepted because the placeholder and error copy both
+ * present amounts as "75,000" — paste and typed commas both work.
+ */
 export function parseExpectedSalary(input: string): number | null | 'invalid' {
-  const trimmed = input.trim()
+  const trimmed = input.trim().replace(/,/g, '')
   if (!trimmed) return null
   if (!/^\d+(\.\d{1,2})?$/.test(trimmed)) return 'invalid'
   const value = Number(trimmed)
