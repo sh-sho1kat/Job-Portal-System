@@ -21,6 +21,7 @@ import { ResumeStep } from './steps/resume-step'
 import { ReviewStep } from './steps/review-step'
 import {
   EMPTY_DRAFT,
+  defaultResume,
   isAvailableFromValid,
   parseExpectedSalary,
   submitApplication,
@@ -107,15 +108,18 @@ export function ApplyPage() {
   )
   const [reached, setReached] = React.useState(() => step)
   const [draft, setDraft] = React.useState<ApplicationDraft>(() => {
+    // Preselect the candidate's default resume (backend's isDefault flag) —
+    // an explicit ?pick overrides it in dev.
+    const preselected = defaultResume()?.id ?? null
     // Dev-only ?pick=<resumeId> and ?letter=1 pair with ?step= for
     // screenshots/testing of a filled-in draft.
-    if (!import.meta.env.DEV) return EMPTY_DRAFT
+    if (!import.meta.env.DEV) return { ...EMPTY_DRAFT, resumeId: preselected }
     const params = new URLSearchParams(window.location.search)
     const pick = params.get('pick')
     const withLetter = params.get('letter') != null
     return {
       ...EMPTY_DRAFT,
-      resumeId: pick,
+      resumeId: pick ?? preselected,
       coverLetter: withLetter
         ? 'Dear Hiring Team,\n\nI would like to apply for the role described in this posting. Over the past four years I have built customer-facing web features in React and TypeScript, and I care about the small details — load time, keyboard access, and copy that respects the reader.\n\nI would welcome the chance to talk about how I can contribute to the team.\n\nSincerely,'
         : '',

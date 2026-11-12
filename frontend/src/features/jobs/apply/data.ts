@@ -114,3 +114,8 @@ export function resumeMatchCount(jobSkills: string[], resumeSkills: string[]): n
 }
 
 export { RESUMES }
+
+/** The candidate's designated default resume, per the DTO's isDefault flag. */
+export function defaultResume() {
+  return RESUMES.find((resume) => resume.isDefault)
+}

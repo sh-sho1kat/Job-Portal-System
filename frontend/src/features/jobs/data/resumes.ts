@@ -5,9 +5,16 @@ export interface ResumeExperience {
   detail: string
 }
 
+/** Template types from the backend's `ResumeTemplateType` enum. */
+export type ResumeTemplate = 'DEFAULT' | 'MODERN' | 'CLASSIC' | 'PROFESSIONAL'
+
 export interface Resume {
   id: string
   name: string
+  /** Resume type — the backend's `ResumeTemplateType`. */
+  template: ResumeTemplate
+  /** The candidate's designated default resume (backend's `isDefault`). */
+  isDefault: boolean
   /** Professional headline shown at the top of the preview. */
   headline: string
   /** Profile paragraph shown in the preview. */
@@ -27,6 +34,8 @@ export const RESUMES: Resume[] = [
   {
     id: 'resume-frontend',
     name: 'Frontend Developer Resume (2026)',
+    template: 'PROFESSIONAL',
+    isDefault: true,
     headline: 'Frontend Developer — React & TypeScript',
     summary:
       'Frontend developer with four years of experience building accessible, performant web applications in React and TypeScript.',
@@ -51,6 +60,8 @@ export const RESUMES: Resume[] = [
   {
     id: 'resume-marketing',
     name: 'Marketing Resume (2025)',
+    template: 'MODERN',
+    isDefault: false,
     headline: 'Marketing Specialist — Content & Campaigns',
     summary:
       'Marketing specialist focused on content strategy, brand campaigns, and analytics-driven growth.',

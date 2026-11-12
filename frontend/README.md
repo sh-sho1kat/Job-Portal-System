@@ -103,9 +103,11 @@ All data is client-side and static; these lines are the wiring points:
   salary period, application deadline, vacancies); `views` stands in for
   `viewCount` and tag names for the DTO's `tagIds` until the taxonomy lookup.
 - `features/jobs/data/resumes.ts` — demo resumes for the AI skills-gap match
-  and the apply flow's resume picker (with a Preview dialog). The preview
-  fields (headline, summary, experience) stand in for the parsed resume
-  document; replace everything with the resume service (`ResumeResponse`
+  and the apply flow's resume picker (with a Preview dialog). The cards show
+  the backend's `ResumeResponse` fields `template` (`ResumeTemplateType`) and
+  `isDefault` — the default resume is preselected when the flow opens. The
+  preview fields (headline, summary, experience) stand in for the parsed
+  resume document; replace everything with the resume service (`ResumeResponse`
   DTOs). The match itself (skill overlap score, matched/missing chips) runs
   locally in `ai-skill-match.tsx` until the analysis endpoint exists.
 - `features/jobs/job-page.tsx` — filtering/sorting already run through one

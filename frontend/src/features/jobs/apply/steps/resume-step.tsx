@@ -14,8 +14,13 @@ import {
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { cn } from '@/lib/utils'
 import type { Job } from '../../data/types'
-import type { Resume } from '../../data/resumes'
+import type { Resume, ResumeTemplate } from '../../data/resumes'
 import { RESUMES, resumeMatchCount, type ApplicationDraft } from '../data'
+
+/** "PROFESSIONAL" → "Professional" — enum value shown in human casing. */
+function templateLabel(template: ResumeTemplate): string {
+  return template.charAt(0) + template.slice(1).toLowerCase()
+}
 
 interface ResumeStepProps {
   job: Job
@@ -26,7 +31,8 @@ interface ResumeStepProps {
 function ResumeOption({
   resumeId,
   name,
-  skills,
+  template,
+  isDefault,
   matchCount,
   jobSkills,
   selected,
@@ -34,7 +40,8 @@ function ResumeOption({
 }: {
   resumeId: string
   name: string
-  skills: string[]
+  template: ResumeTemplate
+  isDefault: boolean
   matchCount: number
   jobSkills: Job['skills']
   selected: boolean
@@ -81,15 +88,19 @@ function ResumeOption({
             </Button>
           </span>
         </span>
+        {/* Resume type and the candidate's default flag — both come off the
+            backend's ResumeResponse (template / isDefault) — sit on their own
+            line under the name, where the skill chips used to be. */}
         <span className="mt-2 flex flex-wrap gap-1.5">
-          {skills.slice(0, 4).map((skill) => (
-            <Badge key={skill} variant="soft" className="rounded-full px-2.5 py-0.5 text-xs">
-              {skill}
-            </Badge>
-          ))}
-          {skills.length > 4 && (
-            <Badge variant="soft" className="rounded-full px-2.5 py-0.5 text-xs">
-              +{skills.length - 4}
+          <Badge variant="soft" className="rounded-full px-2.5 py-0.5 text-xs">
+            {templateLabel(template)}
+          </Badge>
+          {isDefault && (
+            <Badge
+              variant="soft"
+              className="rounded-full px-2.5 py-0.5 text-xs font-semibold text-[var(--neu-accent-ink)]"
+            >
+              Default
             </Badge>
           )}
         </span>
@@ -113,7 +124,20 @@ function ResumePreviewDialog({
           <DialogTitle className="text-lg font-bold tracking-tight text-[var(--foreground)]">
             {resume.name}
           </DialogTitle>
-          <DialogDescription>{resume.headline}</DialogDescription>
+          <DialogDescription className="flex flex-wrap items-center gap-2">
+            <span>{resume.headline}</span>
+            <Badge variant="soft" className="rounded-full px-2.5 py-0.5 text-xs">
+              {templateLabel(resume.template)}
+            </Badge>
+            {resume.isDefault && (
+              <Badge
+                variant="soft"
+                className="rounded-full px-2.5 py-0.5 text-xs font-semibold text-[var(--neu-accent-ink)]"
+              >
+                Default
+              </Badge>
+            )}
+          </DialogDescription>
         </DialogHeader>
 
         <p className="text-sm leading-relaxed text-[var(--foreground)]">{resume.summary}</p>
@@ -170,7 +194,8 @@ export function ResumeStep({ job, draft, onPatch }: ResumeStepProps) {
             key={resume.id}
             resumeId={resume.id}
             name={resume.name}
-            skills={resume.skills}
+            template={resume.template}
+            isDefault={resume.isDefault}
             matchCount={resumeMatchCount(job.skills, resume.skills)}
             jobSkills={job.skills}
             selected={draft.resumeId === resume.id}
