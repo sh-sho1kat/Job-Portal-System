@@ -60,6 +60,7 @@ function PasswordChecklist({ password, confirm }: { password: string; confirm: s
   const showMatch = confirm.length > 0
   const itemClass = 'flex items-center gap-2 text-[13px]'
   return (
+    // Plain list — no panel, no background; the ticks carry the state.
     <ul className="grid gap-y-1.5">
       {checks.map((check) => (
         <li key={check.label} className={itemClass}>
@@ -223,10 +224,14 @@ export function SecurityCard({ account }: { account: UserAccount }) {
               </Field>
             </div>
 
-            {/* 28px = label line (20px) + field gap (8px), so the first rule
-                lines up with the top of the first input, not its label. */}
-            <div className="flex min-w-0 flex-1 flex-col gap-4 sm:justify-between sm:border-l sm:border-[color:var(--neu-edge)] sm:pl-8 sm:pt-[28px]">
-              <PasswordChecklist password={form.newPassword} confirm={form.confirmPassword} />
+            <div className="flex min-w-0 flex-1 flex-col gap-4 sm:justify-between">
+              {/* The rule hugs the rules list only — it stops above the
+                  actions so it never runs into the buttons. The 28px offset
+                  (label line + field gap) drops the first rule level with
+                  the top of the Current password input box. */}
+              <div className="sm:mt-7 sm:border-l sm:border-[color:var(--neu-edge)] sm:pl-8">
+                <PasswordChecklist password={form.newPassword} confirm={form.confirmPassword} />
+              </div>
 
               <div className="flex flex-col gap-3 sm:items-end">
                 <div aria-live="polite">
@@ -244,7 +249,7 @@ export function SecurityCard({ account }: { account: UserAccount }) {
             <Button
               type="submit"
               disabled={saving || !complete}
-              className="[background-image:var(--neu-fill-primary)] text-[var(--primary-foreground)]"
+              className="[background-image:var(--neu-fill-primary)] text-[var(--primary-foreground)] disabled:text-[var(--muted-foreground)]"
             >
               <HugeiconsIcon icon={TickIcon} strokeWidth={2} data-icon="inline-start" />
               {saving ? 'Changing…' : 'Change password'}
