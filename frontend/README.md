@@ -58,9 +58,9 @@ src/
 │  │  ├─ apply/           # multi-step apply flow: page, horizontal stepper, job header card, four steps
 │  │  ├─ components/      # ai-hero, ai-skill-match, results-toolbar, filters-panel,
 │  │  │                   # salary-range, job-card, results-empty
-│     ├─ data/            # types.ts, jobs.ts + resumes.ts (static data), filters.ts
-│     ├─ job-page.tsx     # results workspace: state owner, filterJobs memo
-│     └─ job-detail-page.tsx
+│  │  ├─ data/            # types.ts, jobs.ts + resumes.ts (static data), filters.ts
+│  │  ├─ job-page.tsx     # results workspace: state owner, filterJobs memo
+│  │  └─ job-detail-page.tsx
 ├─ components/
 │  ├─ layout/             # site-navbar (app bar), marketing-navbar (landing) — both full-bleed
 │  ├─ theme-toggle.tsx    # pen-replica light/dark switch ([zoom:0.25] in navbars)
@@ -84,6 +84,11 @@ src/
 - Light/dark toggles per theme; the choice is persisted under the
   `job-portal-theme` localStorage key and applied pre-paint by a script in
   `index.html` (no flash of the wrong mode).
+- Dev/testing URL parameters: `?theme=light|dark` (any page) forces the theme
+  for screenshots; the apply flow additionally accepts `?step=N` (jump to a
+  step), `?pick=<resumeId>` (preselect a resume), and `?letter=1` (pre-fill a
+  cover letter) — all four are `import.meta.env.DEV`-gated or test-only and
+  commented at their read sites.
 - Note for automated checks: Tailwind v4 gates `hover:` styles behind
   `@media (hover: hover)` — headless browsers that report no hover-capable
   pointer will not show hover styling even when it is correctly implemented.
@@ -97,21 +102,25 @@ All data is client-side and static; these lines are the wiring points:
   (description/responsibilities/requirements/benefits, flattened location,
   salary period, application deadline, vacancies); `views` stands in for
   `viewCount` and tag names for the DTO's `tagIds` until the taxonomy lookup.
-- `features/jobs/data/resumes.ts` — demo resumes for the AI skills-gap match;
-  replace with the resume service (`ResumeResponse` DTOs). The match itself
-  (skill overlap score, matched/missing chips) runs locally in
-  `ai-skill-match.tsx` until the analysis endpoint exists.
+- `features/jobs/data/resumes.ts` — demo resumes for the AI skills-gap match
+  and the apply flow's resume picker (with a Preview dialog). The preview
+  fields (headline, summary, experience) stand in for the parsed resume
+  document; replace everything with the resume service (`ResumeResponse`
+  DTOs). The match itself (skill overlap score, matched/missing chips) runs
+  locally in `ai-skill-match.tsx` until the analysis endpoint exists.
 - `features/jobs/job-page.tsx` — filtering/sorting already run through one
   `filterJobs` memo; swap its source for fetched data when available.
 - "Search With AI" puts the prompt into the same text query — wire it to the
   gateway `/ai` service when it exists.
 - **Apply now** routes to `/jobs/:id/apply` — the multi-step flow collects
-  a resume, an optional cover letter (with a local "Write with AI" draft
-  generator), expected salary, and availability, mirroring the
-  application-service `ApplicationRequest` DTO. `submitApplication` and
-  `generateCoverLetter` in `features/jobs/apply/data.ts` are the seams:
-  swap the stubs for the gateway `POST /api/applications/create` and `/ai`
-  calls (job slug → numeric `jobId` mapping noted there). Card and
-  featured-card actions still go to `/jobs/:id`.
+  a resume (with a preview dialog), an optional cover letter (with a local
+  "Write with AI" draft generator plus Copy/Clear actions), expected salary
+  (free-form text in the "75,000" format the copy promises), and
+  availability, mirroring the application-service `ApplicationRequest` DTO.
+  `submitApplication` and `generateCoverLetter` in
+  `features/jobs/apply/data.ts` are the seams: swap the stubs for the
+  gateway `POST /api/applications/create` and `/ai` calls (job slug →
+  numeric `jobId` mapping noted there). Card and featured-card actions
+  still go to `/jobs/:id`.
 - "Featured jobs" on the landing is the newest three posts — stands in for a
   featured flag from the service.
