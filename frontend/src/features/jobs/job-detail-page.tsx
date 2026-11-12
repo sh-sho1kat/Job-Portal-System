@@ -307,6 +307,7 @@ export function JobDetailPage() {
               <div className="flex flex-col gap-2.5">
                 <Button
                   variant="primary"
+                  onClick={() => navigate(`/jobs/${job.id}/apply`)}
                   className="h-11 w-full text-[15px] [background-image:var(--neu-fill-primary)] text-[var(--primary-foreground)]"
                 >
                   Apply now

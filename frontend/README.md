@@ -36,6 +36,7 @@ Routing is client-side via `react-router-dom` (`src/App.tsx`):
 | `/`        | Landing — public entry: hero with job search, featured jobs, About Us carousel, footer   |
 | `/jobs`    | Jobs workspace — the post-login destination: results, filters, AI hero                   |
 | `/jobs/:id`| Job details — posting content, AI skills-gap analysis, overview/actions, tags, location  |
+| `/jobs/:id/apply` | Apply flow — single column: job header card, left-to-right progress, four steps (resume → cover letter with AI draft → details → review with full letter), submit confirmation |
 
 **Landing search hand-off.** The hero search, popular-search links, and footer
 searches navigate to `/jobs?q=<title>&l=<location>`. `job-page.tsx` reads those
@@ -53,9 +54,10 @@ above the overlay. The landing's featured cards link to the same detail pages.
 src/
 ├─ features/
 │  ├─ landing/            # public page: hero, featured jobs, about (carousel), footer, marketing navbar
-│  └─ jobs/               # jobs workspace + job details
-│     ├─ components/      # ai-hero, ai-skill-match, results-toolbar, filters-panel,
-│     │                   # salary-range, job-card, results-empty
+│  ├─ jobs/               # jobs workspace + job details
+│  │  ├─ apply/           # multi-step apply flow: page, horizontal stepper, job header card, four steps
+│  │  ├─ components/      # ai-hero, ai-skill-match, results-toolbar, filters-panel,
+│  │  │                   # salary-range, job-card, results-empty
 │     ├─ data/            # types.ts, jobs.ts + resumes.ts (static data), filters.ts
 │     ├─ job-page.tsx     # results workspace: state owner, filterJobs memo
 │     └─ job-detail-page.tsx
@@ -103,8 +105,13 @@ All data is client-side and static; these lines are the wiring points:
   `filterJobs` memo; swap its source for fetched data when available.
 - "Search With AI" puts the prompt into the same text query — wire it to the
   gateway `/ai` service when it exists.
-- **Apply now** buttons do not submit anywhere yet (the application service
-  isn't built); everything else routes somewhere real: sign-in/CTA to `/jobs`,
-  card and featured-card actions to `/jobs/:id`.
+- **Apply now** routes to `/jobs/:id/apply` — the multi-step flow collects
+  a resume, an optional cover letter (with a local "Write with AI" draft
+  generator), expected salary, and availability, mirroring the
+  application-service `ApplicationRequest` DTO. `submitApplication` and
+  `generateCoverLetter` in `features/jobs/apply/data.ts` are the seams:
+  swap the stubs for the gateway `POST /api/applications/create` and `/ai`
+  calls (job slug → numeric `jobId` mapping noted there). Card and
+  featured-card actions still go to `/jobs/:id`.
 - "Featured jobs" on the landing is the newest three posts — stands in for a
   featured flag from the service.

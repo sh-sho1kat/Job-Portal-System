@@ -19,9 +19,15 @@
       // wrong mode. Keep in sync with THEME_STORAGE_KEY in src/lib/constants.ts.
       ;(() => {
         try {
+          // ?theme=light|dark overrides for testing/screenshots; otherwise the
+          // persisted choice wins, then the OS preference.
+          const forced = new URLSearchParams(window.location.search).get('theme')
           const stored = localStorage.getItem('job-portal-theme')
-          const dark =
-            stored ? stored === 'dark' : window.matchMedia('(prefers-color-scheme: dark)').matches
+          const dark = forced
+            ? forced === 'dark'
+            : stored
+              ? stored === 'dark'
+              : window.matchMedia('(prefers-color-scheme: dark)').matches
           if (dark) document.documentElement.classList.add('dark')
         } catch {
           // localStorage unavailable (private mode) — fall back to the light theme
