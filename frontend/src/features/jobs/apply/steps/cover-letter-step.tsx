@@ -17,10 +17,10 @@ interface CoverLetterStepProps {
   onPatch: (patch: Partial<ApplicationDraft>) => void
 }
 
-const STARTERS = [
-  'Open with the work you want to keep doing — and one result that proves it.',
-  'Name something the company builds that you actually use or admire.',
-  'Close by asking for the conversation, not the job.',
+const TIPS = [
+  'Lead with the position you are applying for and your most relevant achievement.',
+  'Reference a specific product, project, or initiative of the company and connect it to your experience.',
+  'Close by expressing interest in an interview and thanking the reader for their time.',
 ]
 
 /** Step 2 — the cover letter. Optional per the DTO, capped at 5000 chars. */
@@ -37,8 +37,8 @@ export function CoverLetterStep({ job, draft, onPatch }: CoverLetterStepProps) {
       <div className="flex flex-col gap-2">
         <h2 className="text-lg font-semibold tracking-tight text-[var(--foreground)]">Add a cover letter</h2>
         <p className="text-sm leading-relaxed text-[var(--muted-foreground)]">
-          Optional, but a short letter doubles the chance a hiring manager
-          reads past the first page of your resume.
+          Optional. A concise cover letter provides the employer with
+          additional context about your experience.
         </p>
       </div>
 
@@ -57,7 +57,7 @@ export function CoverLetterStep({ job, draft, onPatch }: CoverLetterStepProps) {
           <span className={overLimit ? 'font-semibold text-[var(--neu-error-text)]' : 'text-[var(--muted-foreground)]'}>
             {coverLetterCount(draft.coverLetter)}
           </span>
-          {overLimit && <span className="ml-2 font-medium text-[var(--neu-error-text)]">Trim it back to continue.</span>}
+          {overLimit && <span className="ml-2 font-medium text-[var(--neu-error-text)]">Reduce the length to continue.</span>}
         </p>
         <Button
           variant="soft"
@@ -70,17 +70,17 @@ export function CoverLetterStep({ job, draft, onPatch }: CoverLetterStepProps) {
         </Button>
       </div>
       <p className="text-xs leading-relaxed text-[var(--muted-foreground)]">
-        The draft is a starting point built from this posting and your chosen
-        resume — edit it freely so it sounds like you.
+        This draft was generated from the job posting and your selected
+        resume. You may edit it before submitting.
       </p>
 
       <aside
         aria-label="Writing tips"
         className="rounded-[var(--neu-radius-surface)] bg-[var(--neu-surface-soft)] p-4"
       >
-        <h3 className="text-sm font-semibold text-[var(--foreground)]">Three things that work</h3>
+        <h3 className="text-sm font-semibold text-[var(--foreground)]">Writing tips</h3>
         <ul className="mt-2 flex list-disc flex-col gap-1 pl-5 text-sm leading-relaxed text-[var(--muted-foreground)]">
-          {STARTERS.map((tip) => (
+          {TIPS.map((tip) => (
             <li key={tip}>{tip}</li>
           ))}
         </ul>

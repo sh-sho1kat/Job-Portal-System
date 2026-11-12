@@ -1,7 +1,20 @@
+import * as React from 'react'
+import { HugeiconsIcon } from '@hugeicons/react'
+import { EyeIcon } from '@hugeicons/core-free-icons'
+
 import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { cn } from '@/lib/utils'
 import type { Job } from '../../data/types'
+import type { Resume } from '../../data/resumes'
 import { RESUMES, resumeMatchCount, type ApplicationDraft } from '../data'
 
 interface ResumeStepProps {
@@ -17,6 +30,7 @@ function ResumeOption({
   matchCount,
   jobSkills,
   selected,
+  onPreview,
 }: {
   resumeId: string
   name: string
@@ -24,6 +38,7 @@ function ResumeOption({
   matchCount: number
   jobSkills: Job['skills']
   selected: boolean
+  onPreview: (resumeId: string) => void
 }) {
   return (
     <label
@@ -43,11 +58,28 @@ function ResumeOption({
       <span className="min-w-0 flex-1">
         <span className="flex flex-wrap items-center justify-between gap-2">
           <span data-resume-name="" className="text-sm font-semibold text-[var(--foreground)]">{name}</span>
-          {matchCount > 0 && (
-            <Badge variant="success" className="rounded-full px-2.5 py-0.5 text-xs tabular-nums">
-              {matchCount}/{jobSkills.length} skills match
-            </Badge>
-          )}
+          <span className="flex items-center gap-2">
+            {matchCount > 0 && (
+              <Badge variant="success" className="rounded-full px-2.5 py-0.5 text-xs tabular-nums">
+                {matchCount}/{jobSkills.length} skills match
+              </Badge>
+            )}
+            {/* Preview sits inside the label, so preventDefault keeps the
+                click from also selecting this resume. */}
+            <Button
+              variant="soft"
+              type="button"
+              aria-label={`Preview ${name}`}
+              onClick={(event) => {
+                event.preventDefault()
+                event.stopPropagation()
+                onPreview(resumeId)
+              }}
+              className="size-7 rounded-full p-0"
+            >
+              <HugeiconsIcon icon={EyeIcon} strokeWidth={1.8} aria-hidden="true" />
+            </Button>
+          </span>
         </span>
         <span className="mt-2 flex flex-wrap gap-1.5">
           {skills.slice(0, 4).map((skill) => (
@@ -66,14 +98,66 @@ function ResumeOption({
   )
 }
 
+function ResumePreviewDialog({
+  resume,
+  onClose,
+}: {
+  resume: Resume | undefined
+  onClose: () => void
+}) {
+  if (!resume) return null
+  return (
+    <Dialog open onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="sm:max-w-lg">
+        <DialogHeader>
+          <DialogTitle className="text-lg font-bold tracking-tight text-[var(--foreground)]">
+            {resume.name}
+          </DialogTitle>
+          <DialogDescription>{resume.headline}</DialogDescription>
+        </DialogHeader>
+
+        <p className="text-sm leading-relaxed text-[var(--foreground)]">{resume.summary}</p>
+
+        <div className="flex flex-col gap-4">
+          <h4 className="text-sm font-bold tracking-tight text-[var(--neu-accent-ink)]">Experience</h4>
+          {resume.experience.map((entry) => (
+            <div key={entry.role}>
+              <div className="flex flex-wrap items-baseline justify-between gap-2">
+                <p className="text-sm font-semibold text-[var(--foreground)]">{entry.role}</p>
+                <p className="text-xs tabular-nums text-[var(--muted-foreground)]">{entry.period}</p>
+              </div>
+              <p className="text-sm text-[var(--muted-foreground)]">{entry.company}</p>
+              <p className="mt-1 text-sm leading-relaxed text-[var(--foreground)]">{entry.detail}</p>
+            </div>
+          ))}
+        </div>
+
+        <div className="flex flex-col gap-2">
+          <h4 className="text-sm font-bold tracking-tight text-[var(--neu-accent-ink)]">Skills</h4>
+          <div className="flex flex-wrap gap-1.5">
+            {resume.skills.map((skill) => (
+              <Badge key={skill} variant="soft" className="rounded-full px-2.5 py-0.5 text-xs">
+                {skill}
+              </Badge>
+            ))}
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
 /** Step 1 — pick which resume goes out. */
 export function ResumeStep({ job, draft, onPatch }: ResumeStepProps) {
+  const [previewId, setPreviewId] = React.useState<string | null>(null)
+  const preview = RESUMES.find((item) => item.id === previewId)
+
   return (
     <div className="flex flex-col gap-4">
       <h2 className="text-lg font-semibold tracking-tight text-[var(--foreground)]">Choose a resume</h2>
       <p className="text-sm leading-relaxed text-[var(--muted-foreground)]">
-        The company sees the resume you send — pick the one that tells this
-        story best. Resumes are managed in your profile.
+        Select the resume you would like to submit with this application. The
+        employer will see the resume you choose.
       </p>
 
       <RadioGroup
@@ -90,9 +174,12 @@ export function ResumeStep({ job, draft, onPatch }: ResumeStepProps) {
             matchCount={resumeMatchCount(job.skills, resume.skills)}
             jobSkills={job.skills}
             selected={draft.resumeId === resume.id}
+            onPreview={setPreviewId}
           />
         ))}
       </RadioGroup>
+
+      <ResumePreviewDialog resume={preview} onClose={() => setPreviewId(null)} />
     </div>
   )
 }

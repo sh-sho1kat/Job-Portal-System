@@ -40,17 +40,17 @@ const STEPS: ApplyStep[] = [
  */
 function stepError(index: number, draft: ApplicationDraft): string | null {
   if (index === 0 && !draft.resumeId) {
-    return 'Choose a resume to continue.'
+    return 'Please select a resume to continue.'
   }
   if (index === 1 && draft.coverLetter.length > 5000) {
-    return 'The cover letter is over the 5,000 character limit.'
+    return 'The cover letter exceeds the 5,000 character limit.'
   }
   if (index === 2) {
     if (parseExpectedSalary(draft.expectedSalary) === 'invalid') {
-      return 'Expected salary must be an amount in dollars, like 75,000.'
+      return 'Enter a valid amount in dollars, for example 75,000.'
     }
     if (!isAvailableFromValid(draft.availableFrom)) {
-      return 'Availability can’t be in the past.'
+      return 'The available-from date cannot be in the past.'
     }
   }
   return null
@@ -70,8 +70,8 @@ function ApplySuccess({ jobId }: { jobId: string }) {
         Application sent
       </h1>
       <p className="max-w-md text-sm leading-relaxed text-[var(--muted-foreground)] md:text-base">
-        The company can now see your resume and answers. You'll hear back here
-        when they move your application forward — no need to apply twice.
+        Your application has been submitted to the company. They will review
+        your submission and contact you regarding the next steps.
       </p>
       <div className="mt-2 flex flex-wrap items-center justify-center gap-3">
         <Button variant="primary" onClick={() => navigate(`/jobs/${jobId}`)}>

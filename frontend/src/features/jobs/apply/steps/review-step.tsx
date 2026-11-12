@@ -1,7 +1,3 @@
-import { HugeiconsIcon } from '@hugeicons/react'
-import { AlertCircleIcon } from '@hugeicons/core-free-icons'
-
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
 import type { Job } from '../../data/types'
@@ -45,7 +41,8 @@ export function ReviewStep({ job, draft, onEdit }: ReviewStepProps) {
       <div className="flex flex-col gap-2">
         <h2 className="text-lg font-semibold tracking-tight text-[var(--foreground)]">Review your application</h2>
         <p className="text-sm leading-relaxed text-[var(--muted-foreground)]">
-          This is what {job.company} receives. Change anything before you send.
+          Please review your application below before submitting it to{' '}
+          {job.company}.
         </p>
       </div>
 
@@ -67,7 +64,7 @@ export function ReviewStep({ job, draft, onEdit }: ReviewStepProps) {
             </div>
           </div>
         ) : (
-          <p className="mt-2 text-sm text-[var(--muted-foreground)]">Not chosen yet.</p>
+          <p className="mt-2 text-sm text-[var(--muted-foreground)]">Not selected.</p>
         )}
       </section>
 
@@ -85,7 +82,7 @@ export function ReviewStep({ job, draft, onEdit }: ReviewStepProps) {
           </div>
         ) : (
           <p className="mt-2 text-sm text-[var(--muted-foreground)]">
-            Not included — the resume speaks for itself.
+            Not provided.
           </p>
         )}
       </section>
@@ -94,7 +91,7 @@ export function ReviewStep({ job, draft, onEdit }: ReviewStepProps) {
 
       {/* Terms */}
       <section aria-label="Salary and availability">
-        <h3 className="text-sm font-bold tracking-tight text-[var(--neu-accent-ink)]">Your terms</h3>
+        <h3 className="text-sm font-bold tracking-tight text-[var(--neu-accent-ink)]">Salary & availability</h3>
         <div className="mt-2 grid gap-4 sm:grid-cols-2">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
@@ -102,7 +99,7 @@ export function ReviewStep({ job, draft, onEdit }: ReviewStepProps) {
               <p className="mt-0.5 text-sm font-semibold tabular-nums text-[var(--foreground)]">
                 {salary && salary !== 'invalid'
                   ? new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(salary)
-                  : 'Not shared'}
+                  : 'Not provided'}
               </p>
             </div>
             <ChangeButton stepIndex={2} onEdit={onEdit} />
@@ -111,7 +108,7 @@ export function ReviewStep({ job, draft, onEdit }: ReviewStepProps) {
             <div className="min-w-0">
               <p className="text-xs text-[var(--muted-foreground)]">Available from</p>
               <p className="mt-0.5 text-sm font-semibold text-[var(--foreground)]">
-                {draft.availableFrom ? formatDate(draft.availableFrom) : 'Not set'}
+                {draft.availableFrom ? formatDate(draft.availableFrom) : 'Not provided'}
               </p>
             </div>
             <ChangeButton stepIndex={2} onEdit={onEdit} />
@@ -119,15 +116,11 @@ export function ReviewStep({ job, draft, onEdit }: ReviewStepProps) {
         </div>
       </section>
 
-      <Alert>
-        <HugeiconsIcon icon={AlertCircleIcon} className="size-4" />
-        <AlertTitle>Before you send</AlertTitle>
-        <AlertDescription>
-          Applications go through the gateway's application service — the
-          submit call is wired to it in the next integration step, so this
-          draft stays on your machine for now.
-        </AlertDescription>
-      </Alert>
+      {/* Candidacy note — one line, no internal build talk. */}
+      <p className="text-xs leading-relaxed text-[var(--muted-foreground)]">
+        Once submitted, the application is sent to {job.company} and cannot be
+        edited.
+      </p>
     </div>
   )
 }

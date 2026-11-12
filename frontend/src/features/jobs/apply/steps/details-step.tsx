@@ -21,10 +21,10 @@ export function DetailsStep({ job, draft, onPatch }: DetailsStepProps) {
   return (
     <div className="flex flex-col gap-5">
       <div className="flex flex-col gap-2">
-        <h2 className="text-lg font-semibold tracking-tight text-[var(--foreground)]">The practical details</h2>
+        <h2 className="text-lg font-semibold tracking-tight text-[var(--foreground)]">Application details</h2>
         <p className="text-sm leading-relaxed text-[var(--muted-foreground)]">
-          Both fields are optional. Recruiters see them next to your resume —
-          leave out anything you would rather discuss in the call.
+          Both fields are optional and will be shared with the employer
+          alongside your resume.
         </p>
       </div>
 
@@ -49,7 +49,7 @@ export function DetailsStep({ job, draft, onPatch }: DetailsStepProps) {
               onChange={(event) => onPatch({ expectedSalary: event.target.value })}
             />
           </InputGroup>
-          <FieldDescription>Yearly, before tax. A range beats a single number.</FieldDescription>
+          <FieldDescription>Annual gross salary, before tax.</FieldDescription>
         </Field>
 
         <Field>
@@ -61,7 +61,7 @@ export function DetailsStep({ job, draft, onPatch }: DetailsStepProps) {
             disabledDates={beforeToday}
             startMonth={new Date()}
           />
-          <FieldDescription>When you could start. Today or later.</FieldDescription>
+          <FieldDescription>Your earliest available start date.</FieldDescription>
         </Field>
       </div>
     </div>
