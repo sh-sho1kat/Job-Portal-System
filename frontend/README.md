@@ -37,10 +37,7 @@ Routing is client-side via `react-router-dom` (`src/App.tsx`):
 | `/jobs`    | Jobs workspace — the post-login destination: results, filters, AI hero                   |
 | `/jobs/:id`| Job details — posting content, AI skills-gap analysis, overview/actions, tags, location  |
 | `/jobs/:id/apply` | Apply flow — single column: job header card, left-to-right progress, four steps (resume → cover letter with AI draft → details → review with full letter), submit confirmation |
-| `/profile` | Account page — one column of cards, top to bottom: identity (avatar with a LinkedIn-style change-photo option via its dialog, name, role), Personal details (view mode; "Edit profile" flips the rows to inline fields — no dialog; email locked), Security (role, status, change password collapsed behind its option, with a live rules checklist mirroring `ChangePasswordRequest`), Account (member since, last signed in, details updated), Workspace links (job seeker: My applications + My resumes; employer: My company — dev-only `?role=employer` previews the employer variant), Session (sign out + delete account behind a confirm dialog) |
-| `/applications` | My applications — empty state standing in for `GET /api/applications`; "Browse jobs" hands off to `/jobs` |
-| `/resumes` | My resumes — demo resumes (`ResumeResponse` stand-in: name, template, isDefault) with the apply flow's preview dialog |
-| `/company` | My company — employer home, empty state until company-service is wired |
+| `/profile` | Account page — one column of cards, top to bottom: identity (avatar with a LinkedIn-style change-photo option via its dialog, name, role; slightly deeper card shade as the anchor card), Personal details (view mode; "Edit profile" flips the rows to inline fields — no dialog; email locked), Security (role, status, change password collapsed behind its option, with a live rules checklist mirroring `ChangePasswordRequest`), Activity (two bare fact tiles side by side — icon + label above, value below: "Member Since" / "Last Login", "March 2, 2026" dates and "08:10 AM" 12-hour timestamps), Session (sign out + delete account behind a confirm dialog). Dev-only `?role=employer` previews the employer variant. The My applications / My resumes / My company pages are intentionally deferred until their services are wired |
 
 **Landing search hand-off.** The hero search, popular-search links, and footer
 searches navigate to `/jobs?q=<title>&l=<location>`. `job-page.tsx` reads those
@@ -129,7 +126,10 @@ All data is client-side and static; these lines are the wiring points:
   the linked pages resolve `jobSlug`/`jobTitle`/`companyName` from
   job-service/company-service by `jobId`/`companyId`, the composition the
   gateway owns). The navbar account icon routes to `/profile`.
-  `/profile?role=employer` (dev only) previews the employer variant.
+  `/profile?role=employer` (dev only) previews the employer variant (role
+  badge + Security row). The My applications / My resumes / My company
+  destinations were removed from the profile until their pages are built —
+  the profile card that linked there comes back with them.
 - `features/jobs/job-page.tsx` — filtering/sorting already run through one
   `filterJobs` memo; swap its source for fetched data when available.
 - "Search With AI" puts the prompt into the same text query — wire it to the

@@ -67,7 +67,12 @@ export function IdentityCard({
   }
 
   return (
-    <Card variant="raised" className="gap-0 p-6 md:p-7">
+    // Slightly deeper shade than the other cards: a faint navy wash over
+    // the raised fill marks this as the anchor card of the page.
+    <Card
+      variant="raised"
+      className="gap-0 p-6 md:p-7 [background-image:linear-gradient(135deg,color-mix(in_srgb,var(--primary)_9%,transparent),transparent_62%),var(--neu-fill-raised)]"
+    >
       <div className="flex flex-col items-start gap-5 sm:flex-row sm:items-center">
         <button
           type="button"

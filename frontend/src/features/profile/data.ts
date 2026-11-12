@@ -200,9 +200,11 @@ export function initials(account: Pick<UserAccount, 'firstName' | 'lastName'>): 
   return (first + last).toUpperCase() || '?'
 }
 
+// Match the reference design: full month for plain dates ("March 2, 2026"),
+// short month with 12-hour AM/PM for timestamps ("Apr 27, 2026, 08:10 AM").
 const DATE_FORMAT = new Intl.DateTimeFormat('en-US', {
   day: 'numeric',
-  month: 'short',
+  month: 'long',
   year: 'numeric',
   timeZone: 'UTC',
 })
@@ -213,7 +215,7 @@ const DATE_TIME_FORMAT = new Intl.DateTimeFormat('en-US', {
   year: 'numeric',
   hour: '2-digit',
   minute: '2-digit',
-  hour12: false,
+  hour12: true,
   timeZone: 'UTC',
 })
 

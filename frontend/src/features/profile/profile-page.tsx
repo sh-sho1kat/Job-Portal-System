@@ -5,16 +5,15 @@ import { IdentityCard } from './profile-identity'
 import { PersonalDetailsCard } from './profile-details'
 import { SecurityCard } from './profile-security'
 import { SessionCard } from './profile-session'
-import { WorkspaceLinksCard } from './profile-links'
 import type { UpdateProfileReq } from './data'
 import { ACCOUNT } from './data'
 
 /**
  * Profile page — one focused column of cards, top to bottom: identity
  * (avatar with its change-photo option), personal details (inline edit),
- * security (role, status, change password), account facts, the
- * role-aware workspace links (applications/resumes for a job seeker,
- * company for an employer), and sign out + delete account last.
+ * security (role, status, change password), activity (the account's
+ * dates), and sign out + delete account last. The applications, resumes,
+ * and company pages arrive when their services do.
  */
 export function ProfilePage() {
   const [query, setQuery] = React.useState('')
@@ -50,7 +49,6 @@ export function ProfilePage() {
           <PersonalDetailsCard account={account} onSaved={applyUpdate} />
           <SecurityCard account={account} />
           <AccountFactsCard account={account} />
-          <WorkspaceLinksCard account={account} />
           <SessionCard />
         </div>
       </main>
