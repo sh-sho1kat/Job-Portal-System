@@ -37,6 +37,7 @@ Routing is client-side via `react-router-dom` (`src/App.tsx`):
 | `/jobs`    | Jobs workspace — the post-login destination: results, filters, AI hero                   |
 | `/jobs/:id`| Job details — posting content, AI skills-gap analysis, overview/actions, tags, location  |
 | `/jobs/:id/apply` | Apply flow — single column: job header card, left-to-right progress, four steps (resume → cover letter with AI draft → details → review with full letter), submit confirmation |
+| `/profile` | Account page — settings layout with section nav: Personal info (inline edit mirroring `UpdateUserRequest`, email locked), Security (change password mirroring `ChangePasswordRequest` rules, sign out), Activity (saved jobs from job-preference-service + account facts). No applications, no CV content — those live in their own services |
 
 **Landing search hand-off.** The hero search, popular-search links, and footer
 searches navigate to `/jobs?q=<title>&l=<location>`. `job-page.tsx` reads those
@@ -110,6 +111,14 @@ All data is client-side and static; these lines are the wiring points:
   resume document; replace everything with the resume service (`ResumeResponse`
   DTOs). The match itself (skill overlap score, matched/missing chips) runs
   locally in `ai-skill-match.tsx` until the analysis endpoint exists.
+- `features/profile/data.ts` — the account is a placeholder mirroring `UserResponse`
+  (first/middle/last name, email, phone, role, status, profilePictureUrl,
+  createdAt/lastLoginAt). Wire `GET /api/users/{id}` (own id only — the
+  endpoint rejects other ids without an admin role) and `PUT /api/users/{id}`
+  for Personal info (`UpdateUserRequest` fields only — email is not
+  editable). Seams ready for `PUT /api/auth/me/password` (`ChangePasswordRequest`),
+  `POST /api/auth/logout`, and `GET`/`DELETE /api/preferences/saved-jobs`
+  (`SavedJobResponse`). The navbar account icon routes to `/profile`.
 - `features/jobs/job-page.tsx` — filtering/sorting already run through one
   `filterJobs` memo; swap its source for fetched data when available.
 - "Search With AI" puts the prompt into the same text query — wire it to the

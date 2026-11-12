@@ -4,6 +4,7 @@ import { ApplyPage } from '@/features/jobs/apply/apply-page'
 import { LandingPage } from '@/features/landing/landing-page'
 import { JobDetailPage } from '@/features/jobs/job-detail-page'
 import { JobPage } from '@/features/jobs/job-page'
+import { ProfilePage } from '@/features/profile/profile-page'
 
 export default function App() {
   return (
@@ -14,6 +15,7 @@ export default function App() {
         <Route path="/jobs" element={<JobPage />} />
         <Route path="/jobs/:id" element={<JobDetailPage />} />
         <Route path="/jobs/:id/apply" element={<ApplyPage />} />
+        <Route path="/profile" element={<ProfilePage />} />
       </Routes>
     </BrowserRouter>
   )

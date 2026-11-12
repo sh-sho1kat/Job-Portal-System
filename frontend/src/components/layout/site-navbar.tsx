@@ -132,13 +132,13 @@ export function SiteNavbar({ query, location, onQueryChange, onLocationChange, o
               3
             </span>
           </button>
-          <button
-            type="button"
-            aria-label="Account"
-            className="flex size-9 cursor-pointer items-center justify-center rounded-full [background-image:var(--neu-fill-primary)] text-[var(--primary-foreground)]"
+          <Link
+            to="/profile"
+            aria-label="Your profile"
+            className="flex size-9 shrink-0 items-center justify-center rounded-full [background-image:var(--neu-fill-primary)] text-[var(--primary-foreground)] transition-opacity duration-[var(--neu-duration)] hover:opacity-85"
           >
             <HugeiconsIcon icon={UserAccountIcon} strokeWidth={1.8} aria-hidden="true" className="size-4.5" />
-          </button>
+          </Link>
         </div>
       </div>
     </header>

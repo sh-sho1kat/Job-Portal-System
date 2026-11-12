@@ -43,15 +43,31 @@ function Button({
       data-slot="button"
       data-variant={variant}
       data-size={size}
-      className={cn(
-        "inline-flex shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-[var(--neu-radius-control)] border font-semibold leading-5 tracking-normal outline-hidden transition-[box-shadow,background-color,color] duration-[var(--neu-duration)] motion-reduce:transition-none focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-3 focus-visible:outline-[color:var(--ring)] disabled:pointer-events-none disabled:opacity-50 disabled:shadow-none disabled:[background-image:none] disabled:border-[color:var(--muted-foreground)]/30 [&_svg]:pointer-events-none [&_svg]:block [&_svg:not([class*=size-])]:size-[var(--button-icon-size)] [&_svg]:shrink-0",
-        buttonVariants[variant],
-        buttonSizes[size],
-        className,
-      )}
+      className={buttonClassName({ variant, size, className })}
       {...props}
     />
   );
 }
 
-export { Button, buttonSizes, buttonVariants };
+/**
+ * Full button styling for non-button elements (e.g. a Link styled as a
+ * button) — same base + variant + size classes `Button` renders with.
+ */
+function buttonClassName({
+  variant = "default",
+  size = "default",
+  className,
+}: {
+  variant?: ButtonVariant;
+  size?: ButtonSize;
+  className?: string;
+} = {}) {
+  return cn(
+    "inline-flex shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-[var(--neu-radius-control)] border font-semibold leading-5 tracking-normal outline-hidden transition-[box-shadow,background-color,color] duration-[var(--neu-duration)] motion-reduce:transition-none focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-3 focus-visible:outline-[color:var(--ring)] disabled:pointer-events-none disabled:opacity-50 disabled:shadow-none disabled:[background-image:none] disabled:border-[color:var(--muted-foreground)]/30 [&_svg]:pointer-events-none [&_svg]:block [&_svg:not([class*=size-])]:size-[var(--button-icon-size)] [&_svg]:shrink-0",
+    buttonVariants[variant],
+    buttonSizes[size],
+    className,
+  );
+}
+
+export { Button, buttonSizes, buttonVariants, buttonClassName };
