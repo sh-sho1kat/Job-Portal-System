@@ -58,6 +58,18 @@ export const PASSWORD_RULE =
 
 export const PASSWORD_PATTERN = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&]).+$/
 
+/** The backend's password rules, one check per row — consumed by the live
+ *  checklist under the new-password field. */
+export function passwordChecks(password: string): Array<{ label: string; ok: boolean }> {
+  return [
+    { label: 'At least 8 characters', ok: password.length >= 8 },
+    { label: 'One uppercase letter', ok: /[A-Z]/.test(password) },
+    { label: 'One lowercase letter', ok: /[a-z]/.test(password) },
+    { label: 'One number', ok: /\d/.test(password) },
+    { label: 'One of @$!%*?&', ok: /[@$!%*?&]/.test(password) },
+  ]
+}
+
 export const ROLE_LABEL: Record<UserRole, string> = {
   ROLE_SUPER_ADMIN: 'Super admin',
   ROLE_ADMIN: 'Admin',
@@ -73,10 +85,18 @@ export const STATUS_LABEL: Record<UserStatus, string> = {
   DELETED: 'Deleted',
 }
 
-/** Mirrors `SavedJobResponse`; demo jobs are addressed by slug for links. */
+/**
+ * `SavedJobResponse` joined with its job at read time. The backend row is
+ * exactly `{ id, candidateId, jobId, companyId, notes, savedAt }` (see
+ * `SavedJobResponse.java`); jobSlug/jobTitle/companyName are resolved from
+ * job-service/company-service via `jobId`/`companyId` — the composition the
+ * gateway (or a future BFF call) owns.
+ */
 export interface SavedJob {
   id: number
+  candidateId: number
   jobId: number
+  companyId: number
   jobSlug: string
   jobTitle: string
   companyName: string
@@ -105,7 +125,9 @@ export const ACCOUNT: UserAccount = {
 export const SAVED_JOBS: SavedJob[] = [
   {
     id: 11,
+    candidateId: 42,
     jobId: 4,
+    companyId: 3,
     jobSlug: 'northwind-frontend',
     jobTitle: 'Frontend React Developer',
     companyName: 'Northwind Analytics',
@@ -114,7 +136,9 @@ export const SAVED_JOBS: SavedJob[] = [
   },
   {
     id: 9,
+    candidateId: 42,
     jobId: 6,
+    companyId: 5,
     jobSlug: 'ambertech-qa',
     jobTitle: 'QA Automation Engineer',
     companyName: 'Ambertech',
@@ -123,7 +147,9 @@ export const SAVED_JOBS: SavedJob[] = [
   },
   {
     id: 7,
+    candidateId: 42,
     jobId: 5,
+    companyId: 6,
     jobSlug: 'greenfield-analyst',
     jobTitle: 'Data Analyst',
     companyName: 'Greenfield Labs',
@@ -155,6 +181,11 @@ export async function removeSavedJob(savedJobId: number): Promise<void> {
 /** `POST /api/auth/logout`. */
 export async function signOut(): Promise<void> {
   await new Promise((resolve) => setTimeout(resolve, 400))
+}
+
+/** `DELETE /api/users/{id}` — removes the account permanently. */
+export async function deleteAccount(): Promise<void> {
+  await new Promise((resolve) => setTimeout(resolve, 700))
 }
 
 // --- Formatting helpers (UTC-pinned so SSR/tests agree) ---------------------

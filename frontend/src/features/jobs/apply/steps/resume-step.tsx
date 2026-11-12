@@ -109,7 +109,7 @@ function ResumeOption({
   )
 }
 
-function ResumePreviewDialog({
+export function ResumePreviewDialog({
   resume,
   onClose,
 }: {

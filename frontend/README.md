@@ -37,7 +37,10 @@ Routing is client-side via `react-router-dom` (`src/App.tsx`):
 | `/jobs`    | Jobs workspace — the post-login destination: results, filters, AI hero                   |
 | `/jobs/:id`| Job details — posting content, AI skills-gap analysis, overview/actions, tags, location  |
 | `/jobs/:id/apply` | Apply flow — single column: job header card, left-to-right progress, four steps (resume → cover letter with AI draft → details → review with full letter), submit confirmation |
-| `/profile` | Account page — settings layout with section nav: Personal info (inline edit mirroring `UpdateUserRequest`, email locked), Security (change password mirroring `ChangePasswordRequest` rules, sign out), Activity (saved jobs from job-preference-service + account facts). No applications, no CV content — those live in their own services |
+| `/profile` | Account page — one column of cards, top to bottom: identity (avatar with a LinkedIn-style change-photo option via its dialog, name, role), Personal details (view mode; "Edit profile" flips the rows to inline fields — no dialog; email locked), Security (role, status, change password collapsed behind its option, with a live rules checklist mirroring `ChangePasswordRequest`), Account (member since, last signed in, details updated), Workspace links (job seeker: My applications + My resumes; employer: My company — dev-only `?role=employer` previews the employer variant), Session (sign out + delete account behind a confirm dialog) |
+| `/applications` | My applications — empty state standing in for `GET /api/applications`; "Browse jobs" hands off to `/jobs` |
+| `/resumes` | My resumes — demo resumes (`ResumeResponse` stand-in: name, template, isDefault) with the apply flow's preview dialog |
+| `/company` | My company — employer home, empty state until company-service is wired |
 
 **Landing search hand-off.** The hero search, popular-search links, and footer
 searches navigate to `/jobs?q=<title>&l=<location>`. `job-page.tsx` reads those
@@ -88,7 +91,8 @@ src/
 - Dev/testing URL parameters: `?theme=light|dark` (any page) forces the theme
   for screenshots; the apply flow additionally accepts `?step=N` (jump to a
   step), `?pick=<resumeId>` (preselect a resume), and `?letter=1` (pre-fill a
-  cover letter) — all four are `import.meta.env.DEV`-gated or test-only and
+  cover letter); the profile accepts `?role=employer` (preview the employer
+  variant) — all five are `import.meta.env.DEV`-gated or test-only and
   commented at their read sites.
 - Note for automated checks: Tailwind v4 gates `hover:` styles behind
   `@media (hover: hover)` — headless browsers that report no hover-capable
@@ -116,9 +120,16 @@ All data is client-side and static; these lines are the wiring points:
   createdAt/lastLoginAt). Wire `GET /api/users/{id}` (own id only — the
   endpoint rejects other ids without an admin role) and `PUT /api/users/{id}`
   for Personal info (`UpdateUserRequest` fields only — email is not
-  editable). Seams ready for `PUT /api/auth/me/password` (`ChangePasswordRequest`),
-  `POST /api/auth/logout`, and `GET`/`DELETE /api/preferences/saved-jobs`
-  (`SavedJobResponse`). The navbar account icon routes to `/profile`.
+  editable); `updateUserProfile` is the seam the identity card's photo
+  dialog and the inline details edit call. Seams ready for
+  `PUT /api/auth/me/password` (`ChangePasswordRequest`),
+  `POST /api/auth/logout`, `DELETE /api/users/{id}` (delete account), and
+  `GET`/`DELETE /api/preferences/saved-jobs` (`SavedJobResponse` — the
+  backend row is `{ id, candidateId, jobId, companyId, notes, savedAt }`;
+  the linked pages resolve `jobSlug`/`jobTitle`/`companyName` from
+  job-service/company-service by `jobId`/`companyId`, the composition the
+  gateway owns). The navbar account icon routes to `/profile`.
+  `/profile?role=employer` (dev only) previews the employer variant.
 - `features/jobs/job-page.tsx` — filtering/sorting already run through one
   `filterJobs` memo; swap its source for fetched data when available.
 - "Search With AI" puts the prompt into the same text query — wire it to the
