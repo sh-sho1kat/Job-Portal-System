@@ -60,7 +60,7 @@ function PasswordChecklist({ password, confirm }: { password: string; confirm: s
   const showMatch = confirm.length > 0
   const itemClass = 'flex items-center gap-2 text-[13px]'
   return (
-    <ul className="grid gap-x-6 gap-y-1.5 sm:grid-cols-2">
+    <ul className="grid gap-y-1.5">
       {checks.map((check) => (
         <li key={check.label} className={itemClass}>
           {check.ok ? (
@@ -79,7 +79,7 @@ function PasswordChecklist({ password, confirm }: { password: string; confirm: s
         </li>
       ))}
       {showMatch && (
-        <li className={cn(itemClass, 'sm:col-span-2')}>
+        <li className={itemClass}>
           {password === confirm ? (
             <HugeiconsIcon
               icon={TickIcon}
@@ -184,51 +184,63 @@ export function SecurityCard({ account }: { account: UserAccount }) {
       </dl>
 
       {changing && (
-        <form onSubmit={handleSubmit} className="mt-5 flex min-w-0 flex-col gap-5 border-t border-[color:var(--neu-edge)] pt-5">
-          <Field>
-            <FieldLabel htmlFor="security-current">Current password</FieldLabel>
-            <PasswordInput
-              id="security-current"
-              autoComplete="current-password"
-              value={form.currentPassword}
-              onChange={(value) => patch({ currentPassword: value })}
-              required
-            />
-          </Field>
-          <Field>
-            <FieldLabel htmlFor="security-new">New password</FieldLabel>
-            <PasswordInput
-              id="security-new"
-              autoComplete="new-password"
-              value={form.newPassword}
-              onChange={(value) => patch({ newPassword: value })}
-              required
-            />
-            <PasswordChecklist password={form.newPassword} confirm={form.confirmPassword} />
-          </Field>
-          <Field>
-            <FieldLabel htmlFor="security-confirm">Confirm new password</FieldLabel>
-            <PasswordInput
-              id="security-confirm"
-              autoComplete="new-password"
-              value={form.confirmPassword}
-              onChange={(value) => patch({ confirmPassword: value })}
-              required
-            />
-          </Field>
+        <form onSubmit={handleSubmit} className="mt-5 flex min-w-0 flex-col gap-4 border-t border-[color:var(--neu-edge)] pt-5">
+          {/* Fields on the left; rules on the right with the actions pinned
+              to the bottom of the row, level with the confirm field. */}
+          <div className="flex min-w-0 flex-col gap-4 sm:flex-row sm:items-stretch sm:gap-8">
+            {/* Compact column — password fields don't need the card's full
+                width; a narrow stack keeps the form quick to fill in. */}
+            <div className="grid w-full max-w-sm shrink-0 gap-4">
+              <Field>
+                <FieldLabel htmlFor="security-current">Current password</FieldLabel>
+                <PasswordInput
+                  id="security-current"
+                  autoComplete="current-password"
+                  value={form.currentPassword}
+                  onChange={(value) => patch({ currentPassword: value })}
+                  required
+                />
+              </Field>
+              <Field>
+                <FieldLabel htmlFor="security-new">New password</FieldLabel>
+                <PasswordInput
+                  id="security-new"
+                  autoComplete="new-password"
+                  value={form.newPassword}
+                  onChange={(value) => patch({ newPassword: value })}
+                  required
+                />
+              </Field>
+              <Field>
+                <FieldLabel htmlFor="security-confirm">Confirm new password</FieldLabel>
+                <PasswordInput
+                  id="security-confirm"
+                  autoComplete="new-password"
+                  value={form.confirmPassword}
+                  onChange={(value) => patch({ confirmPassword: value })}
+                  required
+                />
+              </Field>
+            </div>
 
-          <div aria-live="polite">
-            {error && (
-              <p role="alert" className="text-sm font-medium text-[var(--neu-error-text)]">
-                {error}
-              </p>
-            )}
-            {!error && changed && (
-              <p className="text-sm font-medium text-[color:var(--success)]">Password changed.</p>
-            )}
-          </div>
+            {/* 28px = label line (20px) + field gap (8px), so the first rule
+                lines up with the top of the first input, not its label. */}
+            <div className="flex min-w-0 flex-1 flex-col gap-4 sm:justify-between sm:border-l sm:border-[color:var(--neu-edge)] sm:pl-8 sm:pt-[28px]">
+              <PasswordChecklist password={form.newPassword} confirm={form.confirmPassword} />
 
-          <div className="flex items-center gap-3">
+              <div className="flex flex-col gap-3 sm:items-end">
+                <div aria-live="polite">
+                  {error && (
+                    <p role="alert" className="text-sm font-medium text-[var(--neu-error-text)]">
+                      {error}
+                    </p>
+                  )}
+                  {!error && changed && (
+                    <p className="text-sm font-medium text-[color:var(--success)]">Password changed.</p>
+                  )}
+                </div>
+
+                <div className="flex items-center justify-end gap-3">
             <Button
               type="submit"
               disabled={saving || !complete}
@@ -249,6 +261,9 @@ export function SecurityCard({ account }: { account: UserAccount }) {
             >
               Cancel
             </Button>
+          </div>
+              </div>
+            </div>
           </div>
         </form>
       )}
