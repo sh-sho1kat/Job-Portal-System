@@ -37,7 +37,7 @@ Routing is client-side via `react-router-dom` (`src/App.tsx`):
 | `/jobs`    | Jobs workspace — the post-login destination: results, filters, AI hero                   |
 | `/jobs/:id`| Job details — posting content, AI skills-gap analysis, overview/actions, tags, location  |
 | `/jobs/:id/apply` | Apply flow — single column: job header card, left-to-right progress, four steps (resume → cover letter with AI draft → details → review with full letter), submit confirmation |
-| `/applications` | My applications — the candidate's submitted applications, newest first. Each row links to its job (`/jobs/{id}`) and carries the stage badge from the backend's `ApplicationStatus` (Pending, Reviewing, Shortlisted, Interview scheduled, Not selected, Withdrawn), the applied date, the resume used, and the expected salary in taka. Reached from the navbar's "My applications" link |
+| `/applications` | My applications — the candidate's submitted applications with the tools that make the list usable: status chips with live counts (from the backend's `ApplicationStatus`), search over job title/company, newest/oldest ordering, and rows that open a detail dialog — status timeline (Applied → Reviewing → Shortlisted → Interview → Offer, closed paths noted), expected salary in taka, available-from date, resume, cover letter, star toggle, and Withdraw (live statuses only) with an optional reason that flips the row to Withdrawn, mirroring `POST /api/applications/{id}/withdraw`. Reached from the navbar's "My applications" link |
 | `/profile` | Account page — one column of cards, top to bottom: identity (avatar with a LinkedIn-style change-photo option via its dialog, name, role; slightly deeper card shade as the anchor card), Personal details (view mode; "Edit profile" flips the rows to inline fields — no dialog; email locked), Security (role, status, change password collapsed behind its option, with a live rules checklist mirroring `ChangePasswordRequest`), Activity (two bare fact tiles side by side — icon + label above, value below: "Member Since" / "Last Login", "March 2, 2026" dates and "08:10 AM" 12-hour timestamps), Session (sign out + delete account behind a confirm dialog). Dev-only `?role=employer` previews the employer variant. My resumes / My company pages are intentionally deferred until their services are wired |
 
 **Landing search hand-off.** The hero search, popular-search links, and footer
@@ -114,14 +114,18 @@ All data is client-side and static; these lines are the wiring points:
   DTOs). The match itself (skill overlap score, matched/missing chips) runs
   locally in `ai-skill-match.tsx` until the analysis endpoint exists.
 - `features/applications/data.ts` — the "My applications" list stands in for
-  the application service: wire `GET /api/applications?candidateId=…` (the
+  the application service: wire `GET /api/applications/my-applications` (the
   gateway's composition of the application, job, company, and resume
   services). Rows mirror `ApplicationResponse`'s candidate-relevant fields —
   `job` (`JobSummaryResponse`), `company` (`CompanySummaryResponse`),
-  `resume` by title, `expectedSalary`, `status` (`ApplicationStatus`:
-  Pending → Withdrawn), `isStarred`, `appliedAt` — and link to
-  `/jobs/{id}`. Cover letter/notes/screening/withdrawal are omitted until a
-  detail view needs them (`WithdrawApplicationRequest` is the withdraw seam).
+  `resume` by title, `expectedSalary`, `availableFrom`, `coverLetter`,
+  `status` (`ApplicationStatus`: Pending → Withdrawn), `isStarred`,
+  `appliedAt`, `updatedAt`, and `withdrawnReason` (from
+  `WithdrawalResponse`). The page's withdraw is the seam for `POST /api/
+  applications/{id}/withdraw` (`WithdrawApplicationRequest`): it flips the
+  row's status to `WITHDRAWN` and records the reason — the backend keeps the
+  record. Notes and screening are still omitted until a detail view asks
+  for them.
 - `features/profile/data.ts` — the account is a placeholder mirroring `UserResponse`
   (first/middle/last name, email, phone, role, status, profilePictureUrl,
   createdAt/lastLoginAt). Wire `GET /api/users/{id}` (own id only — the
