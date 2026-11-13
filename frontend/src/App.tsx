@@ -5,6 +5,7 @@ import { LandingPage } from '@/features/landing/landing-page'
 import { JobDetailPage } from '@/features/jobs/job-detail-page'
 import { JobPage } from '@/features/jobs/job-page'
 import { ProfilePage } from '@/features/profile/profile-page'
+import { ApplicationsPage } from '@/features/applications/applications-page'
 
 export default function App() {
   return (
@@ -16,6 +17,7 @@ export default function App() {
         <Route path="/jobs/:id" element={<JobDetailPage />} />
         <Route path="/jobs/:id/apply" element={<ApplyPage />} />
         <Route path="/profile" element={<ProfilePage />} />
+        <Route path="/applications" element={<ApplicationsPage />} />
       </Routes>
     </BrowserRouter>
   )
