@@ -37,7 +37,7 @@ Routing is client-side via `react-router-dom` (`src/App.tsx`):
 | `/jobs`    | Jobs workspace — the post-login destination: results, filters, AI hero                   |
 | `/jobs/:id`| Job details — posting content, AI skills-gap analysis, overview/actions, tags, location  |
 | `/jobs/:id/apply` | Apply flow — single column: job header card, left-to-right progress, four steps (resume → cover letter with AI draft → details → review with full letter), submit confirmation |
-| `/applications` | My applications — one self-contained card per application in the job-card shape (company plate, title, meta row, status badge), so the progress and the facts are visible without a second click: status chips with live counts (backend `ApplicationStatus`), search over job title/company, newest/oldest ordering, and on each card the status timeline (Applied → Reviewing → Shortlisted → Interview → Offer; closed paths noted with the withdrawal reason), applied/resume/salary-in-taka/available-from facts, the submitted cover letter, a star toggle, and Withdraw (live statuses only) with an optional reason that flips the card to Withdrawn — mirroring `POST /api/applications/{id}/withdraw`. The whole card links to the job posting; reached from the navbar's "My applications" link |
+| `/applications` | My applications — one self-contained card per application in the job-card shape (company plate, title, meta row, status badge), so the progress and the facts are visible without a second click: status chips with live counts (backend `ApplicationStatus`), search over job title/company, newest/oldest ordering, and on each card the status timeline (Applied → Reviewing → Shortlisted → Interview → Offer; closed paths noted with the withdrawal reason), applied/resume/salary-in-taka/available-from facts, a star toggle, and Withdraw (live statuses only) with an optional reason that flips the card to Withdrawn — mirroring `POST /api/applications/{id}/withdraw`. The whole card links to the job posting; reached from the navbar's "My applications" link |
 | `/profile` | Account page — one column of cards, top to bottom: identity (avatar with a LinkedIn-style change-photo option via its dialog, name, role; slightly deeper card shade as the anchor card), Personal details (view mode; "Edit profile" flips the rows to inline fields — no dialog; email locked), Security (role, status, change password collapsed behind its option, with a live rules checklist mirroring `ChangePasswordRequest`), Activity (two bare fact tiles side by side — icon + label above, value below: "Member Since" / "Last Login", "March 2, 2026" dates and "08:10 AM" 12-hour timestamps), Session (sign out + delete account behind a confirm dialog). Dev-only `?role=employer` previews the employer variant. My resumes / My company pages are intentionally deferred until their services are wired |
 
 **Landing search hand-off.** The hero search, popular-search links, and footer
@@ -118,14 +118,14 @@ All data is client-side and static; these lines are the wiring points:
   gateway's composition of the application, job, company, and resume
   services). Rows mirror `ApplicationResponse`'s candidate-relevant fields —
   `job` (`JobSummaryResponse`), `company` (`CompanySummaryResponse`),
-  `resume` by title, `expectedSalary`, `availableFrom`, `coverLetter`,
+  `resume` by title, `expectedSalary`, `availableFrom`,
   `status` (`ApplicationStatus`: Pending → Withdrawn), `isStarred`,
   `appliedAt`, `updatedAt`, and `withdrawnReason` (from
   `WithdrawalResponse`). The page's withdraw is the seam for `POST /api/
   applications/{id}/withdraw` (`WithdrawApplicationRequest`): it flips the
-  row's status to `WITHDRAWN` and records the reason — the backend keeps the
-  record. Notes and screening are still omitted until a detail view asks
-  for them.
+  card's status to `WITHDRAWN` and records the reason — the backend keeps
+  the record. Cover letter, notes, and screening are omitted from the card
+  list until a dedicated view asks for them.
 - `features/profile/data.ts` — the account is a placeholder mirroring `UserResponse`
   (first/middle/last name, email, phone, role, status, profilePictureUrl,
   createdAt/lastLoginAt). Wire `GET /api/users/{id}` (own id only — the

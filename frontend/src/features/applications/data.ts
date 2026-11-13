@@ -50,8 +50,6 @@ export interface Application {
   expectedSalary: number
   /** `LocalDate` — the start date offered in the application. */
   availableFrom: string
-  /** The cover letter that was submitted, as written in the apply flow. */
-  coverLetter: string
   status: ApplicationStatus
   isStarred: boolean
   /** `Instant` — ISO timestamp of submission. */
@@ -80,8 +78,6 @@ export const APPLICATIONS: Application[] = [
     resume: { title: 'Frontend Developer Resume (2026)' },
     expectedSalary: 960_000,
     availableFrom: '2026-01-05',
-    coverLetter:
-      'I have spent the last two years shipping React and TypeScript interfaces for data-heavy dashboards, which is the core of Northwind\'s product. Your posting emphasises accessible component design and a typed API layer — both are what I work in daily, and I would love to bring that to your analytics suite.',
     status: 'SHORTLISTED',
     isStarred: true,
     appliedAt: '2025-11-10T09:24:00Z',
@@ -100,8 +96,6 @@ export const APPLICATIONS: Application[] = [
     resume: { title: 'Frontend Developer Resume (2026)' },
     expectedSalary: 720_000,
     availableFrom: '2026-01-01',
-    coverLetter:
-      'My frontend background maps directly onto the test-automation work in this role: I have written Playwright suites for three production apps and know what breaks a UI in the wild. I am based in Dhaka and available on-site from January.',
     status: 'REVIEWING',
     isStarred: false,
     appliedAt: '2025-11-06T14:02:00Z',
@@ -120,8 +114,6 @@ export const APPLICATIONS: Application[] = [
     resume: { title: 'Frontend Developer Resume (2026)' },
     expectedSalary: 840_000,
     availableFrom: '2025-12-15',
-    coverLetter:
-      'Sitting between clients and engineers is where I do my best work: I have gathered requirements for fourteen shipped features and translated them into specs the team could build from without a second meeting. Greenfield\'s hybrid setup fits how I collaborate.',
     status: 'INTERVIEW_SCHEDULED',
     isStarred: true,
     appliedAt: '2025-10-28T10:15:00Z',
@@ -140,8 +132,6 @@ export const APPLICATIONS: Application[] = [
     resume: { title: 'Frontend Developer Resume (2026)' },
     expectedSalary: 600_000,
     availableFrom: '2026-01-01',
-    coverLetter:
-      'Zosh\'s posting asks for a React developer who can also hold their own in code review — that is exactly the rhythm I have worked in for the past year. I am keen to grow under senior engineers who pair, and my portfolio shows the kind of customer-facing work your platform ships.',
     status: 'PENDING',
     isStarred: false,
     appliedAt: '2025-11-11T08:41:00Z',
@@ -160,8 +150,6 @@ export const APPLICATIONS: Application[] = [
     resume: { title: 'Frontend Developer Resume (2026)' },
     expectedSalary: 1_050_000,
     availableFrom: '2026-01-01',
-    coverLetter:
-      'While my depth is in engineering, I have owned go-to-market copy for two product launches and managed the brand guidelines both launches followed. I applied because the role bridges product and story — the two halves I most enjoy working between.',
     status: 'REJECTED',
     isStarred: false,
     appliedAt: '2025-10-14T16:30:00Z',
@@ -180,8 +168,6 @@ export const APPLICATIONS: Application[] = [
     resume: { title: 'Frontend Developer Resume (2026)' },
     expectedSalary: 480_000,
     availableFrom: '2025-12-01',
-    coverLetter:
-      'The part-time compliance hours fit alongside my studies, and remote review work is where I am most consistent. I can commit to the two set days a week your posting describes and start in December.',
     status: 'WITHDRAWN',
     isStarred: false,
     appliedAt: '2025-09-22T11:05:00Z',

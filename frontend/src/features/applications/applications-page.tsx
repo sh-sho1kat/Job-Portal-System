@@ -248,13 +248,6 @@ function ApplicationCard({
           )}
         </div>
 
-        <div>
-          <h4 className="text-[13px] font-semibold text-[var(--foreground)]">Cover letter</h4>
-          <p className="mt-1.5 text-[13px] leading-relaxed text-[var(--muted-foreground)]">
-            {application.coverLetter}
-          </p>
-        </div>
-
         <Separator />
 
         <div className="flex flex-wrap items-center justify-between gap-3">
