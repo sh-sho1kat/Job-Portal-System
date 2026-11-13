@@ -1,6 +1,7 @@
 import { HugeiconsIcon } from '@hugeicons/react'
 import {
-  ArrowRight01Icon,
+  Calendar01Icon,
+  File02Icon,
   Search02Icon,
   Sent02Icon,
   StarIcon,
@@ -23,10 +24,11 @@ import {
 import { Field, FieldLabel } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
 import { Select, SelectItem } from '@/components/ui/select'
+import { Separator } from '@/components/ui/separator'
 import { Textarea } from '@/components/ui/textarea'
 import { TakaMark } from '@/features/jobs/components/currency'
 import { cn } from '@/lib/utils'
-import type { ApplicationStatus, TimelineStage } from './data'
+import type { Application, ApplicationStatus, TimelineStage } from './data'
 import {
   APPLICATIONS,
   STATUS_LABEL,
@@ -51,6 +53,15 @@ const STATUS_ORDER: ApplicationStatus[] = [
 ]
 
 type Filter = 'ALL' | ApplicationStatus
+
+function companyInitials(company: string) {
+  return company
+    .split(/\s+/)
+    .filter((word) => /[a-z0-9]/i.test(word[0]))
+    .slice(0, 2)
+    .map((word) => word[0].toUpperCase())
+    .join('')
+}
 
 /** One summary chip: a status filter with its live count. */
 function FilterChip({
@@ -143,14 +154,145 @@ function StatusTimeline({ stages }: { stages: TimelineStage[] }) {
   )
 }
 
+/** Listing card for one application — the job-card shape: company plate,
+ *  title block, meta row, badges, progress, cover letter, actions footer.
+ *  Everything the candidate needs sits on the card; nothing hides behind a
+ *  second click. The whole card links to the job posting (stretched link);
+ *  the star, withdraw, and view-posting controls sit above it (z-10). */
+function ApplicationCard({
+  application,
+  onToggleStar,
+  onWithdraw,
+}: {
+  application: Application
+  onToggleStar: (id: string) => void
+  onWithdraw: (id: string) => void
+}) {
+  return (
+    <Card variant="raised" className="relative p-0 transition-shadow hover:shadow-[var(--neu-shadow-raised)]">
+      <Link
+        to={`/jobs/${application.job.id}`}
+        aria-label={`View ${application.job.title} at ${application.company.name}`}
+        className="absolute inset-0 z-0 rounded-[var(--neu-radius-surface)] focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-2 focus-visible:outline-[color:var(--ring)]"
+      />
+      <div className="flex flex-col gap-3.5 p-5 md:p-6">
+        <div className="flex items-start gap-4">
+          <span
+            aria-hidden="true"
+            className="flex size-14 shrink-0 items-center justify-center rounded-[14px] bg-[var(--neu-surface)] [background-image:var(--neu-fill-inset)] text-sm font-bold text-[var(--neu-accent-ink)] shadow-[var(--neu-shadow-inset)]"
+          >
+            {companyInitials(application.company.name)}
+          </span>
+          <div className="flex min-w-0 flex-1 flex-col gap-1">
+            <h3 className="text-lg font-semibold tracking-tight text-[var(--foreground)]">
+              {application.job.title}
+            </h3>
+            <p className="text-sm font-semibold text-[var(--foreground)]">{application.company.name}</p>
+            <p className="text-[13px] text-[var(--muted-foreground)]">
+              {application.job.employmentType} · {application.job.workMode}
+            </p>
+          </div>
+          <Button
+            variant="ghost"
+            size="icon"
+            aria-pressed={application.isStarred}
+            aria-label={application.isStarred ? 'Remove star' : 'Star this application'}
+            onClick={() => onToggleStar(application.id)}
+            className="relative z-10"
+          >
+            <HugeiconsIcon
+              icon={StarIcon}
+              strokeWidth={1.8}
+              aria-hidden="true"
+              className={cn(application.isStarred && 'text-[color:var(--success)]')}
+            />
+          </Button>
+        </div>
+
+        <ul className="flex flex-wrap items-center gap-x-5 gap-y-1.5 text-[13px] text-[var(--muted-foreground)]">
+          <li className="inline-flex items-center gap-1.5 whitespace-nowrap">
+            <HugeiconsIcon icon={Calendar01Icon} strokeWidth={1.8} aria-hidden="true" className="size-4" />
+            Applied {formatAppliedAt(application.appliedAt)}
+          </li>
+          <li className="inline-flex items-center gap-1.5 min-w-0">
+            <HugeiconsIcon icon={File02Icon} strokeWidth={1.8} aria-hidden="true" className="size-4 shrink-0" />
+            <span className="truncate">{application.resume.title}</span>
+          </li>
+          <li className="inline-flex items-center gap-1.5 whitespace-nowrap font-medium tabular-nums text-[var(--foreground)]">
+            <TakaMark className="text-[15px]" />
+            {formatAmount(application.expectedSalary)}
+          </li>
+          <li className="inline-flex items-center gap-1.5 whitespace-nowrap">
+            <HugeiconsIcon icon={Sent02Icon} strokeWidth={1.8} aria-hidden="true" className="size-4" />
+            Available {formatAvailableFrom(application.availableFrom)}
+          </li>
+        </ul>
+
+        <div className="flex flex-wrap items-center gap-1.5">
+          <Badge
+            variant={STATUS_VARIANT[application.status]}
+            className="rounded-full px-3 py-1 uppercase"
+          >
+            {STATUS_LABEL[application.status]}
+          </Badge>
+        </div>
+
+        <div className="rounded-[var(--neu-radius-control)] bg-[var(--neu-surface)] px-4 py-4 [background-image:var(--neu-fill-inset)] shadow-[var(--neu-shadow-inset)]">
+          <StatusTimeline stages={statusTimeline(application.status)} />
+          {isClosed(application.status) && (
+            <p className="mt-3 flex items-center justify-center gap-1.5 text-center text-[13px] text-[var(--muted-foreground)]">
+              <HugeiconsIcon icon={Tick02Icon} strokeWidth={2} aria-hidden="true" className="size-3.5" />
+              This application is closed — {STATUS_LABEL[application.status]}.
+              {application.withdrawnReason ? ` Reason: ${application.withdrawnReason}` : ''}
+            </p>
+          )}
+        </div>
+
+        <div>
+          <h4 className="text-[13px] font-semibold text-[var(--foreground)]">Cover letter</h4>
+          <p className="mt-1.5 text-[13px] leading-relaxed text-[var(--muted-foreground)]">
+            {application.coverLetter}
+          </p>
+        </div>
+
+        <Separator />
+
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <p className="text-[13px] tabular-nums text-[var(--muted-foreground)]">
+            Last updated {formatUpdatedAt(application.updatedAt)}
+          </p>
+          <div className="flex items-center gap-2">
+            {canWithdraw(application.status) && (
+              <Button
+                variant="ghost"
+                type="button"
+                onClick={() => onWithdraw(application.id)}
+                className="relative z-10 text-[var(--neu-error-text)] hover:text-[var(--neu-error-text)]"
+              >
+                Withdraw
+              </Button>
+            )}
+            <Link
+              to={`/jobs/${application.job.id}`}
+              className={buttonClassName({ variant: 'soft' })}
+              aria-label={`View job posting for ${application.job.title}`}
+            >
+              View job posting
+            </Link>
+          </div>
+        </div>
+      </div>
+    </Card>
+  )
+}
+
 /**
- * My applications — the candidate's submitted applications with the tools
- * that make the list usable day to day: status chips with counts, a search
- * over job and company, newest/oldest ordering, a detail view (status
- * timeline, cover letter, facts) and withdraw with a reason. Data is a
- * stand-in for the application service (`GET /api/applications/
- * my-applications` through the gateway); withdraw mirrors `POST /api/
- * applications/{id}/withdraw`.
+ * My applications — the candidate's submitted applications as rich cards:
+ * status chips with counts, search, newest/oldest ordering, and every
+ * application's progress, facts, and cover letter on its card — no second
+ * click to see where things stand. Data is a stand-in for the application
+ * service (`GET /api/applications/my-applications` through the gateway);
+ * withdraw mirrors `POST /api/applications/{id}/withdraw`.
  */
 export function ApplicationsPage() {
   const [query, setQuery] = React.useState('')
@@ -159,7 +301,6 @@ export function ApplicationsPage() {
   const [filter, setFilter] = React.useState<Filter>('ALL')
   const [search, setSearch] = React.useState('')
   const [newestFirst, setNewestFirst] = React.useState(true)
-  const [detailId, setDetailId] = React.useState<string | null>(null)
   const [withdrawingId, setWithdrawingId] = React.useState<string | null>(null)
   const [withdrawReason, setWithdrawReason] = React.useState('')
 
@@ -182,7 +323,6 @@ export function ApplicationsPage() {
       return newestFirst ? diff : -diff
     })
 
-  const detail = apps.find((app) => app.id === detailId) ?? null
   const withdrawing = apps.find((app) => app.id === withdrawingId) ?? null
 
   // Local apply — the withdraw endpoint is the seam (`POST /api/applications/
@@ -278,72 +418,19 @@ export function ApplicationsPage() {
         </div>
 
         {filtered.length > 0 ? (
-          <Card variant="raised" className="mt-4 gap-0 px-5 py-2 md:px-6">
-            <ul className="flex flex-col divide-y divide-[color:var(--neu-edge)]">
-              {filtered.map((application) => (
-                <li key={application.id}>
-                  <button
-                    type="button"
-                    onClick={() => setDetailId(application.id)}
-                    aria-label={`View application details for ${application.job.title} at ${application.company.name}`}
-                    className="group -mx-2 flex w-[calc(100%+1rem)] items-start gap-3.5 rounded-[var(--neu-radius-control)] px-2 py-4 text-left transition-colors duration-[var(--neu-duration)] hover:bg-[var(--neu-surface-soft)] motion-reduce:transition-none focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-2 focus-visible:outline-[color:var(--ring)]"
-                  >
-                    <span
-                      aria-hidden="true"
-                      className="mt-0.5 flex size-10 shrink-0 items-center justify-center rounded-[var(--neu-radius-control)] bg-[var(--neu-surface)] text-[var(--neu-accent-ink)] [background-image:var(--neu-fill-raised)] shadow-[var(--neu-shadow-raised-sm)]"
-                    >
-                      <HugeiconsIcon icon={Sent02Icon} strokeWidth={1.8} className="size-5" />
-                    </span>
-
-                    <span className="min-w-0 flex-1">
-                      <span className="flex flex-wrap items-center gap-2">
-                        <span className="truncate text-sm font-semibold text-[var(--foreground)] group-hover:underline">
-                          {application.job.title}
-                        </span>
-                        {application.isStarred && (
-                          <HugeiconsIcon
-                            icon={StarIcon}
-                            strokeWidth={2}
-                            aria-label="Starred"
-                            className="size-3.5 shrink-0 text-[color:var(--success)]"
-                          />
-                        )}
-                      </span>
-                      <span className="mt-0.5 block truncate text-[13px] text-[var(--muted-foreground)]">
-                        {application.company.name} · {application.job.employmentType} · {application.job.workMode}
-                      </span>
-                      <span className="mt-0.5 block truncate text-[13px] text-[var(--muted-foreground)]">
-                        Resume: {application.resume.title}
-                      </span>
-                    </span>
-
-                    <span className="flex shrink-0 flex-col items-end gap-1.5">
-                      <Badge
-                        variant={STATUS_VARIANT[application.status]}
-                        className="rounded-full px-2.5 py-0.5 text-xs font-semibold"
-                      >
-                        {STATUS_LABEL[application.status]}
-                      </Badge>
-                      <span className="text-[13px] text-[var(--muted-foreground)]">
-                        Applied {formatAppliedAt(application.appliedAt)}
-                      </span>
-                      <span className="text-sm font-semibold tabular-nums text-[var(--foreground)]">
-                        <TakaMark className="mr-0.5 text-[0.8em]" />
-                        {formatAmount(application.expectedSalary)}
-                      </span>
-                    </span>
-
-                    <HugeiconsIcon
-                      icon={ArrowRight01Icon}
-                      strokeWidth={2}
-                      aria-hidden="true"
-                      className="mt-8 hidden size-4 shrink-0 text-[var(--muted-foreground)] transition-transform duration-[var(--neu-duration)] group-hover:translate-x-0.5 sm:block motion-reduce:transition-none"
-                    />
-                  </button>
-                </li>
-              ))}
-            </ul>
-          </Card>
+          <div className="mt-4 flex flex-col gap-4">
+            {filtered.map((application) => (
+              <ApplicationCard
+                key={application.id}
+                application={application}
+                onToggleStar={toggleStar}
+                onWithdraw={(id) => {
+                  setWithdrawingId(id)
+                  setWithdrawReason('')
+                }}
+              />
+            ))}
+          </div>
         ) : (
           <Card variant="raised" className="mt-4 items-center gap-2 px-6 py-12 text-center">
             <HugeiconsIcon icon={Sent02Icon} strokeWidth={1.5} aria-hidden="true" className="size-8 text-[var(--muted-foreground)]" />
@@ -361,121 +448,6 @@ export function ApplicationsPage() {
           Applications come from the application service when it is wired; withdrawing an application lands here too.
         </p>
       </main>
-
-      {/* Detail — what was submitted and where it stands. */}
-      <Dialog open={detail !== null} onOpenChange={(open) => !open && setDetailId(null)}>
-        <DialogContent className="max-w-lg">
-          {detail && (
-            <>
-              <DialogTitle>{detail.job.title}</DialogTitle>
-              <DialogDescription>
-                {detail.company.name} · {detail.job.employmentType} · {detail.job.workMode}
-              </DialogDescription>
-
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <div className="flex items-center gap-2">
-                  <Badge
-                    variant={STATUS_VARIANT[detail.status]}
-                    className="rounded-full px-2.5 py-0.5 text-xs font-semibold"
-                  >
-                    {STATUS_LABEL[detail.status]}
-                  </Badge>
-                  <span className="text-[13px] text-[var(--muted-foreground)]">
-                    Applied {formatAppliedAt(detail.appliedAt)}
-                  </span>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => toggleStar(detail.id)}
-                  aria-pressed={detail.isStarred}
-                  aria-label={detail.isStarred ? 'Remove star' : 'Star this application'}
-                  className="flex size-8 items-center justify-center rounded-full text-[var(--muted-foreground)] transition-colors duration-[var(--neu-duration)] hover:bg-[var(--neu-surface-soft)] hover:text-[var(--foreground)] focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-2 focus-visible:outline-[color:var(--ring)]"
-                >
-                  <HugeiconsIcon
-                    icon={StarIcon}
-                    strokeWidth={2}
-                    aria-hidden="true"
-                    className={cn('size-4', detail.isStarred && 'text-[color:var(--success)]')}
-                  />
-                </button>
-              </div>
-
-              <div className="rounded-[var(--neu-radius-control)] bg-[var(--neu-surface)] px-4 py-4 [background-image:var(--neu-fill-inset)] shadow-[var(--neu-shadow-inset)]">
-                <StatusTimeline stages={statusTimeline(detail.status)} />
-                {isClosed(detail.status) && (
-                  <p className="mt-3 flex items-center justify-center gap-1.5 text-center text-[13px] text-[var(--muted-foreground)]">
-                    <HugeiconsIcon icon={Tick02Icon} strokeWidth={2} aria-hidden="true" className="size-3.5" />
-                    This application is closed — {STATUS_LABEL[detail.status]}.
-                  </p>
-                )}
-                {detail.withdrawnReason && (
-                  <p className="mt-2 text-center text-[13px] text-[var(--muted-foreground)]">
-                    Reason: {detail.withdrawnReason}
-                  </p>
-                )}
-              </div>
-
-              <dl className="grid grid-cols-2 gap-x-6 gap-y-3">
-                <div>
-                  <dt className="text-[13px] text-[var(--muted-foreground)]">Expected salary</dt>
-                  <dd className="mt-0.5 text-sm font-semibold tabular-nums text-[var(--foreground)]">
-                    <TakaMark className="mr-0.5 text-[0.8em]" />
-                    {formatAmount(detail.expectedSalary)}
-                  </dd>
-                </div>
-                <div>
-                  <dt className="text-[13px] text-[var(--muted-foreground)]">Available from</dt>
-                  <dd className="mt-0.5 text-sm font-semibold tabular-nums text-[var(--foreground)]">
-                    {formatAvailableFrom(detail.availableFrom)}
-                  </dd>
-                </div>
-                <div>
-                  <dt className="text-[13px] text-[var(--muted-foreground)]">Resume</dt>
-                  <dd className="mt-0.5 truncate text-sm font-medium text-[var(--foreground)]">
-                    {detail.resume.title}
-                  </dd>
-                </div>
-                <div>
-                  <dt className="text-[13px] text-[var(--muted-foreground)]">Last updated</dt>
-                  <dd className="mt-0.5 text-sm font-medium tabular-nums text-[var(--foreground)]">
-                    {formatUpdatedAt(detail.updatedAt)}
-                  </dd>
-                </div>
-              </dl>
-
-              <div>
-                <h3 className="text-[13px] font-semibold text-[var(--foreground)]">Cover letter</h3>
-                <p className="mt-1.5 rounded-[var(--neu-radius-control)] bg-[var(--neu-surface)] px-3.5 py-3 text-sm leading-relaxed text-[var(--foreground)] [background-image:var(--neu-fill-inset)] shadow-[var(--neu-shadow-inset)]">
-                  {detail.coverLetter}
-                </p>
-              </div>
-
-              <DialogFooter>
-                {canWithdraw(detail.status) && (
-                  <Button
-                    variant="ghost"
-                    type="button"
-                    onClick={() => {
-                      setWithdrawingId(detail.id)
-                      setWithdrawReason('')
-                      setDetailId(null)
-                    }}
-                    className="text-[var(--neu-error-text)] hover:text-[var(--neu-error-text)]"
-                  >
-                    Withdraw
-                  </Button>
-                )}
-                <Link
-                  to={`/jobs/${detail.job.id}`}
-                  className={buttonClassName({ variant: 'soft' })}
-                >
-                  View job posting
-                </Link>
-              </DialogFooter>
-            </>
-          )}
-        </DialogContent>
-      </Dialog>
 
       {/* Withdraw — a typed-out consequence and an optional reason, like the
           backend's `WithdrawApplicationRequest` expects. */}
