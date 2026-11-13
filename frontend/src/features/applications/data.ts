@@ -6,10 +6,10 @@ import type { Badge } from '@/components/ui/badge'
  * Stand-in for the application service through the gateway — the candidate's
  * own applications (`GET /api/applications/my-applications` when wired). The
  * shapes mirror the backend's `ApplicationResponse` and its summary DTOs:
- * `JobSummaryResponse` (job), `CompanySummaryResponse` (company),
- * `ResumeSummaryResponse` (resume, by title), and the `ApplicationStatus`
- * enum. Notes and screening stay out until the detail view needs them;
- * withdraw mirrors `POST /api/applications/{id}/withdraw`.
+ * `JobSummaryResponse` (job), `CompanySummaryResponse` (company), and the
+ * `ApplicationStatus` enum. The attached resume, cover letter, notes, and
+ * screening stay out of the list until a view needs them; withdraw mirrors
+ * `POST /api/applications/{id}/withdraw`.
  */
 
 /** The backend's `ApplicationStatus` enum. */
@@ -36,16 +36,10 @@ export interface ApplicationCompanySummary {
   logoUrl: string | null
 }
 
-export interface ApplicationResumeSummary {
-  /** The resume title that was attached, from `ResumeSummaryResponse`. */
-  title: string
-}
-
 export interface Application {
   id: string
   job: ApplicationJobSummary
   company: ApplicationCompanySummary
-  resume: ApplicationResumeSummary
   /** Bare amount in taka — `TakaMark` renders the ৳ glyph. */
   expectedSalary: number
   /** `LocalDate` — the start date offered in the application. */
@@ -75,7 +69,6 @@ export const APPLICATIONS: Application[] = [
       workMode: 'Remote',
     },
     company: { name: 'Northwind Analytics', logoUrl: null },
-    resume: { title: 'Frontend Developer Resume (2026)' },
     expectedSalary: 960_000,
     availableFrom: '2026-01-05',
     status: 'SHORTLISTED',
@@ -93,7 +86,6 @@ export const APPLICATIONS: Application[] = [
       workMode: 'On-site',
     },
     company: { name: 'Ambertech Solutions', logoUrl: null },
-    resume: { title: 'Frontend Developer Resume (2026)' },
     expectedSalary: 720_000,
     availableFrom: '2026-01-01',
     status: 'REVIEWING',
@@ -111,7 +103,6 @@ export const APPLICATIONS: Application[] = [
       workMode: 'Hybrid',
     },
     company: { name: 'Greenfield Consulting', logoUrl: null },
-    resume: { title: 'Frontend Developer Resume (2026)' },
     expectedSalary: 840_000,
     availableFrom: '2025-12-15',
     status: 'INTERVIEW_SCHEDULED',
@@ -129,7 +120,6 @@ export const APPLICATIONS: Application[] = [
       workMode: 'Hybrid',
     },
     company: { name: 'Zosh Technologies Pvt. Ltd.', logoUrl: null },
-    resume: { title: 'Frontend Developer Resume (2026)' },
     expectedSalary: 600_000,
     availableFrom: '2026-01-01',
     status: 'PENDING',
@@ -147,7 +137,6 @@ export const APPLICATIONS: Application[] = [
       workMode: 'On-site',
     },
     company: { name: 'Zosh Technologies Pvt. Ltd.', logoUrl: null },
-    resume: { title: 'Frontend Developer Resume (2026)' },
     expectedSalary: 1_050_000,
     availableFrom: '2026-01-01',
     status: 'REJECTED',
@@ -165,7 +154,6 @@ export const APPLICATIONS: Application[] = [
       workMode: 'Remote',
     },
     company: { name: 'Zosh Technologies Pvt. Ltd.', logoUrl: null },
-    resume: { title: 'Frontend Developer Resume (2026)' },
     expectedSalary: 480_000,
     availableFrom: '2025-12-01',
     status: 'WITHDRAWN',

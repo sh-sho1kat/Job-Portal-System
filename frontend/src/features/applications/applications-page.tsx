@@ -1,12 +1,5 @@
 import { HugeiconsIcon } from '@hugeicons/react'
-import {
-  Calendar01Icon,
-  File02Icon,
-  Search02Icon,
-  Sent02Icon,
-  StarIcon,
-  Tick02Icon,
-} from '@hugeicons/core-free-icons'
+import { Search02Icon, Sent02Icon, StarIcon } from '@hugeicons/core-free-icons'
 import * as React from 'react'
 import { Link } from 'react-router'
 
@@ -63,7 +56,8 @@ function companyInitials(company: string) {
     .join('')
 }
 
-/** One summary chip: a status filter with its live count. */
+/** One summary chip: a status filter with its live count — quiet until it
+ *  is the active one. */
 function FilterChip({
   label,
   count,
@@ -81,29 +75,22 @@ function FilterChip({
       onClick={onClick}
       aria-pressed={active}
       className={cn(
-        'flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1.5 text-[13px] transition-shadow duration-[var(--neu-duration)] motion-reduce:transition-none focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-2 focus-visible:outline-[color:var(--ring)]',
+        'flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-1.5 text-[13px] transition-colors duration-[var(--neu-duration)] motion-reduce:transition-none focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-2 focus-visible:outline-[color:var(--ring)]',
         active
-          ? '[background-image:var(--neu-fill-primary)] font-semibold text-[var(--primary-foreground)] shadow-[var(--neu-shadow-raised-sm)]'
-          : 'bg-[var(--neu-surface)] font-medium text-[var(--muted-foreground)] [background-image:var(--neu-fill-raised)] shadow-[var(--neu-shadow-raised-sm)] hover:text-[var(--foreground)]',
+          ? 'border-transparent [background-image:var(--neu-fill-primary)] font-semibold text-[var(--primary-foreground)]'
+          : 'border-[color:var(--neu-edge)] bg-[var(--neu-surface)] font-medium text-[var(--muted-foreground)] hover:text-[var(--foreground)]',
       )}
     >
       {label}
-      <span
-        className={cn(
-          'rounded-full px-1.5 py-0.5 text-[11px] font-semibold leading-none tabular-nums',
-          active
-            ? 'bg-white/15 text-[var(--primary-foreground)]'
-            : 'bg-[var(--neu-surface-soft)] text-[var(--muted-foreground)]',
-        )}
-      >
+      <span className={cn('text-[11px] font-semibold leading-none tabular-nums', active ? 'opacity-75' : 'opacity-60')}>
         {count}
       </span>
     </button>
   )
 }
 
-/** Applied → Reviewing → Shortlisted → Interview → Offer, with the stage the
- *  status sits at highlighted and closed paths left quiet. */
+/** Applied → Reviewing → Shortlisted → Interview → Offer — bare, no box.
+ *  The stage the status sits at carries the only emphasis. */
 function StatusTimeline({ stages }: { stages: TimelineStage[] }) {
   return (
     <ol className="flex items-start">
@@ -114,36 +101,35 @@ function StatusTimeline({ stages }: { stages: TimelineStage[] }) {
               <span
                 aria-hidden="true"
                 className={cn(
-                  'absolute right-0 left-1/2 ml-3 h-0.5 rounded-full',
-                  stage.done ? 'bg-[color:var(--success)] opacity-50' : 'bg-[var(--neu-edge)]',
+                  // Reaches from this dot's center to the next dot's center:
+                  // the row is one stage wide, so -right-1/2 + matching
+                  // margins cover the whole segment between the two dots.
+                  'absolute -right-1/2 left-1/2 mx-2.5 h-[2.5px] rounded-full',
+                  stage.done ? 'bg-[color:var(--success)] opacity-40' : 'bg-[color:var(--neu-edge)]',
                 )}
               />
             )}
             {stage.current ? (
               <span
                 aria-hidden="true"
-                className="relative flex size-3.5 items-center justify-center rounded-full [background-image:var(--neu-fill-primary)]"
+                className="relative flex size-3 items-center justify-center rounded-full [background-image:var(--neu-fill-primary)]"
               >
-                <span className="absolute -inset-1 rounded-full border-2 border-[color:var(--primary)] opacity-30" />
+                <span className="absolute -inset-1 rounded-full border border-[color:var(--primary)] opacity-25" />
               </span>
             ) : (
               <span
                 aria-hidden="true"
                 className={cn(
-                  'relative size-2.5 rounded-full',
-                  stage.done ? 'bg-[color:var(--success)]' : 'bg-[var(--muted-foreground)] opacity-40',
+                  'relative size-2 rounded-full',
+                  stage.done ? 'bg-[color:var(--success)]' : 'bg-[var(--muted-foreground)] opacity-30',
                 )}
               />
             )}
           </div>
           <span
             className={cn(
-              'mt-2 text-center text-[11px] leading-tight',
-              stage.current
-                ? 'font-semibold text-[var(--foreground)]'
-                : stage.done
-                  ? 'font-medium text-[var(--foreground)]'
-                  : 'text-[var(--muted-foreground)]',
+              'mt-1.5 text-center text-[11px] leading-tight',
+              stage.current ? 'font-semibold text-[var(--foreground)]' : 'text-[var(--muted-foreground)]',
             )}
           >
             {stage.label}
@@ -154,51 +140,51 @@ function StatusTimeline({ stages }: { stages: TimelineStage[] }) {
   )
 }
 
-/** Listing card for one application — the job-card shape: company plate,
- *  title block, meta row, badges, progress, cover letter, actions footer.
- *  Everything the candidate needs sits on the card; nothing hides behind a
- *  second click. The whole card links to the job posting (stretched link);
- *  the star, withdraw, and view-posting controls sit above it (z-10). */
+/** One application card, kept deliberately quiet: identity row, bare
+ *  progress, one meta line, actions. The card itself is not clickable —
+ *  reaching the job posting is the explicit "View job posting" action. */
 function ApplicationCard({
   application,
   onToggleStar,
   onWithdraw,
+  onViewReason,
 }: {
   application: Application
   onToggleStar: (id: string) => void
   onWithdraw: (id: string) => void
+  onViewReason: (application: Application) => void
 }) {
   return (
-    <Card variant="raised" className="relative p-0 transition-shadow hover:shadow-[var(--neu-shadow-raised)]">
-      <Link
-        to={`/jobs/${application.job.id}`}
-        aria-label={`View ${application.job.title} at ${application.company.name}`}
-        className="absolute inset-0 z-0 rounded-[var(--neu-radius-surface)] focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-2 focus-visible:outline-[color:var(--ring)]"
-      />
-      <div className="flex flex-col gap-3.5 p-5 md:p-6">
-        <div className="flex items-start gap-4">
+    <Card variant="raised" className="transition-shadow hover:shadow-[var(--neu-shadow-raised)]">
+      <div className="flex flex-col gap-4 p-5 md:p-6">
+        <div className="flex items-center gap-3.5">
           <span
             aria-hidden="true"
-            className="flex size-14 shrink-0 items-center justify-center rounded-[14px] bg-[var(--neu-surface)] [background-image:var(--neu-fill-inset)] text-sm font-bold text-[var(--neu-accent-ink)] shadow-[var(--neu-shadow-inset)]"
+            className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-[var(--neu-surface)] [background-image:var(--neu-fill-inset)] text-xs font-bold text-[var(--neu-accent-ink)] shadow-[var(--neu-shadow-inset)]"
           >
             {companyInitials(application.company.name)}
           </span>
-          <div className="flex min-w-0 flex-1 flex-col gap-1">
-            <h3 className="text-lg font-semibold tracking-tight text-[var(--foreground)]">
+          <div className="min-w-0 flex-1">
+            <h3 className="truncate text-[15px] font-semibold tracking-tight text-[var(--foreground)]">
               {application.job.title}
             </h3>
-            <p className="text-sm font-semibold text-[var(--foreground)]">{application.company.name}</p>
-            <p className="text-[13px] text-[var(--muted-foreground)]">
-              {application.job.employmentType} · {application.job.workMode}
+            <p className="mt-0.5 truncate text-[13px] text-[var(--muted-foreground)]">
+              {application.company.name} · {application.job.employmentType} · {application.job.workMode}
             </p>
           </div>
+          <Badge
+            variant={STATUS_VARIANT[application.status]}
+            className="shrink-0 rounded-full px-2.5 py-0.5 text-xs font-semibold"
+          >
+            {STATUS_LABEL[application.status]}
+          </Badge>
           <Button
             variant="ghost"
             size="icon"
             aria-pressed={application.isStarred}
             aria-label={application.isStarred ? 'Remove star' : 'Star this application'}
             onClick={() => onToggleStar(application.id)}
-            className="relative z-10"
+            className="shrink-0"
           >
             <HugeiconsIcon
               icon={StarIcon}
@@ -209,49 +195,41 @@ function ApplicationCard({
           </Button>
         </div>
 
-        <ul className="flex flex-wrap items-center gap-x-5 gap-y-1.5 text-[13px] text-[var(--muted-foreground)]">
-          <li className="inline-flex items-center gap-1.5 whitespace-nowrap">
-            <HugeiconsIcon icon={Calendar01Icon} strokeWidth={1.8} aria-hidden="true" className="size-4" />
-            Applied {formatAppliedAt(application.appliedAt)}
-          </li>
-          <li className="inline-flex items-center gap-1.5 min-w-0">
-            <HugeiconsIcon icon={File02Icon} strokeWidth={1.8} aria-hidden="true" className="size-4 shrink-0" />
-            <span className="truncate">{application.resume.title}</span>
-          </li>
-          <li className="inline-flex items-center gap-1.5 whitespace-nowrap font-medium tabular-nums text-[var(--foreground)]">
-            <TakaMark className="text-[15px]" />
-            {formatAmount(application.expectedSalary)}
-          </li>
-          <li className="inline-flex items-center gap-1.5 whitespace-nowrap">
-            <HugeiconsIcon icon={Sent02Icon} strokeWidth={1.8} aria-hidden="true" className="size-4" />
-            Available {formatAvailableFrom(application.availableFrom)}
-          </li>
-        </ul>
-
-        <div className="flex flex-wrap items-center gap-1.5">
-          <Badge
-            variant={STATUS_VARIANT[application.status]}
-            className="rounded-full px-3 py-1 uppercase"
-          >
-            {STATUS_LABEL[application.status]}
-          </Badge>
-        </div>
-
-        <div className="rounded-[var(--neu-radius-control)] bg-[var(--neu-surface)] px-4 py-4 [background-image:var(--neu-fill-inset)] shadow-[var(--neu-shadow-inset)]">
+        <div className="px-1">
           <StatusTimeline stages={statusTimeline(application.status)} />
           {isClosed(application.status) && (
-            <p className="mt-3 flex items-center justify-center gap-1.5 text-center text-[13px] text-[var(--muted-foreground)]">
-              <HugeiconsIcon icon={Tick02Icon} strokeWidth={2} aria-hidden="true" className="size-3.5" />
-              This application is closed — {STATUS_LABEL[application.status]}.
-              {application.withdrawnReason ? ` Reason: ${application.withdrawnReason}` : ''}
+            <p className="mt-2.5 flex flex-wrap items-center justify-center gap-x-2 gap-y-1 text-center text-[12.5px] text-[var(--muted-foreground)]">
+              <span>
+                This application is closed — {STATUS_LABEL[application.status]}
+              </span>
+              {application.withdrawnReason && (
+                <button
+                  type="button"
+                  onClick={() => onViewReason(application)}
+                  className="font-medium text-[var(--foreground)] underline decoration-[color:var(--neu-edge)] underline-offset-2 transition-colors duration-[var(--neu-duration)] hover:decoration-[color:var(--foreground)] focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-2 focus-visible:outline-[color:var(--ring)]"
+                >
+                  View reason
+                </button>
+              )}
             </p>
           )}
+        </div>
+
+        <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+          <p className="min-w-0 text-[13px] text-[var(--muted-foreground)]">
+            Applied {formatAppliedAt(application.appliedAt)} · Available{' '}
+            {formatAvailableFrom(application.availableFrom)}
+          </p>
+          <p className="text-sm font-semibold tabular-nums text-[var(--foreground)]">
+            <TakaMark className="mr-0.5 text-[0.8em]" />
+            {formatAmount(application.expectedSalary)}
+          </p>
         </div>
 
         <Separator />
 
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <p className="text-[13px] tabular-nums text-[var(--muted-foreground)]">
+          <p className="text-xs tabular-nums text-[var(--muted-foreground)]">
             Last updated {formatUpdatedAt(application.updatedAt)}
           </p>
           <div className="flex items-center gap-2">
@@ -260,7 +238,7 @@ function ApplicationCard({
                 variant="ghost"
                 type="button"
                 onClick={() => onWithdraw(application.id)}
-                className="relative z-10 text-[var(--neu-error-text)] hover:text-[var(--neu-error-text)]"
+                className="text-[var(--neu-error-text)] hover:text-[var(--neu-error-text)]"
               >
                 Withdraw
               </Button>
@@ -280,12 +258,12 @@ function ApplicationCard({
 }
 
 /**
- * My applications — the candidate's submitted applications as rich cards:
- * status chips with counts, search, newest/oldest ordering, and every
- * application's progress, facts, and cover letter on its card — no second
- * click to see where things stand. Data is a stand-in for the application
- * service (`GET /api/applications/my-applications` through the gateway);
- * withdraw mirrors `POST /api/applications/{id}/withdraw`.
+ * My applications — the candidate's submitted applications as quiet cards:
+ * status chips with counts, search, newest/oldest ordering, and each
+ * application's progress and facts on its own card — no second click to
+ * see where things stand. Data is a stand-in for the application service
+ * (`GET /api/applications/my-applications` through the gateway); withdraw
+ * mirrors `POST /api/applications/{id}/withdraw`.
  */
 export function ApplicationsPage() {
   const [query, setQuery] = React.useState('')
@@ -296,6 +274,7 @@ export function ApplicationsPage() {
   const [newestFirst, setNewestFirst] = React.useState(true)
   const [withdrawingId, setWithdrawingId] = React.useState<string | null>(null)
   const [withdrawReason, setWithdrawReason] = React.useState('')
+  const [reasonForId, setReasonForId] = React.useState<string | null>(null)
 
   const statusesPresent = STATUS_ORDER.filter((status) =>
     apps.some((app) => app.status === status),
@@ -317,9 +296,10 @@ export function ApplicationsPage() {
     })
 
   const withdrawing = apps.find((app) => app.id === withdrawingId) ?? null
+  const reasonFor = apps.find((app) => app.id === reasonForId) ?? null
 
   // Local apply — the withdraw endpoint is the seam (`POST /api/applications/
-  // {id}/withdraw` with `WithdrawApplicationRequest`). The row stays in the
+  // {id}/withdraw` with `WithdrawApplicationRequest`). The card stays in the
   // list as WITHDRAWN — the backend keeps the record, it doesn't delete it.
   const toggleStar = (id: string) => {
     setApps((current) =>
@@ -417,6 +397,7 @@ export function ApplicationsPage() {
                 key={application.id}
                 application={application}
                 onToggleStar={toggleStar}
+                onViewReason={(app) => setReasonForId(app.id)}
                 onWithdraw={(id) => {
                   setWithdrawingId(id)
                   setWithdrawReason('')
@@ -441,6 +422,25 @@ export function ApplicationsPage() {
           Applications come from the application service when it is wired; withdrawing an application lands here too.
         </p>
       </main>
+
+      {/* Withdrawal reason — the record the candidate wrote when they pulled
+          the application, shown in a window instead of cluttering the card. */}
+      <Dialog open={reasonFor !== null} onOpenChange={(open) => !open && setReasonForId(null)}>
+        <DialogContent className="max-w-md">
+          {reasonFor && (
+            <div className="flex min-w-0 flex-col gap-4">
+              <DialogTitle>Withdrawal reason</DialogTitle>
+              <DialogDescription>
+                {reasonFor.job.title} at {reasonFor.company.name} — withdrawn{' '}
+                {formatUpdatedAt(reasonFor.updatedAt)}.
+              </DialogDescription>
+              <p className="rounded-[var(--neu-radius-control)] bg-[var(--neu-surface)] px-4 py-3 text-sm leading-relaxed text-[var(--foreground)] [background-image:var(--neu-fill-inset)] shadow-[var(--neu-shadow-inset)]">
+                {reasonFor.withdrawnReason}
+              </p>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
 
       {/* Withdraw — a typed-out consequence and an optional reason, like the
           backend's `WithdrawApplicationRequest` expects. */}
