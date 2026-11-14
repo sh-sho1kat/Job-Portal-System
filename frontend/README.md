@@ -38,6 +38,7 @@ Routing is client-side via `react-router-dom` (`src/App.tsx`):
 | `/jobs/:id`| Job details — posting content, AI skills-gap analysis, overview/actions, tags, location  |
 | `/jobs/:id/apply` | Apply flow — single column: job header card, left-to-right progress, four steps (resume → cover letter with AI draft → details → review with full letter), submit confirmation |
 | `/applications` | My applications — one self-contained card per application in the job-card shape (company plate, title, meta row, status badge), so the progress and the facts are visible without a second click: status chips with live counts (backend `ApplicationStatus`), search over job title/company, newest/oldest ordering, and on each card the status timeline (Applied → Reviewing → Shortlisted → Interview → Offer; closed paths noted with the withdrawal reason), applied/salary-in-taka/available-from facts, a star toggle, and Withdraw (live statuses only) with an optional reason that flips the card to Withdrawn — mirroring `POST /api/applications/{id}/withdraw`. Cards are not clickable; the explicit "View job posting" link leads to the job, and a withdrawn card's reason opens in a dialog instead of cluttering the card. Reached from the navbar's "My applications" link |
+| `/saved` | Saved jobs — the candidate's bookmarked listings as standard job cards (same card as the jobs workspace, whole card → job detail), with a trash control on each card that pulls the bookmark without touching the job (reversible via the bookmark toggle on the jobs page); count in the header, empty state with a "Browse jobs" link. Reached from the navbar's "Saved jobs" link |
 | `/profile` | Account page — one column of cards, top to bottom: identity (avatar with a LinkedIn-style change-photo option via its dialog, name, role; slightly deeper card shade as the anchor card), Personal details (view mode; "Edit profile" flips the rows to inline fields — no dialog; email locked), Security (role, status, change password collapsed behind its option, with a live rules checklist mirroring `ChangePasswordRequest`), Activity (two bare fact tiles side by side — icon + label above, value below: "Member Since" / "Last Login", "March 2, 2026" dates and "08:10 AM" 12-hour timestamps), Session (sign out + delete account behind a confirm dialog). Dev-only `?role=employer` previews the employer variant. My resumes / My company pages are intentionally deferred until their services are wired |
 
 **Landing search hand-off.** The hero search, popular-search links, and footer
@@ -63,6 +64,9 @@ src/
 │  │  ├─ data/            # types.ts, jobs.ts + resumes.ts (static data), filters.ts
 │  │  ├─ job-page.tsx     # results workspace: state owner, filterJobs memo
 │  │  └─ job-detail-page.tsx
+│  ├─ applications/       # "My applications": data.ts (DTO mirror) + page
+│  ├─ saved/              # saved jobs: data.ts (shared bookmark store) + page
+│  └─ profile/            # account cards: identity, details, security, activity, session
 ├─ components/
 │  ├─ layout/             # site-navbar (app bar), marketing-navbar (landing) — both full-bleed
 │  ├─ theme-toggle.tsx    # pen-replica light/dark switch ([zoom:0.25] in navbars)
@@ -139,7 +143,11 @@ All data is client-side and static; these lines are the wiring points:
   backend row is `{ id, candidateId, jobId, companyId, notes, savedAt }`;
   the linked pages resolve `jobSlug`/`jobTitle`/`companyName` from
   job-service/company-service by `jobId`/`companyId`, the composition the
-  gateway owns). The navbar account icon routes to `/profile`.
+  gateway owns). The saved-jobs bookmark list lives in
+  `features/saved/data.ts` (shared store behind `useSavedJobIds` /
+  `toggleSavedJob` / `removeSavedJob`, seeded with two demo bookmarks) —
+  swap the module store for that endpoint when it lands.
+  The navbar account icon routes to `/profile`.
   `/profile?role=employer` (dev only) previews the employer variant (role
   badge + Security row). The My applications / My resumes / My company
   destinations were removed from the profile until their pages are built —

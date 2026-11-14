@@ -1,5 +1,6 @@
 import { HugeiconsIcon } from '@hugeicons/react'
 import {
+  Bookmark02Icon,
   Notification03Icon,
   Search02Icon,
   Sent02Icon,
@@ -35,6 +36,7 @@ interface NavLink {
 const NAV_LINKS: NavLink[] = [
   { label: 'Jobs', active: true, to: '/jobs' },
   { label: 'My applications', icon: Sent02Icon, to: '/applications' },
+  { label: 'Saved jobs', icon: Bookmark02Icon, to: '/saved' },
   { label: 'AI Tools', icon: SparklesIcon },
   { label: 'AI Match', icon: Target02Icon },
 ]
