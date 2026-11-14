@@ -39,7 +39,8 @@ Routing is client-side via `react-router-dom` (`src/App.tsx`):
 | `/jobs/:id/apply` | Apply flow — single column: job header card, left-to-right progress, four steps (resume → cover letter with AI draft → details → review with full letter), submit confirmation |
 | `/applications` | My applications — one self-contained card per application in the job-card shape (company plate, title, meta row, status badge), so the progress and the facts are visible without a second click: status chips with live counts (backend `ApplicationStatus`), search over job title/company, newest/oldest ordering, and on each card the status timeline (Applied → Reviewing → Shortlisted → Interview → Offer; closed paths noted with the withdrawal reason), applied/salary-in-taka/available-from facts, a star toggle, and Withdraw (live statuses only) with an optional reason that flips the card to Withdrawn — mirroring `POST /api/applications/{id}/withdraw`. Cards are not clickable; the explicit "View job posting" link leads to the job, and a withdrawn card's reason opens in a dialog instead of cluttering the card. Reached from the navbar's "My applications" link |
 | `/saved` | Saved jobs — the candidate's bookmarked listings as standard job cards (same card as the jobs workspace, whole card → job detail), with a trash control on each card that pulls the bookmark without touching the job (reversible via the bookmark toggle on the jobs page); count in the header, empty state with a "Browse jobs" link. Reached from the navbar's "Saved jobs" link |
-| `/profile` | Account page — one column of cards, top to bottom: identity (avatar with a LinkedIn-style change-photo option via its dialog, name, role; slightly deeper card shade as the anchor card), Personal details (view mode; "Edit profile" flips the rows to inline fields — no dialog; email locked), Security (role, status, change password collapsed behind its option, with a live rules checklist mirroring `ChangePasswordRequest`), Activity (two bare fact tiles side by side — icon + label above, value below: "Member Since" / "Last Login", "March 2, 2026" dates and "08:10 AM" 12-hour timestamps), Session (sign out + delete account behind a confirm dialog). Dev-only `?role=employer` previews the employer variant. My resumes / My company pages are intentionally deferred until their services are wired |
+| `/resumes` | My resumes — the candidate's resumes in the same quiet card shape: title, template · visibility (backend `ResumeTemplateType` / `ResumeVisibility`), the backend's completion score as a quiet bar, updated date and section counts, a "Default" badge on the apply-with resume. Actions mirror the service: Preview (the apply flow's dialog), Set as default (`POST /api/resumes/{id}/set-default` — demotes the previous default, so the button hides on the default card), and Delete behind a confirm that states the backend's rule (soft delete; the newest remaining resume becomes the default). Reached from the navbar's "My resumes" link |
+| `/profile` | Account page — one column of cards, top to bottom: identity (avatar with a LinkedIn-style change-photo option via its dialog, name, role; slightly deeper card shade as the anchor card), Personal details (view mode; "Edit profile" flips the rows to inline fields — no dialog; email locked), Security (role, status, change password collapsed behind its option, with a live rules checklist mirroring `ChangePasswordRequest`), Activity (two bare fact tiles side by side — icon + label above, value below: "Member Since" / "Last Login", "March 2, 2026" dates and "08:10 AM" 12-hour timestamps), Session (sign out + delete account behind a confirm dialog). Dev-only `?role=employer` previews the employer variant. My company page is intentionally deferred until its service is wired |
 
 **Landing search hand-off.** The hero search, popular-search links, and footer
 searches navigate to `/jobs?q=<title>&l=<location>`. `job-page.tsx` reads those
@@ -66,6 +67,7 @@ src/
 │  │  └─ job-detail-page.tsx
 │  ├─ applications/       # "My applications": data.ts (DTO mirror) + page
 │  ├─ saved/              # saved jobs: data.ts (shared bookmark store) + page
+│  ├─ resumes/            # my resumes: data.ts (ResumeResponse mirror + store) + page
 │  └─ profile/            # account cards: identity, details, security, activity, session
 ├─ components/
 │  ├─ layout/             # site-navbar (app bar), marketing-navbar (landing) — both full-bleed
@@ -130,6 +132,15 @@ All data is client-side and static; these lines are the wiring points:
   card's status to `WITHDRAWN` and records the reason — the backend keeps
   the record. The attached resume, cover letter, notes, and screening are
   omitted from the card list until a dedicated view asks for them.
+- `features/resumes/data.ts` — the "My resumes" list mirrors the resume
+  service's `ResumeResponse` (`title`, `template` from
+  `ResumeTemplateType`, `visibility` from `ResumeVisibility`, `isDefault`,
+  `personalInfo.headline`, `summary`, the 0–100 `completionScore`,
+  `createdAt`/`updatedAt`, and stand-in work/skill sections). The store is
+  the seam for `POST /api/resumes/create`, `PUT /api/resumes/{id}`
+  (title/template/visibility via `UpdateResumeRequest`),
+  `POST /api/resumes/{id}/set-default`, and `DELETE /api/resumes/{id}`
+  (soft delete; newest remaining becomes default — mirrored locally).
 - `features/profile/data.ts` — the account is a placeholder mirroring `UserResponse`
   (first/middle/last name, email, phone, role, status, profilePictureUrl,
   createdAt/lastLoginAt). Wire `GET /api/users/{id}` (own id only — the
@@ -151,7 +162,9 @@ All data is client-side and static; these lines are the wiring points:
   `/profile?role=employer` (dev only) previews the employer variant (role
   badge + Security row). The My applications / My resumes / My company
   destinations were removed from the profile until their pages are built —
-  the profile card that linked there comes back with them.
+  My applications and My resumes now exist at `/applications` and
+  `/resumes` (navbar links); the My company page is still deferred, and
+  the profile card that linked there comes back with it.
 - `features/jobs/job-page.tsx` — filtering/sorting already run through one
   `filterJobs` memo; swap its source for fetched data when available.
 - "Search With AI" puts the prompt into the same text query — wire it to the

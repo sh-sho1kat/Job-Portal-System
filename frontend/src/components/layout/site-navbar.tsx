@@ -1,6 +1,7 @@
 import { HugeiconsIcon } from '@hugeicons/react'
 import {
   Bookmark02Icon,
+  File02Icon,
   Notification03Icon,
   Search02Icon,
   Sent02Icon,
@@ -37,6 +38,7 @@ const NAV_LINKS: NavLink[] = [
   { label: 'Jobs', active: true, to: '/jobs' },
   { label: 'My applications', icon: Sent02Icon, to: '/applications' },
   { label: 'Saved jobs', icon: Bookmark02Icon, to: '/saved' },
+  { label: 'My resumes', icon: File02Icon, to: '/resumes' },
   { label: 'AI Tools', icon: SparklesIcon },
   { label: 'AI Match', icon: Target02Icon },
 ]

@@ -7,6 +7,7 @@ import { JobPage } from '@/features/jobs/job-page'
 import { ProfilePage } from '@/features/profile/profile-page'
 import { ApplicationsPage } from '@/features/applications/applications-page'
 import { SavedJobsPage } from '@/features/saved/saved-jobs-page'
+import { ResumesPage } from '@/features/resumes/resumes-page'
 
 export default function App() {
   return (
@@ -21,6 +22,8 @@ export default function App() {
         <Route path="/applications" element={<ApplicationsPage />} />
         {/* Bookmarks for the jobs workspace — shared store in features/saved. */}
         <Route path="/saved" element={<SavedJobsPage />} />
+        {/* The candidate's resumes — resume-service mirror in features/resumes. */}
+        <Route path="/resumes" element={<ResumesPage />} />
       </Routes>
     </BrowserRouter>
   )
