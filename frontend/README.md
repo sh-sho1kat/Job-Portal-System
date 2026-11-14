@@ -49,7 +49,7 @@ on pre-filtered results. On a details page the navbar search submits back to
 `/jobs` with the same params (new `onSearch` prop on `SiteNavbar`).
 
 **Card → details.** Job cards are fully clickable via a stretched link
-(`features/jobs/components/job-card.tsx`); the save button keeps its own click
+(`features/user/jobs/components/job-card.tsx`); the save button keeps its own click
 above the overlay. The landing's featured cards link to the same detail pages.
 
 ## Structure
@@ -58,17 +58,21 @@ above the overlay. The landing's featured cards link to the same detail pages.
 src/
 ├─ features/
 │  ├─ landing/            # public page: hero, featured jobs, about (carousel), footer, marketing navbar
-│  ├─ jobs/               # jobs workspace + job details
-│  │  ├─ apply/           # multi-step apply flow: page, horizontal stepper, job header card, four steps
-│  │  ├─ components/      # ai-hero, ai-skill-match, results-toolbar, filters-panel,
-│  │  │                   # salary-range, job-card, results-empty
-│  │  ├─ data/            # types.ts, jobs.ts + resumes.ts (static data), filters.ts
-│  │  ├─ job-page.tsx     # results workspace: state owner, filterJobs memo
-│  │  └─ job-detail-page.tsx
-│  ├─ applications/       # "My applications": data.ts (DTO mirror) + page
-│  ├─ saved/              # saved jobs: data.ts (shared bookmark store) + page
-│  ├─ resumes/            # my resumes: data.ts (ResumeResponse mirror + store) + page
-│  └─ profile/            # account cards: identity, details, security, activity, session
+│  ├─ user/               # candidate workspace (role-scoped feature trees)
+│  │  ├─ jobs/            # jobs workspace + job details
+│  │  │  ├─ apply/        # multi-step apply flow: page, horizontal stepper, job header card, four steps
+│  │  │  ├─ components/   # ai-hero, ai-skill-match, results-toolbar, filters-panel,
+│  │  │  │                # salary-range, job-card, results-empty, currency
+│  │  │  ├─ data/         # types.ts, jobs.ts + resumes.ts (static data), filters.ts
+│  │  │  ├─ job-page.tsx  # results workspace: state owner, filterJobs memo
+│  │  │  └─ job-detail-page.tsx
+│  │  ├─ applications/    # "My applications": data.ts (DTO mirror) + page
+│  │  ├─ saved/           # saved jobs: data.ts (shared bookmark store) + page
+│  │  ├─ resumes/         # my resumes: data.ts (ResumeResponse mirror + store) + page
+│  │  └─ profile/         # account cards: identity, details, security, activity, session
+│  ├─ admin/              # reserved for the admin workspace (empty)
+│  ├─ employer/           # reserved for the employer workspace (empty)
+│  └─ superAdmin/         # reserved for the super-admin workspace (empty)
 ├─ components/
 │  ├─ layout/             # site-navbar (app bar), marketing-navbar (landing) — both full-bleed
 │  ├─ theme-toggle.tsx    # pen-replica light/dark switch ([zoom:0.25] in navbars)
@@ -106,12 +110,12 @@ src/
 
 All data is client-side and static; these lines are the wiring points:
 
-- `features/jobs/data/jobs.ts` — replace `JOBS` with the gateway job-service
+- `features/user/jobs/data/jobs.ts` — replace `JOBS` with the gateway job-service
   call. Detail-page fields mirror the backend's public `JobResponse` DTO
   (description/responsibilities/requirements/benefits, flattened location,
   salary period, application deadline, vacancies); `views` stands in for
   `viewCount` and tag names for the DTO's `tagIds` until the taxonomy lookup.
-- `features/jobs/data/resumes.ts` — demo resumes for the AI skills-gap match
+- `features/user/jobs/data/resumes.ts` — demo resumes for the AI skills-gap match
   and the apply flow's resume picker (with a Preview dialog). The cards show
   the backend's `ResumeResponse` fields `template` (`ResumeTemplateType`) and
   `isDefault` — the default resume is preselected when the flow opens. The
@@ -119,7 +123,7 @@ All data is client-side and static; these lines are the wiring points:
   resume document; replace everything with the resume service (`ResumeResponse`
   DTOs). The match itself (skill overlap score, matched/missing chips) runs
   locally in `ai-skill-match.tsx` until the analysis endpoint exists.
-- `features/applications/data.ts` — the "My applications" list stands in for
+- `features/user/applications/data.ts` — the "My applications" list stands in for
   the application service: wire `GET /api/applications/my-applications` (the
   gateway's composition of the application, job, and company services).
   Rows mirror `ApplicationResponse`'s candidate-relevant fields —
@@ -132,7 +136,7 @@ All data is client-side and static; these lines are the wiring points:
   card's status to `WITHDRAWN` and records the reason — the backend keeps
   the record. The attached resume, cover letter, notes, and screening are
   omitted from the card list until a dedicated view asks for them.
-- `features/resumes/data.ts` — the "My resumes" list mirrors the resume
+- `features/user/resumes/data.ts` — the "My resumes" list mirrors the resume
   service's `ResumeResponse` (`title`, `template` from
   `ResumeTemplateType`, `visibility` from `ResumeVisibility`, `isDefault`,
   `personalInfo.headline`, `summary`, the 0–100 `completionScore`,
@@ -141,7 +145,7 @@ All data is client-side and static; these lines are the wiring points:
   (title/template/visibility via `UpdateResumeRequest`),
   `POST /api/resumes/{id}/set-default`, and `DELETE /api/resumes/{id}`
   (soft delete; newest remaining becomes default — mirrored locally).
-- `features/profile/data.ts` — the account is a placeholder mirroring `UserResponse`
+- `features/user/profile/data.ts` — the account is a placeholder mirroring `UserResponse`
   (first/middle/last name, email, phone, role, status, profilePictureUrl,
   createdAt/lastLoginAt). Wire `GET /api/users/{id}` (own id only — the
   endpoint rejects other ids without an admin role) and `PUT /api/users/{id}`
@@ -155,7 +159,7 @@ All data is client-side and static; these lines are the wiring points:
   the linked pages resolve `jobSlug`/`jobTitle`/`companyName` from
   job-service/company-service by `jobId`/`companyId`, the composition the
   gateway owns). The saved-jobs bookmark list lives in
-  `features/saved/data.ts` (shared store behind `useSavedJobIds` /
+  `features/user/saved/data.ts` (shared store behind `useSavedJobIds` /
   `toggleSavedJob` / `removeSavedJob`, seeded with two demo bookmarks) —
   swap the module store for that endpoint when it lands.
   The navbar account icon routes to `/profile`.
@@ -165,7 +169,7 @@ All data is client-side and static; these lines are the wiring points:
   My applications and My resumes now exist at `/applications` and
   `/resumes` (navbar links); the My company page is still deferred, and
   the profile card that linked there comes back with it.
-- `features/jobs/job-page.tsx` — filtering/sorting already run through one
+- `features/user/jobs/job-page.tsx` — filtering/sorting already run through one
   `filterJobs` memo; swap its source for fetched data when available.
 - "Search With AI" puts the prompt into the same text query — wire it to the
   gateway `/ai` service when it exists.
@@ -175,7 +179,7 @@ All data is client-side and static; these lines are the wiring points:
   (free-form text in the "75,000" format the copy promises), and
   availability, mirroring the application-service `ApplicationRequest` DTO.
   `submitApplication` and `generateCoverLetter` in
-  `features/jobs/apply/data.ts` are the seams: swap the stubs for the
+  `features/user/jobs/apply/data.ts` are the seams: swap the stubs for the
   gateway `POST /api/applications/create` and `/ai` calls (job slug →
   numeric `jobId` mapping noted there). Card and featured-card actions
   still go to `/jobs/:id`.

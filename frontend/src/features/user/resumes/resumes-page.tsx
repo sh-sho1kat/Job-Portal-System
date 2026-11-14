@@ -13,7 +13,7 @@ import {
   DialogFooter,
   DialogTitle,
 } from '@/components/ui/dialog'
-import { ResumePreviewDialog } from '@/features/jobs/apply/steps/resume-step'
+import { ResumePreviewDialog } from '@/features/user/jobs/apply/steps/resume-step'
 import { cn } from '@/lib/utils'
 import type { ResumeItem } from './data'
 import {

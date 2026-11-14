@@ -5,10 +5,10 @@ import { Link, useNavigate } from 'react-router-dom'
 
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { TakaMark } from '@/features/jobs/components/currency'
+import { TakaMark } from '@/features/user/jobs/components/currency'
 import { Card } from '@/components/ui/card'
-import { JOBS } from '@/features/jobs/data/jobs'
-import type { EmploymentType, Job } from '@/features/jobs/data/types'
+import { JOBS } from '@/features/user/jobs/data/jobs'
+import type { EmploymentType, Job } from '@/features/user/jobs/data/types'
 import { cn } from '@/lib/utils'
 
 /** Newest three roles — stands in for a "featured" flag until the service exists. */

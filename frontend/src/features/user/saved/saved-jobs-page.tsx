@@ -6,8 +6,8 @@ import { Link } from 'react-router'
 import { SiteNavbar } from '@/components/layout/site-navbar'
 import { buttonClassName } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
-import { JobCard } from '@/features/jobs/components/job-card'
-import { JOBS } from '@/features/jobs/data/jobs'
+import { JobCard } from '@/features/user/jobs/components/job-card'
+import { JOBS } from '@/features/user/jobs/data/jobs'
 import { removeSavedJob, useSavedJobIds } from './data'
 
 /**

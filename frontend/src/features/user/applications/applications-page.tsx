@@ -19,7 +19,7 @@ import { Input } from '@/components/ui/input'
 import { Select, SelectItem } from '@/components/ui/select'
 import { Separator } from '@/components/ui/separator'
 import { Textarea } from '@/components/ui/textarea'
-import { TakaMark } from '@/features/jobs/components/currency'
+import { TakaMark } from '@/features/user/jobs/components/currency'
 import { cn } from '@/lib/utils'
 import type { Application, ApplicationStatus, TimelineStage } from './data'
 import {

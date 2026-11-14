@@ -16,7 +16,7 @@ import { Card } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
 import { TakaMark } from './currency'
 import { cn } from '@/lib/utils'
-import { toggleSavedJob, useIsJobSaved } from '@/features/saved/data'
+import { toggleSavedJob, useIsJobSaved } from '@/features/user/saved/data'
 import type { Job } from '../data/types'
 
 function companyInitials(company: string) {
