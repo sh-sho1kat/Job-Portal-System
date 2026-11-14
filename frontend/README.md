@@ -39,7 +39,7 @@ Routing is client-side via `react-router-dom` (`src/App.tsx`):
 | `/jobs/:id/apply` | Apply flow — single column: job header card, left-to-right progress, four steps (resume → cover letter with AI draft → details → review with full letter), submit confirmation |
 | `/applications` | My applications — one self-contained card per application in the job-card shape (company plate, title, meta row, status badge), so the progress and the facts are visible without a second click: status chips with live counts (backend `ApplicationStatus`), search over job title/company, newest/oldest ordering, and on each card the status timeline (Applied → Reviewing → Shortlisted → Interview → Offer; closed paths noted with the withdrawal reason), applied/salary-in-taka/available-from facts, a star toggle, and Withdraw (live statuses only) with an optional reason that flips the card to Withdrawn — mirroring `POST /api/applications/{id}/withdraw`. Cards are not clickable; the explicit "View job posting" link leads to the job, and a withdrawn card's reason opens in a dialog instead of cluttering the card. Reached from the navbar's "My applications" link |
 | `/saved` | Saved jobs — the candidate's bookmarked listings as standard job cards (same card as the jobs workspace, whole card → job detail), with a trash control on each card that pulls the bookmark without touching the job (reversible via the bookmark toggle on the jobs page); count in the header, empty state with a "Browse jobs" link. Reached from the navbar's "Saved jobs" link |
-| `/resumes` | My resumes — the candidate's resumes in the same quiet card shape: title, template · visibility (backend `ResumeTemplateType` / `ResumeVisibility`), the backend's completion score as a quiet bar, updated date and section counts, a "Default" badge on the apply-with resume. Actions mirror the service: Preview (the apply flow's dialog), Set as default (`POST /api/resumes/{id}/set-default` — demotes the previous default, so the button hides on the default card), and Delete behind a confirm that states the backend's rule (soft delete; the newest remaining resume becomes the default). Reached from the navbar's "My resumes" link |
+| `/resumes` | My resumes — reference layout: header with a "+ New resume" primary action, an amber "Default resume" banner (names the resume that goes out when none is chosen), and a card grid closing with a dashed new-resume tile ("Pick a template to get started"). Each card: file plate, title, template badge (`ResumeTemplateType`), the backend's completion score as label + bar, updated date + visibility (`ResumeVisibility`) with icons, View (the apply flow's preview dialog) · Edit (title/template/visibility via `PUT /api/resumes/{id}`, `UpdateResumeRequest`) · Delete (confirm dialog stating the backend's soft-delete rule), a full-width "AI Career Feedback" button standing in for `POST /api/ai/resume/career-feedback` (`CareerFeedbackResponse`: profile strength, overall summary, shortlisting issues, prioritized improvements), and a "Default resume"/"Set as default" row (`POST /api/resumes/{id}/set-default`). Create mirrors `POST /api/resumes/create` (`ResumeRequest` — starts empty, completion 0). Reached from the navbar's "My resumes" link |
 | `/profile` | Account page — one column of cards, top to bottom: identity (avatar with a LinkedIn-style change-photo option via its dialog, name, role; slightly deeper card shade as the anchor card), Personal details (view mode; "Edit profile" flips the rows to inline fields — no dialog; email locked), Security (role, status, change password collapsed behind its option, with a live rules checklist mirroring `ChangePasswordRequest`), Activity (two bare fact tiles side by side — icon + label above, value below: "Member Since" / "Last Login", "March 2, 2026" dates and "08:10 AM" 12-hour timestamps), Session (sign out + delete account behind a confirm dialog). Dev-only `?role=employer` previews the employer variant. My company page is intentionally deferred until its service is wired |
 
 **Landing search hand-off.** The hero search, popular-search links, and footer
@@ -140,11 +140,14 @@ All data is client-side and static; these lines are the wiring points:
   service's `ResumeResponse` (`title`, `template` from
   `ResumeTemplateType`, `visibility` from `ResumeVisibility`, `isDefault`,
   `personalInfo.headline`, `summary`, the 0–100 `completionScore`,
-  `createdAt`/`updatedAt`, and stand-in work/skill sections). The store is
-  the seam for `POST /api/resumes/create`, `PUT /api/resumes/{id}`
-  (title/template/visibility via `UpdateResumeRequest`),
+  `createdAt`/`updatedAt`, and stand-in work/skill sections). Store actions
+  are the seams for `POST /api/resumes/create` (`createResume`),
+  `PUT /api/resumes/{id}` (title/template/visibility via
+  `UpdateResumeRequest`, `updateResume`),
   `POST /api/resumes/{id}/set-default`, and `DELETE /api/resumes/{id}`
   (soft delete; newest remaining becomes default — mirrored locally).
+  `careerFeedback` stands in for the AI service's
+  `POST /api/ai/resume/career-feedback` (`CareerFeedbackResponse` shape).
 - `features/user/profile/data.ts` — the account is a placeholder mirroring `UserResponse`
   (first/middle/last name, email, phone, role, status, profilePictureUrl,
   createdAt/lastLoginAt). Wire `GET /api/users/{id}` (own id only — the
