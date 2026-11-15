@@ -105,12 +105,16 @@ public class ResumeMapper {
     public PersonalInfoResponse toPersonalInfoResponse(PersonalInfo info) {
         return info == null ? null : new PersonalInfoResponse(
                 info.getFirstName(),
+                info.getMiddleName(),
                 info.getLastName(),
                 info.getHeadline(),
                 info.getEmail(),
                 info.getPhone(),
-                info.getCity(),
-                info.getCountry(),
+                info.getGender(),
+                info.getNationality(),
+                info.getDateOfBirth(),
+                info.getPresentAddress(),
+                info.getPermanentAddress(),
                 info.getLinkedInUrl(),
                 info.getGithubUrl(),
                 info.getPortfolioUrl(),
