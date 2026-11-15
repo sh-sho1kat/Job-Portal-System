@@ -223,12 +223,16 @@ public class ResumeServiceImpl implements ResumeService {
                 ? resume.getPersonalInfo()
                 : PersonalInfo.builder().build();
         if (request.firstName() != null) info.setFirstName(request.firstName().trim());
+        if (request.middleName() != null) info.setMiddleName(request.middleName().trim());
         if (request.lastName() != null) info.setLastName(request.lastName().trim());
         if (request.headline() != null) info.setHeadline(request.headline().trim());
         if (request.email() != null) info.setEmail(request.email().trim());
         if (request.phone() != null) info.setPhone(request.phone().trim());
-        if (request.city() != null) info.setCity(request.city().trim());
-        if (request.country() != null) info.setCountry(request.country().trim());
+        if (request.gender() != null) info.setGender(request.gender());
+        if (request.dateOfBirth() != null) info.setDateOfBirth(request.dateOfBirth().trim());
+        if (request.nationality() != null) info.setNationality(request.nationality().trim());
+        if (request.presentAddress() != null) info.setPresentAddress(request.presentAddress());
+        if (request.permanentAddress() != null) info.setPermanentAddress(request.permanentAddress());
         if (request.linkedInUrl() != null) info.setLinkedInUrl(request.linkedInUrl().trim());
         if (request.githubUrl() != null) info.setGithubUrl(request.githubUrl().trim());
         if (request.portfolioUrl() != null) info.setPortfolioUrl(request.portfolioUrl().trim());
