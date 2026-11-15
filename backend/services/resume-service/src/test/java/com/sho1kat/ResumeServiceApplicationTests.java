@@ -98,8 +98,8 @@ class ResumeServiceApplicationTests {
         assertThat(resumeService.getResumeById(resumeId, CANDIDATE).completionScore()).isZero();
 
         resumeService.updatePersonalInfo(resumeId, CANDIDATE,
-                new PersonalInfoRequest("Alex", null, "Backend engineer", "alex@example.com",
-                        null, null, null, null, null, null, null));
+                new PersonalInfoRequest("Alex", null, null, "Backend engineer", "alex@example.com",
+                        null, null, null, null, null, null, null, null, null, null));
 
         ResumeResponse detail = resumeService.getResumeById(resumeId, CANDIDATE);
         assertThat(detail.personalInfo().firstName()).isEqualTo("Alex");
@@ -158,8 +158,8 @@ class ResumeServiceApplicationTests {
 
         // personal name + email add two more checklist parts
         detail = resumeService.updatePersonalInfo(resumeId, CANDIDATE,
-                new PersonalInfoRequest("Mia", "Keller", null, "mia@example.com",
-                        null, null, null, null, null, null, null));
+                new PersonalInfoRequest("Mia", null, "Keller", null, "mia@example.com",
+                        null, null, null, null, null, null, null, null, null, null));
         assertThat(detail.completionScore()).isEqualTo(70);
         assertThat(detail.workExperiences()).hasSize(1);
         assertThat(detail.educations().get(0).isCurrentlyStudying()).isTrue();
