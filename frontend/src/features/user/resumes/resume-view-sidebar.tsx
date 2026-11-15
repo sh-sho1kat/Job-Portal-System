@@ -34,7 +34,7 @@ import { ResumePreviewDialog } from '@/features/user/jobs/apply/steps/resume-ste
 import { ACCOUNT, fullName } from '@/features/user/profile/data'
 import { Separator } from '@/components/ui/separator'
 import { cn } from '@/lib/utils'
-import type { ResumeItem, ResumeRailShade } from './data'
+import type { ResumeItem } from './data'
 import {
   LANGUAGE_PROFICIENCY_LABEL,
   TEMPLATE_LABEL,
@@ -71,43 +71,17 @@ const SECTIONS = [
 export type ResumeSectionId = (typeof SECTIONS)[number]['id']
 
 /**
- * Rail shade demo — three scoped CSS-variable treatments, one per seeded
- * resume. Overriding the surface/text/fill tokens on the rail's own root
- * re-themes everything inside it (menu, chips, footer, buttons) without
- * touching the rest of the page, in both themes. The client will keep one
- * and the others come out.
+ * Rail shade — a panel one step darker than the page. Overriding the
+ * surface tokens on the rail's own root re-themes everything inside it
+ * (menu, chips, footer, buttons) without touching the rest of the page,
+ * in both themes.
  */
-const RAIL_SHADE_STYLE: Record<ResumeRailShade, React.CSSProperties> = {
-  // A panel one step darker than the page — quiet, clearly separated.
-  ink: {
-    '--neu-surface': 'var(--neu-rail-ink)',
-    '--neu-surface-soft': 'var(--neu-rail-ink-soft)',
-    '--neu-fill-inset': 'var(--neu-rail-ink-fill)',
-    '--neu-edge': 'var(--border)',
-  } as React.CSSProperties,
-  // The page tone itself — the rail recedes; the border and the active
-  // item carry all the weight.
-  page: {
-    '--neu-surface': 'var(--background)',
-    '--neu-fill-inset': 'var(--neu-rail-page-fill)',
-    '--neu-edge': 'var(--border)',
-  } as React.CSSProperties,
-  // Deep navy panel with light ink — the statement treatment.
-  navy: {
-    '--neu-surface': '#3f536f',
-    '--neu-surface-soft': 'rgb(238 242 247 / 0.08)',
-    '--neu-surface-low': 'rgb(238 242 247 / 0.14)',
-    '--foreground': '#eef2f7',
-    '--muted-foreground': 'rgb(238 242 247 / 0.62)',
-    '--border': 'rgb(238 242 247 / 0.16)',
-    '--neu-edge': 'rgb(238 242 247 / 0.16)',
-    '--neu-accent-ink': '#d7e1ee',
-    '--neu-fill-inset': 'linear-gradient(135deg, rgb(255 255 255 / 0.09), rgb(255 255 255 / 0.03))',
-    '--neu-fill-raised': 'linear-gradient(135deg, rgb(255 255 255 / 0.06), rgb(255 255 255 / 0.02))',
-    '--neu-fill-primary': 'linear-gradient(135deg, #d7e1ee, #b2c2d8)',
-    '--neu-selected-border': 'rgb(215 225 238 / 0.55)',
-  } as React.CSSProperties,
-}
+const RAIL_SHADE_STYLE = {
+  '--neu-surface': 'var(--neu-rail-ink)',
+  '--neu-surface-soft': 'var(--neu-rail-ink-soft)',
+  '--neu-fill-inset': 'var(--neu-rail-ink-fill)',
+  '--neu-edge': 'var(--border)',
+} as React.CSSProperties
 
 /** Label/value row used across Personal Info and Settings. */
 function MetaRow({ label, children }: { label: string; children: React.ReactNode }) {
@@ -519,7 +493,7 @@ export function ResumeViewSidebar({
       mobileDescription="Resume sections"
       closeLabel="Close resume view"
       className="md:h-full"
-      style={resume.railShade ? RAIL_SHADE_STYLE[resume.railShade] : undefined}
+      style={RAIL_SHADE_STYLE}
     >
       <ViewHeader resume={resume} onClose={onClose} />
       <SidebarContent className="p-2">

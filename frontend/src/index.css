@@ -45,11 +45,10 @@
   --neu-shadow-primary: 3px 4px 10px color-mix(in srgb, rgb(31 39 50 / 0.17) 92%, transparent), -3px -3px 9px color-mix(in srgb, rgb(255 255 255 / 0.94) 64%, transparent), inset 1px 1px 2px color-mix(in srgb, #3f536f 94%, white);
   --neu-shadow-primary-hover: 4px 4px 12px color-mix(in srgb, rgb(31 39 50 / 0.17) 92%, transparent), -4px -4px 12px color-mix(in srgb, rgb(255 255 255 / 0.94) 64%, transparent), inset 1px 1px 2px color-mix(in srgb, #3f536f 94%, white);
   --neu-fill-inset: linear-gradient(135deg, color-mix(in srgb, #d5d9de 35%, #e6e8eb), color-mix(in srgb, #f1f3f5 30%, #e6e8eb));
-  /* Resume-view rail shade demo — a panel a step darker than the page. */
+  /* Resume-view rail shade — a panel a step darker than the page. */
   --neu-rail-ink: #b3bcc7;
   --neu-rail-ink-soft: #a7b1be;
   --neu-rail-ink-fill: linear-gradient(135deg, color-mix(in srgb, #8f99a6 40%, #b3bcc7), color-mix(in srgb, #d2d7dd 30%, #b3bcc7));
-  --neu-rail-page-fill: linear-gradient(135deg, #d2d7dd, #dfe3e7);
   --neu-shadow-primary-inset: inset 2px 2px 5px color-mix(in srgb, #3f536f 68%, black), inset -2px -2px 5px color-mix(in srgb, #3f536f 78%, white);
   --neu-shadow-destructive-inset: inset 2px 2px 5px color-mix(in srgb, #c8545f 68%, black), inset -2px -2px 5px color-mix(in srgb, #c8545f 78%, white);
   --neu-overlay: rgb(15 23 42 / 0.28);
@@ -122,11 +121,10 @@
   --neu-shadow-primary: 4px 5px 10px rgb(0 0 0 / 0.48), -4px -4px 9px color-mix(in srgb, rgb(255 255 255 / 0.045) 84%, transparent), inset 1px 1px 2px color-mix(in srgb, #b2c2d8 94%, white);
   --neu-shadow-primary-hover: 5px 5px 12px rgb(0 0 0 / 0.48), -5px -5px 12px color-mix(in srgb, rgb(255 255 255 / 0.045) 84%, transparent), inset 1px 1px 2px color-mix(in srgb, #b2c2d8 94%, white);
   --neu-fill-inset: linear-gradient(135deg, color-mix(in srgb, #0d1014 35%, #181c22), color-mix(in srgb, #222831 30%, #181c22));
-  /* Resume-view rail shade demo — a panel a step above the dark page. */
+  /* Resume-view rail shade — a panel a step above the dark page. */
   --neu-rail-ink: #1e242d;
   --neu-rail-ink-soft: #272e39;
   --neu-rail-ink-fill: linear-gradient(135deg, color-mix(in srgb, #0a0d11 45%, #1e242d), color-mix(in srgb, #2c333e 35%, #1e242d));
-  --neu-rail-page-fill: linear-gradient(135deg, color-mix(in srgb, #0d1014 55%, #111419), #161a20);
   --neu-shadow-primary-inset: inset 2px 2px 5px color-mix(in srgb, #b2c2d8 68%, black), inset -2px -2px 5px color-mix(in srgb, #b2c2d8 78%, white);
   --neu-shadow-destructive-inset: inset 2px 2px 5px color-mix(in srgb, #ff7885 68%, black), inset -2px -2px 5px color-mix(in srgb, #ff7885 78%, white);
   --neu-overlay: rgb(0 0 0 / 0.55);

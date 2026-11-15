@@ -95,13 +95,6 @@ export interface ResumeLanguageEntry {
   proficiency: ResumeLanguageProficiency
 }
 
-/**
- * Rail shade demo — each seeded resume carries one of the three candidate
- * sidebar treatments (deeper panel / page tone / navy accent) so they can
- * be compared side by side; one will be kept and the others removed.
- */
-export type ResumeRailShade = 'ink' | 'page' | 'navy'
-
 export interface ResumeItem {
   id: string
   title: string
@@ -119,8 +112,6 @@ export interface ResumeItem {
   awards: ResumeAwardEntry[]
   languages: ResumeLanguageEntry[]
   completionScore: number
-  /** Rail shade demo — see `ResumeRailShade`. */
-  railShade?: ResumeRailShade
   /** `Instant` timestamps. */
   createdAt: string
   updatedAt: string
@@ -133,7 +124,6 @@ let resumes: ResumeItem[] = [
     template: 'PROFESSIONAL',
     visibility: 'PRIVATE',
     isDefault: true,
-    railShade: 'ink',
     headline: 'Frontend Developer — React & TypeScript',
     summary:
       'Frontend developer with four years of experience building accessible, performant web applications in React and TypeScript.',
@@ -219,7 +209,6 @@ let resumes: ResumeItem[] = [
     template: 'MODERN',
     visibility: 'LINK_ONLY',
     isDefault: false,
-    railShade: 'page',
     headline: 'Marketing Specialist — Content & Campaigns',
     summary:
       'Marketing specialist focused on content strategy, brand campaigns, and analytics-driven growth.',
@@ -264,7 +253,6 @@ let resumes: ResumeItem[] = [
     template: 'CLASSIC',
     visibility: 'PRIVATE',
     isDefault: false,
-    railShade: 'navy',
     headline: 'Data Analyst — SQL & Dashboards',
     summary:
       'Data analyst turning operational data into dashboards and decisions leadership can act on.',
