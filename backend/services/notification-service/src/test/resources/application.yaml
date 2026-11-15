@@ -1,0 +1,13 @@
+# Test-only configuration: config server and discovery are not running in tests.
+spring:
+  cloud:
+    config:
+      enabled: false
+    discovery:
+      enabled: false
+  application:
+    name: notification-service-test
+
+eureka:
+  client:
+    enabled: false
