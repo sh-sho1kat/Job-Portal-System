@@ -28,7 +28,7 @@ import { Input } from '@/components/ui/input'
 import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card'
 import { Select, SelectItem } from '@/components/ui/select'
 import { Separator } from '@/components/ui/separator'
-import { ResumePreviewDialog } from '@/features/user/jobs/apply/steps/resume-step'
+import { ResumeViewSheet } from './resume-view-sheet'
 import { cn } from '@/lib/utils'
 import type { ResumeItem, ResumeTemplateType, ResumeVisibility } from './data'
 import {
@@ -52,33 +52,17 @@ const TEMPLATE_VARIANT: Record<ResumeTemplateType, 'primary' | 'soft' | 'outline
   DEFAULT: 'soft',
 }
 
-/** The apply flow's preview dialog consumes its own `Resume` shape; this
- *  adapts the list item onto it. */
-function toPreviewShape(item: ResumeItem) {
-  return {
-    id: item.id,
-    name: item.title,
-    template: item.template,
-    isDefault: item.isDefault,
-    headline: item.headline,
-    summary: item.summary,
-    experience: item.work,
-    skills: item.skills,
-  }
-}
-
-
 /** One resume card, in the reference layout: identity + template badge,
  *  completion, visibility meta, actions row, AI feedback, default row. */
 function ResumeCard({
   resume,
-  onPreview,
+  onView,
   onEdit,
   onDelete,
   onFeedback,
 }: {
   resume: ResumeItem
-  onPreview: (resume: ResumeItem) => void
+  onView: (resume: ResumeItem) => void
   onEdit: (resume: ResumeItem) => void
   onDelete: (resume: ResumeItem) => void
   onFeedback: (resume: ResumeItem) => void
@@ -157,7 +141,7 @@ function ResumeCard({
 
         <div className="mt-auto flex flex-col gap-2">
           <div className="flex items-stretch gap-2">
-            <Button variant="soft" className="flex-1" onClick={() => onPreview(resume)}>
+            <Button variant="soft" className="flex-1" onClick={() => onView(resume)}>
               <HugeiconsIcon icon={ViewIcon} strokeWidth={1.8} aria-hidden="true" />
               View
             </Button>
@@ -296,15 +280,15 @@ function ResumeFields({
  * dashed new-resume tile closing the grid. Data mirrors the resume service
  * (`GET /api/resumes/my-resumes`); create/edit mirror `POST /create` and
  * `PUT /{id}`, and AI feedback stands in for
- * `POST /api/ai/resume/career-feedback`. Reached from the navbar's
- * "My resumes" link.
+ * `POST /api/ai/resume/career-feedback`. View opens the section sidebar
+ * (resume-view-sheet). Reached from the navbar's "My resumes" link.
  */
 export function ResumesPage() {
   const [query, setQuery] = React.useState('')
   const [location, setLocation] = React.useState('')
   const resumes = useResumes()
 
-  const [previewId, setPreviewId] = React.useState<string | null>(null)
+  const [viewingId, setViewingId] = React.useState<string | null>(null)
   const [editingId, setEditingId] = React.useState<string | null>(null)
   const [deletingId, setDeletingId] = React.useState<string | null>(null)
   const [feedbackId, setFeedbackId] = React.useState<string | null>(null)
@@ -318,7 +302,7 @@ export function ResumesPage() {
   const editing = (resumes.find((item) => item.id === editingId) ?? null) as ResumeItem | null
   const deleting = (resumes.find((item) => item.id === deletingId) ?? null) as ResumeItem | null
   const feedback = (resumes.find((item) => item.id === feedbackId) ?? null) as ResumeItem | null
-  const preview = (resumes.find((item) => item.id === previewId) ?? null) as ResumeItem | null
+  const viewing = (resumes.find((item) => item.id === viewingId) ?? null) as ResumeItem | null
   const defaultResume = resumes.find((item) => item.isDefault) ?? null
 
   const openCreate = () => {
@@ -391,7 +375,7 @@ export function ResumesPage() {
             <ResumeCard
               key={resume.id}
               resume={resume}
-              onPreview={(item) => setPreviewId(item.id)}
+              onView={(item) => setViewingId(item.id)}
               onEdit={openEdit}
               onDelete={(item) => setDeletingId(item.id)}
               onFeedback={(item) => setFeedbackId(item.id)}
@@ -401,8 +385,11 @@ export function ResumesPage() {
         </div>
       </main>
 
-      {/* Preview — the same dialog the apply flow uses. */}
-      <ResumePreviewDialog resume={preview ? toPreviewShape(preview) : undefined} onClose={() => setPreviewId(null)} />
+      {/* View — the section sidebar mirroring the resume service's stored
+          sections (personal info, summary, work, education, skills,
+          projects, certifications, awards, languages, settings). The
+          rendered document preview stays reachable from its header. */}
+      <ResumeViewSheet resume={viewing} onClose={() => setViewingId(null)} />
 
       {/* AI career feedback — stands in for POST /api/ai/resume/career-feedback
           (CareerFeedbackResponse): profile strength, summary, shortlisting

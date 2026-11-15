@@ -10,6 +10,9 @@ import * as React from 'react'
  * - `completionScore` — the backend's 0–100 checklist heuristic
  * - `work` / `skills` — stand-ins for the `WorkExperienceResponse` /
  *   `ResumeSkillResponse` lists the detail view carries
+ * - `education` / `projects` / `certifications` / `awards` / `languages` —
+ *   mirrors of the per-section entities the resume service keeps
+ *   (EducationController, ProjectController, …) shown in the view sidebar
  * The store is the seam: swap it for the endpoints (`POST /api/resumes/
  * create`, `PUT /api/resumes/{id}` for title/template/visibility,
  * `POST /api/resumes/{id}/set-default`, `DELETE /api/resumes/{id}` — soft
@@ -40,6 +43,58 @@ export interface ResumeWorkEntry {
   detail: string
 }
 
+/**
+ * Section records mirror the resume-service entities one-to-one
+ * (`Education`, `Project`, `Certification`, `Award`, `Language`), so the
+ * view sidebar can render each section exactly as the backend stores it.
+ */
+export interface ResumeEducationEntry {
+  institutionName: string
+  degree: string
+  fieldOfStudy: string
+  grade: string | null
+  period: string
+  isCurrentlyStudying: boolean
+}
+
+export interface ResumeProjectEntry {
+  title: string
+  description: string
+  technologies: string[]
+  projectUrl: string | null
+}
+
+export interface ResumeCertificationEntry {
+  name: string
+  issuingOrganization: string
+  /** ISO date */
+  issueDate: string
+  expirationDate: string | null
+  credentialId: string | null
+}
+
+export interface ResumeAwardEntry {
+  title: string
+  issuer: string
+  /** ISO date */
+  dateAwarded: string
+  description: string | null
+}
+
+/** `LanguageProficiency`: BASIC / CONVERSATIONAL / FLUENT. */
+export type ResumeLanguageProficiency = 'BASIC' | 'CONVERSATIONAL' | 'FLUENT'
+
+export const LANGUAGE_PROFICIENCY_LABEL: Record<ResumeLanguageProficiency, string> = {
+  BASIC: 'Basic',
+  CONVERSATIONAL: 'Conversational',
+  FLUENT: 'Fluent',
+}
+
+export interface ResumeLanguageEntry {
+  languageName: string
+  proficiency: ResumeLanguageProficiency
+}
+
 export interface ResumeItem {
   id: string
   title: string
@@ -51,6 +106,11 @@ export interface ResumeItem {
   summary: string
   work: ResumeWorkEntry[]
   skills: string[]
+  education: ResumeEducationEntry[]
+  projects: ResumeProjectEntry[]
+  certifications: ResumeCertificationEntry[]
+  awards: ResumeAwardEntry[]
+  languages: ResumeLanguageEntry[]
   completionScore: number
   /** `Instant` timestamps. */
   createdAt: string
@@ -84,6 +144,61 @@ let resumes: ResumeItem[] = [
       },
     ],
     skills: ['JavaScript', 'React', 'TypeScript', 'Playwright', 'CI/CD', 'Git'],
+    education: [
+      {
+        institutionName: 'Islamic University of Technology',
+        degree: 'B.Sc. Engineering',
+        fieldOfStudy: 'Computer Science & Engineering',
+        grade: '3.71 CGPA',
+        period: '2016 – 2020',
+        isCurrentlyStudying: false,
+      },
+      {
+        institutionName: 'Rajuk Uttara Model College',
+        degree: 'HSC',
+        fieldOfStudy: 'Science',
+        grade: null,
+        period: '2014 – 2016',
+        isCurrentlyStudying: false,
+      },
+    ],
+    projects: [
+      {
+        title: 'Checkout rebuild — Lumen Retail',
+        description:
+          'Led the React rewrite of the checkout flow around a shared design-system component library.',
+        technologies: ['React', 'TypeScript', 'Storybook'],
+        projectUrl: null,
+      },
+      {
+        title: 'Neumorphic UI kit',
+        description:
+          'Open-source shadcn component kit that later became the design system used across this portal.',
+        technologies: ['Tailwind CSS', 'Base UI'],
+        projectUrl: 'github.com/sahil-hossain/neu-kit',
+      },
+    ],
+    certifications: [
+      {
+        name: 'AWS Certified Cloud Practitioner',
+        issuingOrganization: 'Amazon Web Services',
+        issueDate: '2023-08-01',
+        expirationDate: null,
+        credentialId: 'AWS-CCP-8842',
+      },
+    ],
+    awards: [
+      {
+        title: 'Champion — Inter-university programming contest',
+        issuer: 'IUT CSE Society',
+        dateAwarded: '2019-11-20',
+        description: null,
+      },
+    ],
+    languages: [
+      { languageName: 'Bengali', proficiency: 'FLUENT' },
+      { languageName: 'English', proficiency: 'CONVERSATIONAL' },
+    ],
     completionScore: 92,
     createdAt: '2025-01-12T10:00:00Z',
     updatedAt: '2025-11-10T09:15:00Z',
@@ -114,6 +229,20 @@ let resumes: ResumeItem[] = [
       },
     ],
     skills: ['Canva', 'Zeplin', 'Communication', 'Problem Solving', 'SEO'],
+    education: [
+      {
+        institutionName: 'University of Dhaka',
+        degree: 'BBA',
+        fieldOfStudy: 'Marketing',
+        grade: null,
+        period: '2017 – 2021',
+        isCurrentlyStudying: false,
+      },
+    ],
+    projects: [],
+    certifications: [],
+    awards: [],
+    languages: [{ languageName: 'Bengali', proficiency: 'FLUENT' }],
     completionScore: 74,
     createdAt: '2024-06-02T08:00:00Z',
     updatedAt: '2025-09-28T14:30:00Z',
@@ -137,6 +266,20 @@ let resumes: ResumeItem[] = [
       },
     ],
     skills: ['SQL', 'Excel', 'Power BI', 'Python'],
+    education: [
+      {
+        institutionName: 'Islamic University of Technology',
+        degree: 'B.Sc. Engineering',
+        fieldOfStudy: 'Computer Science & Engineering',
+        grade: '3.58 CGPA',
+        period: '2020 – 2024',
+        isCurrentlyStudying: false,
+      },
+    ],
+    projects: [],
+    certifications: [],
+    awards: [],
+    languages: [],
     completionScore: 55,
     createdAt: '2025-10-20T11:00:00Z',
     updatedAt: '2025-10-20T11:00:00Z',
@@ -209,6 +352,11 @@ export function createResume(input: {
     summary: '',
     work: [],
     skills: [],
+    education: [],
+    projects: [],
+    certifications: [],
+    awards: [],
+    languages: [],
     completionScore: 0,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
