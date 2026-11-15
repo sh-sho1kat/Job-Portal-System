@@ -352,19 +352,23 @@ export function ResumesPage() {
   }
 
   return (
-    <div className="min-h-dvh">
+    <div className={cn('flex flex-col', viewing ? 'h-dvh overflow-hidden' : 'min-h-dvh')}>
+      <SiteNavbar query={query} location={location} onQueryChange={setQuery} onLocationChange={setLocation} />
+
       <SidebarProvider
         open={viewing !== null}
         onOpenChange={(open) => {
           // The sidebar's own shortcut (Ctrl/Cmd+B) while viewing closes it.
           if (!open) setViewingId(null)
         }}
+        className={viewing ? 'flex-1' : undefined}
       >
         {/* The left section rail — the resume service's stored sections
             (personal info, summary, work, education, skills, projects,
             certifications, awards, languages, settings). On desktop the
             section content renders in the main area beside it; on mobile
-            the rail is a left sheet carrying menu + content. */}
+            the rail is a left sheet carrying menu + content. The navbar
+            stays above the shell, so the rail starts beneath it. */}
         {viewing && (
           <ResumeViewSidebar
             key={viewing.id}
@@ -374,8 +378,7 @@ export function ResumesPage() {
             onClose={() => setViewingId(null)}
           />
         )}
-        <SidebarInset>
-          <SiteNavbar query={query} location={location} onQueryChange={setQuery} onLocationChange={setLocation} />
+        <SidebarInset className={viewing ? 'md:overflow-y-auto' : undefined}>
 
           {viewing && !isMobile ? (
             <ResumeViewDetail resume={viewing} section={viewSection} />

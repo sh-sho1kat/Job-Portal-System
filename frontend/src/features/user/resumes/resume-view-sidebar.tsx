@@ -32,6 +32,7 @@ import {
 } from '@/components/ui/sidebar'
 import { ResumePreviewDialog } from '@/features/user/jobs/apply/steps/resume-step'
 import { ACCOUNT, fullName } from '@/features/user/profile/data'
+import { Separator } from '@/components/ui/separator'
 import { cn } from '@/lib/utils'
 import type { ResumeItem } from './data'
 import {
@@ -68,28 +69,6 @@ const SECTIONS = [
 ] as const
 
 export type ResumeSectionId = (typeof SECTIONS)[number]['id']
-
-/** Entry counts for the rail — lists only; identity/summary/settings are single. */
-function sectionCount(resume: ResumeItem, id: ResumeSectionId): number | null {
-  switch (id) {
-    case 'work':
-      return resume.work.length
-    case 'education':
-      return resume.education.length
-    case 'skills':
-      return resume.skills.length
-    case 'projects':
-      return resume.projects.length
-    case 'certifications':
-      return resume.certifications.length
-    case 'awards':
-      return resume.awards.length
-    case 'languages':
-      return resume.languages.length
-    default:
-      return null
-  }
-}
 
 /** Label/value row used across Personal Info and Settings. */
 function MetaRow({ label, children }: { label: string; children: React.ReactNode }) {
@@ -157,8 +136,8 @@ export function SectionContent({ resume, section }: { resume: ResumeItem; sectio
             ))}
           </MetaList>
           <p className="text-[13px] leading-relaxed text-[var(--muted-foreground)]">
-            City, country and profile links (LinkedIn, GitHub, portfolio, website) live in the
-            backend's personal-info record — they appear here once section editing arrives.
+            City, country and profile links aren't on this resume yet — they appear here once
+            section editing arrives.
           </p>
         </div>
       )
@@ -352,7 +331,7 @@ export function SectionContent({ resume, section }: { resume: ResumeItem; sectio
             <MetaRow label="Last updated">{formatResumeDate(resume.updatedAt)}</MetaRow>
           </MetaList>
           <p className="text-[13px] leading-relaxed text-[var(--muted-foreground)]">
-            Title, template and visibility are edited from the Edit dialog; per-section editing
+            Title, template and visibility are edited from the Edit dialog — per-section editing
             arrives with the backend endpoints.
           </p>
         </div>
@@ -377,11 +356,11 @@ function ViewHeader({ resume, onClose }: { resume: ResumeItem; onClose: () => vo
           className="size-4 text-[var(--neu-accent-ink)]"
         />
       </span>
-      <div className="min-w-0">
-        <p className="truncate text-[13px] font-semibold text-[var(--foreground)]">
+      <div className={cn('min-w-0 flex-1', isMobile && 'pr-8')}>
+        <p className="line-clamp-2 text-[13px] font-semibold leading-snug text-[var(--foreground)]">
           {resume.title}
         </p>
-        <p className="text-[11px] text-[var(--muted-foreground)]">
+        <p className="mt-0.5 text-[11px] text-[var(--muted-foreground)]">
           Updated {formatResumeDate(resume.updatedAt)}
         </p>
       </div>
@@ -391,7 +370,7 @@ function ViewHeader({ resume, onClose }: { resume: ResumeItem; onClose: () => vo
           size="icon"
           aria-label="Close resume view"
           onClick={onClose}
-          className="ml-auto size-8 shrink-0"
+          className="size-8 shrink-0"
         >
           <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="size-4">
             <path d="m6 6 12 12M6 18 18 6" />
@@ -490,15 +469,16 @@ export function ResumeViewSidebar({
   }, [isMobile, openMobile])
 
   return (
+    // Desktop: the shell row is viewport-minus-navbar, so the rail fills it
+    // exactly. (Mobile renders as a sheet — height classes must not leak
+    // onto its fixed popup.)
     <Sidebar
       side="left"
       collapsible="none"
       mobileTitle={resume.title}
       mobileDescription="Resume sections"
       closeLabel="Close resume view"
-      // Desktop: pin the rail while the page scrolls. (Mobile renders as a
-      // sheet — these must not leak onto its fixed popup.)
-      className="md:sticky md:top-0 md:h-dvh md:self-start"
+      className="md:h-full"
     >
       <ViewHeader resume={resume} onClose={onClose} />
       <SidebarContent className="p-2">
@@ -507,7 +487,6 @@ export function ResumeViewSidebar({
           <SidebarGroupContent>
             <SidebarMenu>
               {SECTIONS.map(({ id, label, icon }) => {
-                const count = sectionCount(resume, id)
                 const active = id === section
                 return (
                   <SidebarMenuItem key={id}>
@@ -515,6 +494,11 @@ export function ResumeViewSidebar({
                       isActive={active}
                       aria-current={active ? 'true' : undefined}
                       onClick={() => onSectionChange(id)}
+                      className={cn(
+                        'border border-transparent',
+                        active &&
+                          'border-[color:var(--neu-selected-border)] [background-image:var(--neu-fill-inset)]',
+                      )}
                     >
                       <HugeiconsIcon
                         icon={icon}
@@ -523,11 +507,6 @@ export function ResumeViewSidebar({
                         className={cn('size-4 shrink-0', !active && 'text-[var(--muted-foreground)]')}
                       />
                       <span className="min-w-0 flex-1 truncate">{label}</span>
-                      {count !== null && (
-                        <span className="shrink-0 text-[11px] font-semibold tabular-nums text-[var(--muted-foreground)] opacity-80">
-                          {count}
-                        </span>
-                      )}
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                 )
@@ -559,8 +538,9 @@ export function ResumeViewDetail({
   resume: ResumeItem
   section: ResumeSectionId
 }) {
+  const active = SECTIONS.find(({ id }) => id === section)
   return (
-    <div className="mx-auto w-full max-w-3xl px-4 pb-16 pt-8 md:px-6">
+    <div className="mx-auto w-full max-w-3xl px-4 pb-16 pt-10 md:px-8">
       <header className="flex flex-col gap-2">
         <h1 className="text-[22px] font-bold tracking-tight text-[var(--foreground)]">
           {resume.title}
@@ -585,6 +565,29 @@ export function ResumeViewDetail({
           </span>
         </div>
       </header>
+
+      {/* Orientation row — names the section being read, with the same icon
+          language as the rail. */}
+      <div className="mt-8 flex items-center gap-3">
+        {active && (
+          <span
+            aria-hidden="true"
+            className="flex size-8 shrink-0 items-center justify-center rounded-[var(--neu-radius-control)] bg-[var(--neu-surface)] [background-image:var(--neu-fill-inset)] shadow-[var(--neu-shadow-inset)]"
+          >
+            <HugeiconsIcon
+              icon={active.icon}
+              strokeWidth={1.8}
+              aria-hidden="true"
+              className="size-4 text-[var(--neu-accent-ink)]"
+            />
+          </span>
+        )}
+        <h2 className="text-[15px] font-semibold tracking-tight text-[var(--foreground)]">
+          {active?.label}
+        </h2>
+        <Separator className="flex-1" />
+      </div>
+
       <div className="mt-6 min-w-0">
         <SectionContent resume={resume} section={section} />
       </div>
