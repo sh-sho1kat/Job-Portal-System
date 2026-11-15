@@ -17,7 +17,19 @@ import * as React from 'react'
 
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Sheet, SheetContent, SheetDescription, SheetTitle } from '@/components/ui/sheet'
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarFooter,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarGroupLabel,
+  SidebarHeader,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  useSidebar,
+} from '@/components/ui/sidebar'
 import { ResumePreviewDialog } from '@/features/user/jobs/apply/steps/resume-step'
 import { ACCOUNT, fullName } from '@/features/user/profile/data'
 import { cn } from '@/lib/utils'
@@ -30,14 +42,16 @@ import {
 } from './data'
 
 /**
- * View-resume sidebar — the resume's stored sections, one nav rail entry
- * per backend section. The resume service keeps each of these as its own
+ * View-resume sidebar — the resume's stored sections, one rail entry per
+ * backend section. The resume service keeps each of these as its own
  * aggregate (PersonalInfoController, WorkExperienceController,
  * EducationController, ResumeSkillController, ProjectController,
  * CertificationController, AwardController, LanguageController) plus the
  * `UpdateResumeRequest` fields under Settings; the section order here is
- * the resume document's reading order. Read-only for now — section editing
- * lands with the backend endpoints.
+ * the resume document's reading order. Rendered with the shared Sidebar
+ * primitive: a left rail on desktop (section menu + detail in the main
+ * area), a left sheet with menu + content stacked on mobile. Read-only
+ * for now — section editing lands with the backend endpoints.
  */
 
 const SECTIONS = [
@@ -80,7 +94,7 @@ function sectionCount(resume: ResumeItem, id: ResumeSectionId): number | null {
 /** Label/value row used across Personal Info and Settings. */
 function MetaRow({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div className="grid min-w-0 grid-cols-[7rem_minmax(0,1fr)] items-baseline gap-3 py-2 max-[420px]:grid-cols-1 max-[420px]:gap-0.5">
+    <div className="grid min-w-0 grid-cols-[7rem_minmax(0,1fr)] items-baseline gap-3 py-2 max-sm:grid-cols-1 max-sm:gap-0.5">
       <dt className="text-[13px] text-[var(--muted-foreground)]">{label}</dt>
       <dd className="min-w-0 text-[13px] font-medium leading-relaxed text-[var(--foreground)]">
         {children}
@@ -106,7 +120,7 @@ function SectionEmpty({ message }: { message: string }) {
 }
 
 /** The apply flow's preview dialog consumes its own `Resume` shape; this
- *  adapts the list item onto it (same adapter the card grid used). */
+ *  adapts the list item onto it. */
 function toPreviewShape(item: ResumeItem) {
   return {
     id: item.id,
@@ -120,7 +134,9 @@ function toPreviewShape(item: ResumeItem) {
   }
 }
 
-function SectionContent({ resume, section }: { resume: ResumeItem; section: ResumeSectionId }) {
+/** The active section's stored content — shared by the desktop detail and
+ *  the mobile sheet. */
+export function SectionContent({ resume, section }: { resume: ResumeItem; section: ResumeSectionId }) {
   switch (section) {
     case 'personal-info': {
       // Same candidate as everywhere else in the portal — identity fields
@@ -344,147 +360,234 @@ function SectionContent({ resume, section }: { resume: ResumeItem; section: Resu
   }
 }
 
-/**
- * One resume's section view. Remounted per resume (via `key` upstream) so
- * every open starts at the top of the document — no reset effect needed.
- */
-function ResumeViewPane({ resume }: { resume: ResumeItem }) {
-  const [section, setSection] = React.useState<ResumeSectionId>('personal-info')
-  const [docPreview, setDocPreview] = React.useState(false)
-
+/** The rail's identity block: file plate, title, updated date, and (desktop
+ *  only) the close control — the mobile sheet has the sheet's own close. */
+function ViewHeader({ resume, onClose }: { resume: ResumeItem; onClose: () => void }) {
+  const { isMobile } = useSidebar()
   return (
-    <>
-      <div className="flex min-h-0 flex-1 flex-col">
-        <header className="flex flex-col gap-2.5">
-          <div className="flex items-start gap-3">
-            <span
-              aria-hidden="true"
-              className="flex size-9 shrink-0 items-center justify-center rounded-[10px] bg-[var(--neu-surface)] [background-image:var(--neu-fill-inset)] shadow-[var(--neu-shadow-inset)]"
-            >
-              <HugeiconsIcon
-                icon={File02Icon}
-                strokeWidth={1.8}
-                aria-hidden="true"
-                className="size-4 text-[var(--neu-accent-ink)]"
-              />
-            </span>
-            <div className="min-w-0 pr-8">
-              <SheetTitle className="text-base leading-snug">{resume.title}</SheetTitle>
-              <SheetDescription className="mt-0.5 text-[13px]">
-                Last updated {formatResumeDate(resume.updatedAt)}
-              </SheetDescription>
-            </div>
-          </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <Badge variant="soft" className="rounded-full px-2.5 py-0.5 text-[11px] font-semibold">
-              {TEMPLATE_LABEL[resume.template]}
-            </Badge>
-            <Badge variant="outline" className="rounded-full px-2.5 py-0.5 text-[11px] font-semibold">
-              {VISIBILITY_LABEL[resume.visibility]}
-            </Badge>
-            {resume.isDefault && (
-              <Badge variant="primary" className="rounded-full px-2.5 py-0.5 text-[11px] font-semibold">
-                Default
-              </Badge>
+    <SidebarHeader>
+      <span
+        aria-hidden="true"
+        className="flex size-9 shrink-0 items-center justify-center rounded-[10px] bg-[var(--neu-surface)] [background-image:var(--neu-fill-inset)] shadow-[var(--neu-shadow-inset)]"
+      >
+        <HugeiconsIcon
+          icon={File02Icon}
+          strokeWidth={1.8}
+          aria-hidden="true"
+          className="size-4 text-[var(--neu-accent-ink)]"
+        />
+      </span>
+      <div className="min-w-0">
+        <p className="truncate text-[13px] font-semibold text-[var(--foreground)]">
+          {resume.title}
+        </p>
+        <p className="text-[11px] text-[var(--muted-foreground)]">
+          Updated {formatResumeDate(resume.updatedAt)}
+        </p>
+      </div>
+      {!isMobile && (
+        <Button
+          variant="ghost"
+          size="icon"
+          aria-label="Close resume view"
+          onClick={onClose}
+          className="ml-auto size-8 shrink-0"
+        >
+          <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="size-4">
+            <path d="m6 6 12 12M6 18 18 6" />
+          </svg>
+        </Button>
+      )}
+    </SidebarHeader>
+  )
+}
+
+/** Completion meter + document preview in the rail footer. */
+function ViewFooter({ resume }: { resume: ResumeItem }) {
+  const [docPreview, setDocPreview] = React.useState(false)
+  return (
+    <SidebarFooter>
+      <div>
+        <div className="flex items-baseline justify-between px-1">
+          <span className="text-[11px] font-medium text-[var(--muted-foreground)]">Completion</span>
+          <span className="text-[11px] font-semibold tabular-nums text-[var(--foreground)]">
+            {resume.completionScore}%
+          </span>
+        </div>
+        <div
+          role="progressbar"
+          aria-label="Completion"
+          aria-valuenow={resume.completionScore}
+          aria-valuemin={0}
+          aria-valuemax={100}
+          className="mt-1 h-1.5 min-w-0 overflow-hidden rounded-full bg-[var(--neu-surface)] [background-image:var(--neu-fill-inset)] shadow-[var(--neu-shadow-inset)]"
+        >
+          <div
+            className={cn(
+              'h-full rounded-full',
+              resume.completionScore >= 100
+                ? 'bg-[color:var(--success)]'
+                : '[background-image:var(--neu-fill-primary)]',
             )}
-            <span className="text-xs tabular-nums text-[var(--muted-foreground)]">
-              {resume.completionScore}% complete
-            </span>
-            <Button
-              variant="soft"
-              size="sm"
-              className="ml-auto"
-              onClick={() => setDocPreview(true)}
-            >
-              <HugeiconsIcon icon={ViewIcon} strokeWidth={1.8} aria-hidden="true" />
-              Document preview
-            </Button>
-          </div>
-        </header>
-
-        {/* Rail + content. The rail sticks while the content scrolls
-            with the sheet on desktop; chips wrap on mobile. */}
-        <div className="mt-5 flex min-w-0 flex-1 flex-col gap-4 md:grid md:grid-cols-[10.5rem_minmax(0,1fr)] md:gap-5">
-          <nav
-            aria-label="Resume sections"
-            className="flex min-w-0 flex-wrap gap-1.5 md:sticky md:top-0 md:self-start md:flex-col"
-          >
-            {SECTIONS.map(({ id, label, icon }) => {
-              const count = sectionCount(resume, id)
-              const active = id === section
-              return (
-                <button
-                  key={id}
-                  type="button"
-                  aria-current={active ? 'true' : undefined}
-                  onClick={() => setSection(id)}
-                  className={cn(
-                    'flex min-w-0 cursor-pointer items-center gap-2 rounded-[var(--neu-radius-control)] px-3 py-2 text-left text-[13px] font-medium transition-[background-color,box-shadow,color] duration-[var(--neu-duration)] outline-none focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-2 focus-visible:outline-[color:var(--ring)]',
-                    active
-                      ? 'border border-[color:var(--neu-selected-border)] bg-[var(--neu-surface)] [background-image:var(--neu-fill-selected)] shadow-[var(--neu-shadow-inset-sm)] text-[var(--foreground)]'
-                      : 'text-[var(--muted-foreground)] hover:text-[var(--foreground)]',
-                  )}
-                >
-                  <HugeiconsIcon
-                    icon={icon}
-                    strokeWidth={1.8}
-                    aria-hidden="true"
-                    className={cn('size-4 shrink-0', active && 'text-[var(--neu-accent-ink)]')}
-                  />
-                  <span className="min-w-0 flex-1 truncate">{label}</span>
-                  {count !== null && (
-                    <span
-                      className={cn(
-                        'shrink-0 rounded-full px-1.5 text-[11px] font-semibold tabular-nums',
-                        active
-                          ? 'text-[var(--neu-accent-ink)]'
-                          : 'text-[var(--muted-foreground)] opacity-70',
-                      )}
-                    >
-                      {count}
-                    </span>
-                  )}
-                </button>
-              )
-            })}
-          </nav>
-
-          <div className="min-w-0 md:max-h-[calc(100dvh-18rem)] md:overflow-y-auto md:pr-1">
-            <SectionContent resume={resume} section={section} />
-          </div>
+            style={{ width: `${resume.completionScore}%` }}
+          />
         </div>
       </div>
+      <Button variant="soft" className="w-full" onClick={() => setDocPreview(true)}>
+        <HugeiconsIcon icon={ViewIcon} strokeWidth={1.8} aria-hidden="true" />
+        Document preview
+      </Button>
 
       {/* The rendered document, kept one click away from the section view. */}
       <ResumePreviewDialog
         resume={docPreview ? toPreviewShape(resume) : undefined}
         onClose={() => setDocPreview(false)}
       />
-    </>
+    </SidebarFooter>
   )
 }
 
 /**
- * The View sidebar for one resume: header (title + template/visibility
- * meta), a section rail matching the backend's resume sections, and the
- * active section's stored content.
+ * The left sidebar for one resume. On desktop it is a persistent rail
+ * (section menu; the section content renders in the main area next to it);
+ * on mobile the Sidebar primitive renders it as a left sheet with the
+ * content stacked under the menu. Remounted per resume via `key`, so every
+ * open starts at the top of the document.
  */
-export function ResumeViewSheet({
+export function ResumeViewSidebar({
   resume,
+  section,
+  onSectionChange,
   onClose,
 }: {
-  resume: ResumeItem | null
+  resume: ResumeItem
+  section: ResumeSectionId
+  onSectionChange: (section: ResumeSectionId) => void
   onClose: () => void
 }) {
+  const { isMobile, openMobile, setOpenMobile } = useSidebar()
+
+  // On mobile the rail renders as a left sheet driven by the sidebar
+  // context: open it when the view mounts, and when the sheet is dismissed
+  // (its own close button or Escape) mirror that back into the page's view
+  // state so the two never disagree. The `everOpen` ref keeps the dismissal
+  // sync from firing before the sheet has actually opened — including
+  // through StrictMode's double effect run.
+  const everOpenRef = React.useRef(false)
+  const onCloseRef = React.useRef(onClose)
+  React.useEffect(() => {
+    onCloseRef.current = onClose
+  }, [onClose])
+  React.useEffect(() => {
+    if (isMobile && openMobile) everOpenRef.current = true
+  }, [isMobile, openMobile])
+  React.useEffect(() => {
+    if (!isMobile) return
+    setOpenMobile(true)
+  }, [isMobile, setOpenMobile])
+  React.useEffect(() => {
+    if (isMobile && everOpenRef.current && !openMobile) onCloseRef.current()
+  }, [isMobile, openMobile])
+
   return (
-    <Sheet open={resume !== null} onOpenChange={(open) => !open && onClose()}>
-      <SheetContent
-        side="right"
-        closeLabel="Close resume view"
-        className="w-[min(46rem,calc(100vw-1rem))]!"
-      >
-        {resume && <ResumeViewPane key={resume.id} resume={resume} />}
-      </SheetContent>
-    </Sheet>
+    <Sidebar
+      side="left"
+      collapsible="none"
+      mobileTitle={resume.title}
+      mobileDescription="Resume sections"
+      closeLabel="Close resume view"
+      // Desktop: pin the rail while the page scrolls. (Mobile renders as a
+      // sheet — these must not leak onto its fixed popup.)
+      className="md:sticky md:top-0 md:h-dvh md:self-start"
+    >
+      <ViewHeader resume={resume} onClose={onClose} />
+      <SidebarContent className="p-2">
+        <SidebarGroup className="py-1">
+          <SidebarGroupLabel>Sections</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {SECTIONS.map(({ id, label, icon }) => {
+                const count = sectionCount(resume, id)
+                const active = id === section
+                return (
+                  <SidebarMenuItem key={id}>
+                    <SidebarMenuButton
+                      isActive={active}
+                      aria-current={active ? 'true' : undefined}
+                      onClick={() => onSectionChange(id)}
+                    >
+                      <HugeiconsIcon
+                        icon={icon}
+                        strokeWidth={1.8}
+                        aria-hidden="true"
+                        className={cn('size-4 shrink-0', !active && 'text-[var(--muted-foreground)]')}
+                      />
+                      <span className="min-w-0 flex-1 truncate">{label}</span>
+                      {count !== null && (
+                        <span className="shrink-0 text-[11px] font-semibold tabular-nums text-[var(--muted-foreground)] opacity-80">
+                          {count}
+                        </span>
+                      )}
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                )
+              })}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        {/* Mobile: the sheet carries the section content itself, stacked
+            under the menu. */}
+        {isMobile && (
+          <SidebarGroup className="min-w-0 py-1">
+            <SidebarGroupContent className="min-w-0">
+              <SectionContent resume={resume} section={section} />
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
+      </SidebarContent>
+      <ViewFooter resume={resume} />
+    </Sidebar>
+  )
+}
+
+/** Desktop: the section detail shown in the main area beside the rail. */
+export function ResumeViewDetail({
+  resume,
+  section,
+}: {
+  resume: ResumeItem
+  section: ResumeSectionId
+}) {
+  return (
+    <div className="mx-auto w-full max-w-3xl px-4 pb-16 pt-8 md:px-6">
+      <header className="flex flex-col gap-2">
+        <h1 className="text-[22px] font-bold tracking-tight text-[var(--foreground)]">
+          {resume.title}
+        </h1>
+        <p className="text-sm text-[var(--muted-foreground)]">
+          Last updated {formatResumeDate(resume.updatedAt)}
+        </p>
+        <div className="flex flex-wrap items-center gap-2">
+          <Badge variant="soft" className="rounded-full px-2.5 py-0.5 text-[11px] font-semibold">
+            {TEMPLATE_LABEL[resume.template]}
+          </Badge>
+          <Badge variant="outline" className="rounded-full px-2.5 py-0.5 text-[11px] font-semibold">
+            {VISIBILITY_LABEL[resume.visibility]}
+          </Badge>
+          {resume.isDefault && (
+            <Badge variant="primary" className="rounded-full px-2.5 py-0.5 text-[11px] font-semibold">
+              Default
+            </Badge>
+          )}
+          <span className="text-xs tabular-nums text-[var(--muted-foreground)]">
+            {resume.completionScore}% complete
+          </span>
+        </div>
+      </header>
+      <div className="mt-6 min-w-0">
+        <SectionContent resume={resume} section={section} />
+      </div>
+    </div>
   )
 }

@@ -5,7 +5,11 @@ import * as React from "react";
 const MOBILE_BREAKPOINT = 768;
 
 export function useIsMobile() {
-  const [isMobile, setIsMobile] = React.useState(false);
+  // Initial value read synchronously — this is a client-only SPA, and the
+  // false default made the first paint render the desktop layout on phones.
+  const [isMobile, setIsMobile] = React.useState(
+    () => window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT - 1}px)`).matches,
+  );
 
   React.useEffect(() => {
     const media = window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT - 1}px)`);

@@ -28,7 +28,13 @@ import { Input } from '@/components/ui/input'
 import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card'
 import { Select, SelectItem } from '@/components/ui/select'
 import { Separator } from '@/components/ui/separator'
-import { ResumeViewSheet } from './resume-view-sheet'
+import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar'
+import { useIsMobile } from '@/hooks/use-mobile'
+import {
+  ResumeViewDetail,
+  ResumeViewSidebar,
+  type ResumeSectionId,
+} from './resume-view-sidebar'
 import { cn } from '@/lib/utils'
 import type { ResumeItem, ResumeTemplateType, ResumeVisibility } from './data'
 import {
@@ -280,15 +286,18 @@ function ResumeFields({
  * dashed new-resume tile closing the grid. Data mirrors the resume service
  * (`GET /api/resumes/my-resumes`); create/edit mirror `POST /create` and
  * `PUT /{id}`, and AI feedback stands in for
- * `POST /api/ai/resume/career-feedback`. View opens the section sidebar
- * (resume-view-sheet). Reached from the navbar's "My resumes" link.
+ * `POST /api/ai/resume/career-feedback`. View opens the left section
+ * sidebar (resume-view-sidebar, the shared Sidebar primitive). Reached
+ * from the navbar's "My resumes" link.
  */
 export function ResumesPage() {
   const [query, setQuery] = React.useState('')
   const [location, setLocation] = React.useState('')
   const resumes = useResumes()
+  const isMobile = useIsMobile()
 
   const [viewingId, setViewingId] = React.useState<string | null>(null)
+  const [viewSection, setViewSection] = React.useState<ResumeSectionId>('personal-info')
   const [editingId, setEditingId] = React.useState<string | null>(null)
   const [deletingId, setDeletingId] = React.useState<string | null>(null)
   const [feedbackId, setFeedbackId] = React.useState<string | null>(null)
@@ -319,6 +328,13 @@ export function ResumesPage() {
     setEditingId(item.id)
   }
 
+  // View opens the left section rail; every open starts at the top of the
+  // document.
+  const openView = (item: ResumeItem) => {
+    setViewingId(item.id)
+    setViewSection('personal-info')
+  }
+
   const submitEdit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     const trimmed = title.trim()
@@ -337,9 +353,34 @@ export function ResumesPage() {
 
   return (
     <div className="min-h-dvh">
-      <SiteNavbar query={query} location={location} onQueryChange={setQuery} onLocationChange={setLocation} />
+      <SidebarProvider
+        open={viewing !== null}
+        onOpenChange={(open) => {
+          // The sidebar's own shortcut (Ctrl/Cmd+B) while viewing closes it.
+          if (!open) setViewingId(null)
+        }}
+      >
+        {/* The left section rail — the resume service's stored sections
+            (personal info, summary, work, education, skills, projects,
+            certifications, awards, languages, settings). On desktop the
+            section content renders in the main area beside it; on mobile
+            the rail is a left sheet carrying menu + content. */}
+        {viewing && (
+          <ResumeViewSidebar
+            key={viewing.id}
+            resume={viewing}
+            section={viewSection}
+            onSectionChange={setViewSection}
+            onClose={() => setViewingId(null)}
+          />
+        )}
+        <SidebarInset>
+          <SiteNavbar query={query} location={location} onQueryChange={setQuery} onLocationChange={setLocation} />
 
-      <main className="mx-auto w-full max-w-5xl px-4 pb-16 pt-8 md:px-6">
+          {viewing && !isMobile ? (
+            <ResumeViewDetail resume={viewing} section={viewSection} />
+          ) : (
+          <main className="mx-auto w-full max-w-5xl px-4 pb-16 pt-8 md:px-6">
         <header className="flex flex-wrap items-start justify-between gap-3">
           <div className="min-w-0">
             <h1 className="text-[22px] font-bold tracking-tight text-[var(--foreground)]">My resumes</h1>
@@ -375,7 +416,7 @@ export function ResumesPage() {
             <ResumeCard
               key={resume.id}
               resume={resume}
-              onView={(item) => setViewingId(item.id)}
+              onView={openView}
               onEdit={openEdit}
               onDelete={(item) => setDeletingId(item.id)}
               onFeedback={(item) => setFeedbackId(item.id)}
@@ -384,12 +425,9 @@ export function ResumesPage() {
           <NewResumeTile onClick={openCreate} />
         </div>
       </main>
-
-      {/* View — the section sidebar mirroring the resume service's stored
-          sections (personal info, summary, work, education, skills,
-          projects, certifications, awards, languages, settings). The
-          rendered document preview stays reachable from its header. */}
-      <ResumeViewSheet resume={viewing} onClose={() => setViewingId(null)} />
+          )}
+        </SidebarInset>
+      </SidebarProvider>
 
       {/* AI career feedback — stands in for POST /api/ai/resume/career-feedback
           (CareerFeedbackResponse): profile strength, summary, shortlisting
