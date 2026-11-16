@@ -2541,7 +2541,7 @@
           "name": "Resume Operations",
           "item": [
             {
-              "name": "Update personal info (patch)",
+              "name": "Update personal info",
               "request": {
                 "method": "PATCH",
                 "url": {
@@ -2569,14 +2569,14 @@
                 ],
                 "body": {
                   "mode": "raw",
-                  "raw": "{\"firstName\": \"Alex\", \"lastName\": \"Keller\", \"headline\": \"Backend engineer\", \"email\": \"alex@example.com\"}",
+                  "raw": "{\n  \"firstName\": \"Alex\",\n  \"middleName\": null,\n  \"lastName\": \"Keller\",\n  \"headline\": \"Backend engineer\",\n  \"email\": \"alex@example.com\",\n  \"phone\": \"+8801712345678\",\n  \"gender\": \"MALE\",\n  \"nationality\": \"Bangladeshi\",\n  \"dateOfBirth\": \"01-15-1999\",\n  \"presentAddress\": {\n    \"address\": \"House 10, Road 12, Banani\",\n    \"city\": \"Dhaka\",\n    \"state\": \"Dhaka\",\n    \"country\": \"Bangladesh\",\n    \"zipCode\": \"1213\"\n  },\n  \"permanentAddress\": {\n    \"address\": \"Village Rangtia, Post Katiadi\",\n    \"city\": \"Kishoreganj\",\n    \"state\": \"Dhaka Division\",\n    \"country\": \"Bangladesh\",\n    \"zipCode\": \"2340\"\n  },\n  \"linkedInUrl\": \"https://www.linkedin.com/in/alexkeller\",\n  \"githubUrl\": \"https://github.com/alexkeller\",\n  \"portfolioUrl\": null,\n  \"websiteUrl\": null\n}",
                   "options": {
                     "raw": {
                       "language": "json"
                     }
                   }
                 },
-                "description": "Patch-style personal info: only supplied fields change, `null` keeps them. URLs must be http(s)."
+                "description": "Full personal-info form (validated as one document): firstName, lastName, email, phone, gender (MALE|FEMALE|OTHER), nationality, dateOfBirth (MM-dd-yyyy) and both addresses are required; middleName, headline and the four URLs are optional. URLs must be http(s). Address objects: address, city, state, country, zipCode."
               },
               "event": [
                 {
