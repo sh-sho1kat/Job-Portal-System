@@ -3,7 +3,6 @@ package com.sho1kat;
 import com.sho1kat.client.CompanyClient;
 import com.sho1kat.client.JobClient;
 import com.sho1kat.client.ResumeClient;
-import com.sho1kat.client.UserClient;
 import com.sho1kat.dto.applicationServiceDto.request.ApplicationNoteRequest;
 import com.sho1kat.dto.applicationServiceDto.request.ApplicationRequest;
 import com.sho1kat.dto.applicationServiceDto.request.CompanyApplicationFilterRequest;
@@ -12,12 +11,15 @@ import com.sho1kat.dto.applicationServiceDto.response.ApplicationNoteResponse;
 import com.sho1kat.dto.applicationServiceDto.response.ApplicationResponse;
 import com.sho1kat.dto.companyServiceDto.response.CompanySummaryResponse;
 import com.sho1kat.dto.jobServiceDto.response.JobSummaryResponse;
+import com.sho1kat.dto.ResumeServiceDto.response.PersonalInfoResponse;
 import com.sho1kat.dto.ResumeServiceDto.response.ResumeSummaryResponse;
 import com.sho1kat.dto.userServiceDto.response.CandidateSummaryResponse;
+import com.sho1kat.embeddable.Address;
 import com.sho1kat.entity.Application;
 import com.sho1kat.enums.AiShortListStatus;
 import com.sho1kat.enums.ApplicationStatus;
 import com.sho1kat.enums.EmploymentType;
+import com.sho1kat.enums.Gender;
 import com.sho1kat.enums.IndustryType;
 import com.sho1kat.enums.WorkMode;
 import com.sho1kat.event.ApplicationCountEventPublisher;
@@ -56,6 +58,7 @@ class ApplicationServiceLifecycleTest {
     private static final long JOB = 9901L;
     private static final long RESUME = 2201L;
     private static final long RESUME_OTHER = 2202L;
+    private static final long RESUME_BARE = 2203L;
     private static final long EMPLOYER = 5101L;
     private static final String EMPLOYER_ROLE = "EMPLOYER";
     private static final String ADMIN_ROLE = "ADMIN";
@@ -77,9 +80,6 @@ class ApplicationServiceLifecycleTest {
 
     @MockitoBean
     private CompanyClient companyClient;
-
-    @MockitoBean
-    private UserClient userClient;
 
     @MockitoBean
     private ResumeClient resumeClient;
@@ -104,26 +104,40 @@ class ApplicationServiceLifecycleTest {
         CandidateSummaryResponse otherCandidate = new CandidateSummaryResponse(
                 OTHER_CANDIDATE, "Nabila", null, "Rahman", "nabila@example.com", null, null);
         ResumeSummaryResponse resume = new ResumeSummaryResponse(
-                RESUME, CANDIDATE, "Backend CV", null, null,
+                RESUME, CANDIDATE, "Backend CV", personalInfo("Mitu", null, "Hoque"), null,
                 List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of());
         ResumeSummaryResponse otherResume = new ResumeSummaryResponse(
-                RESUME_OTHER, OTHER_CANDIDATE, "Backend CV Two", null, null,
+                RESUME_OTHER, OTHER_CANDIDATE, "Backend CV Two", personalInfo("Nabila", null, "Rahman"), null,
+                List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of());
+        ResumeSummaryResponse bareResume = new ResumeSummaryResponse(
+                RESUME_BARE, CANDIDATE, "Bare CV", null, null,
                 List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of());
 
         when(jobClient.getJobById(JOB)).thenReturn(job);
         when(companyClient.getCompanyById(COMPANY)).thenReturn(company);
         when(companyClient.getCompanyById(OTHER_COMPANY)).thenReturn(otherCompany);
         when(companyClient.getMyCompany()).thenReturn(company);
-        when(userClient.getUserSummary(CANDIDATE)).thenReturn(candidate);
-        when(userClient.getUserSummary(OTHER_CANDIDATE)).thenReturn(otherCandidate);
         when(resumeClient.getResume(RESUME, CANDIDATE)).thenReturn(resume);
         when(resumeClient.getResume(RESUME_OTHER, OTHER_CANDIDATE)).thenReturn(otherResume);
+        when(resumeClient.getResume(RESUME_BARE, CANDIDATE)).thenReturn(bareResume);
+        when(resumeClient.getCandidateSummary(RESUME, CANDIDATE)).thenReturn(candidate);
+        when(resumeClient.getCandidateSummary(RESUME_OTHER, OTHER_CANDIDATE)).thenReturn(otherCandidate);
     }
 
     @AfterEach
     void cleanUp() {
         applicationNoteRepository.deleteAll();
         applicationRepository.deleteAll();
+    }
+
+    private static PersonalInfoResponse personalInfo(String firstName, String middleName, String lastName) {
+        return new PersonalInfoResponse(
+                firstName, middleName, lastName, "Backend engineer",
+                firstName.toLowerCase() + "@example.com", "+8801712345678",
+                Gender.MALE, "Bangladeshi", "01-15-1999",
+                new Address("House 10, Road 12", "Dhaka", "Dhaka", "Bangladesh", "1213"),
+                new Address("Village Rangtia", "Kishoreganj", "Dhaka Division", "Bangladesh", "2340"),
+                null, null, null, null);
     }
 
     private static ApplicationRequest applyRequest(long job, long company, long resume) {
@@ -145,6 +159,9 @@ class ApplicationServiceLifecycleTest {
         // fresh application is PENDING with the ids denormalised, no screening yet
         assertThat(created.status()).isEqualTo(ApplicationStatus.PENDING);
         assertThat(created.candidate().id()).isEqualTo(CANDIDATE);
+        assertThat(created.candidate().firstName()).isEqualTo("Mitu");
+        assertThat(created.candidate().lastName()).isEqualTo("Hoque");
+        assertThat(created.candidate().email()).isEqualTo("mitu@example.com");
         assertThat(created.company().id()).isEqualTo(COMPANY);
         assertThat(created.job().id()).isEqualTo(JOB);
         assertThat(created.resume().id()).isEqualTo(RESUME);
@@ -185,6 +202,12 @@ class ApplicationServiceLifecycleTest {
     }
 
     @Test
+    void applyRequiresPersonalInfoOnTheResume() {
+        withStatus(() -> applicationService.createApplication(
+                CANDIDATE, applyRequest(JOB, COMPANY, RESUME_BARE)), ApiException.BAD_REQUEST);
+    }
+
+    @Test
     void companyInboxScopesFiltersSortsAndTransitions() {
         ApplicationResponse first = applicationService.createApplication(
                 CANDIDATE, applyRequest(JOB, COMPANY, RESUME));
@@ -220,6 +243,7 @@ class ApplicationServiceLifecycleTest {
         ApplicationResponse reviewing = applicationService.updateStatus(
                 COMPANY, second.id(), ApplicationStatus.REVIEWING, EMPLOYER, EMPLOYER_ROLE);
         assertThat(reviewing.status()).isEqualTo(ApplicationStatus.REVIEWING);
+        assertThat(reviewing.candidate().firstName()).isEqualTo("Nabila");
         applicationService.updateStatus(
                 COMPANY, second.id(), ApplicationStatus.SHORTLISTED, EMPLOYER, EMPLOYER_ROLE);
         ApplicationResponse hired = applicationService.updateStatus(
