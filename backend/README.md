@@ -853,9 +853,12 @@ at `@Order(0)`); peers reach them directly over Eureka/Feign with a shared secre
 
 ```
 application-service (candidate views + employer review inbox)
-  UserServiceClient →  GET user-service   /internal/users/{id}                       → CandidateSummaryResponse
-  ResumeClient      →  GET resume-service /internal/resumes/{resumeId}?candidateId=… → ResumeSummaryResponse
-                         (employer-safe summary; an unmatched candidateId answers 403)
+  ResumeClient      →  GET resume-service /internal/resumes/{resumeId}?candidateId=…                  → ResumeSummaryResponse
+                         (employer-safe summary; serves soft-deleted resumes too — the applied-with
+                          snapshot; an unmatched candidateId answers 404)
+  ResumeClient      →  GET resume-service /internal/resumes/{resumeId}/candidate-summary?candidateId=… → CandidateSummaryResponse
+                         (candidate identity built from the resume's personal info — not the user
+                          account; applying is refused until personal info is filled in)
   JobClient / CompanyClient → public /api/jobs/{id}, /api/companies/{id},
                          /api/companies/my-company — these keep forwarding the
                          requester's own identity for owner checks
@@ -1098,10 +1101,13 @@ The event (`com.sho1kat.event.ApplicationStatusUpdateEvent` in common-lib)
 carries `oldStatus`, `newStatus`, the candidate's name (`FirstName`,
 `MiddleName`, `LastName`), `email` and the `jobTitle`/`companyName` pair for
 the letter body. Before publishing, the publisher resolves real candidate
-contact data — `userClient.getUserSummary(candidateId)` reads user-service's
-internal summary feed (`GET /internal/users/{id}`, guarded by
-`INTERNAL_SERVICE_TOKEN`), so mails name the actual recipient. If user-service
-is unreachable, the Feign fallback publishes the event with null contact
+contact data — `resumeClient.getCandidateSummary(resumeId, candidateId)` reads
+resume-service's internal candidate-summary feed
+(`GET /internal/resumes/{resumeId}/candidate-summary`), built from the applied
+resume's `personalInfo` rather than the user account, so mails name the
+professional identity the employer reviewed (a resume deleted after applying
+is still served as the applied-with snapshot). If resume-service is
+unreachable, the Feign fallback publishes the event with null contact
 fields (a null-safe name join renders `Candidate`) instead of failing the
 workflow.
 
@@ -1166,7 +1172,7 @@ publicly would make it a spam relay.
 - [ ] Method-level role checks in the services — coarse role gating runs at the gateway today; per-record ownership is handled per service (job-service now also verifies the posting's `companyId` against company-service at creation)
 - [ ] Per-service JWT re-verification for defense in depth (services currently trust gateway-injected `X-User-*` headers)
 - [x] Application-count wiring — application-service publishes `application-count-increase` on every created application; job-service consumes it and bumps the posting counter (`ApplicationCountKafkaConsumer`)
-- [x] Real candidate contact in status events — the publisher resolves candidate name/email via user-service's internal summary feed before publishing
+- [x] Real candidate contact in status events — the publisher resolves candidate name/email from the applied resume's personal info (resume-service candidate-summary feed), not the user account
 - [ ] Cross-service data resolution finishing touches — job cards already embed live company summaries over Feign; pending: AI screening integration in the inbox
 - [ ] AI-powered features (matching, recommendations) — beyond the ai-service generation suite: per-candidate job matching/recommendations
 - [ ] Container images via Jib for each service
