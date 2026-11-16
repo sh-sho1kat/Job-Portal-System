@@ -6,6 +6,7 @@ import com.sho1kat.dto.ResumeServiceDto.request.UpdateResumeRequest;
 import com.sho1kat.dto.ResumeServiceDto.request.UpdateSummaryRequest;
 import com.sho1kat.dto.ResumeServiceDto.response.ResumeResponse;
 import com.sho1kat.dto.ResumeServiceDto.response.ResumeSummaryResponse;
+import com.sho1kat.dto.userServiceDto.response.CandidateSummaryResponse;
 import com.sho1kat.entity.Resume;
 
 import java.util.List;
@@ -37,6 +38,8 @@ public interface ResumeService {
     // Admin/ Employer
 
     ResumeSummaryResponse getResumeSummary(Long resumeId, Long candidateId);
+
+    CandidateSummaryResponse getCandidateSummary(Long resumeId, Long candidateId);
 
     // ---- shared helpers for the sub-section services ----
 

@@ -6,6 +6,7 @@ import com.sho1kat.dto.ResumeServiceDto.request.UpdateResumeRequest;
 import com.sho1kat.dto.ResumeServiceDto.request.UpdateSummaryRequest;
 import com.sho1kat.dto.ResumeServiceDto.response.ResumeResponse;
 import com.sho1kat.dto.ResumeServiceDto.response.ResumeSummaryResponse;
+import com.sho1kat.dto.userServiceDto.response.CandidateSummaryResponse;
 import com.sho1kat.entity.PersonalInfo;
 import com.sho1kat.entity.Resume;
 import com.sho1kat.enums.ResumeTemplateType;
@@ -103,8 +104,30 @@ public class ResumeServiceImpl implements ResumeService {
     @Override
     @Transactional
     public ResumeSummaryResponse getResumeSummary(Long resumeId, Long candidateId) {
-        Resume resume = requireOwnedResume(resumeId, candidateId);
+        verifyCandidateId(candidateId, "view this resume");
+        Resume resume = resumeRepository.findByIdAndCandidateId(resumeId, candidateId)
+                .orElseThrow(() -> ApiException.notFound("Resume not found with id: " + resumeId));
         return toEmployerResponse(resume);
+    }
+
+    @Override
+    @Transactional
+    public CandidateSummaryResponse getCandidateSummary(Long resumeId, Long candidateId) {
+        verifyCandidateId(candidateId, "view this resume");
+        Resume resume = resumeRepository.findByIdAndCandidateId(resumeId, candidateId)
+                .orElseThrow(() -> ApiException.notFound("Resume not found with id: " + resumeId));
+        PersonalInfo personal = resume.getPersonalInfo();
+        if (personal == null) {
+            return new CandidateSummaryResponse(candidateId, null, null, null, null, null, null);
+        }
+        return new CandidateSummaryResponse(
+                candidateId,
+                personal.getFirstName(),
+                personal.getMiddleName(),
+                personal.getLastName(),
+                personal.getEmail(),
+                personal.getPhone(),
+                null);
     }
 
     @Override

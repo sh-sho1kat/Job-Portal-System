@@ -1,6 +1,7 @@
 package com.sho1kat.controller;
 
 import com.sho1kat.dto.ResumeServiceDto.response.ResumeSummaryResponse;
+import com.sho1kat.dto.userServiceDto.response.CandidateSummaryResponse;
 import com.sho1kat.service.ResumeService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
@@ -15,5 +16,10 @@ public class InternalServiceController {
     @GetMapping("/{resumeId}")
     public ResumeSummaryResponse getResume(@PathVariable Long resumeId, @RequestParam("candidateId") Long candidateId) {
         return resumeService.getResumeSummary(resumeId, candidateId);
+    }
+
+    @GetMapping("/{resumeId}/candidate-summary")
+    public CandidateSummaryResponse getCandidateSummary(@PathVariable Long resumeId, @RequestParam("candidateId") Long candidateId) {
+        return resumeService.getCandidateSummary(resumeId, candidateId);
     }
 }
