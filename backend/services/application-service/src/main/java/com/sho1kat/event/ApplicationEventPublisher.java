@@ -1,13 +1,9 @@
 
 package com.sho1kat.event;
 
-import com.sho1kat.client.CompanyClient;
-import com.sho1kat.client.JobClient;
-import com.sho1kat.client.UserClient;
 import com.sho1kat.dto.companyServiceDto.response.CompanySummaryResponse;
 import com.sho1kat.dto.jobServiceDto.response.JobSummaryResponse;
 import com.sho1kat.dto.userServiceDto.response.CandidateSummaryResponse;
-import com.sho1kat.dto.userServiceDto.response.UserResponse;
 import com.sho1kat.entity.Application;
 import com.sho1kat.enums.ApplicationStatus;
 import lombok.RequiredArgsConstructor;
@@ -23,9 +19,6 @@ public class ApplicationEventPublisher {
     public static final String TOPIC = "application.status.change";
 
     private final KafkaTemplate<String, Object> kafkaTemplate;
-    private final UserClient userClient;
-    private final CompanyClient companyClient;
-    private final JobClient jobClient;
 
     public void publishApplicationStatusUpdateEvent(
             CandidateSummaryResponse candidate,

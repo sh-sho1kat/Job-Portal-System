@@ -3,7 +3,7 @@ package com.sho1kat.service.impl;
 import com.sho1kat.client.CompanyClient;
 import com.sho1kat.client.JobClient;
 import com.sho1kat.client.ResumeClient;
-import com.sho1kat.client.UserClient;
+import com.sho1kat.dto.ResumeServiceDto.response.PersonalInfoResponse;
 import com.sho1kat.dto.ResumeServiceDto.response.ResumeSummaryResponse;
 import com.sho1kat.dto.applicationServiceDto.request.ApplicationRequest;
 import com.sho1kat.dto.applicationServiceDto.request.CompanyApplicationFilterRequest;
@@ -73,7 +73,6 @@ public class ApplicationServiceImpl implements ApplicationService {
     private final ApplicationCountEventPublisher applicationCountEventPublisher;
     private final ResumeClient resumeClient;
     private final JobClient jobClient;
-    private final UserClient userClient;
     private final CompanyClient companyClient;
 
     // ---- candidate ----
@@ -88,8 +87,9 @@ public class ApplicationServiceImpl implements ApplicationService {
         }
         JobSummaryResponse job = fetchJobSummary(request.jobId(), request.companyId());
         CompanySummaryResponse company = fetchCompanySummary(request.companyId());
-        CandidateSummaryResponse candidate = fetchCandidateSummary(candidateId);
+        CandidateSummaryResponse candidate = fetchCandidateSummary(candidateId, request.resumeId());
         ResumeSummaryResponse resume = fetchResumeSummary(request.resumeId(), candidateId);
+        requirePersonalInfoForApply(resume);
         Application application = applicationRepository.save(applicationMapper.toEntity(candidateId, request));
         applicationEventPublisher.publishApplicationStatusUpdateEvent(candidate, job, company, ApplicationStatus.PENDING, ApplicationStatus.PENDING);
         applicationCountEventPublisher.publishApplicationCountIncreaseEvent(request.jobId());
@@ -113,11 +113,9 @@ public class ApplicationServiceImpl implements ApplicationService {
                         Sort.Order.desc("id")
                 ));
 
-        CandidateSummaryResponse candidate = fetchCandidateSummary(candidateId);
-
         return applicationRepository.findByCandidateId(candidateId, pageable)
                 .map(application -> applicationMapper.toDetail(application,
-                        candidate,
+                        fetchCandidateSummary(candidateId, application.getResumeId()),
                         fetchCompanySummary(application.getCompanyId()),
                         fetchJobSummary(application.getJobId(), application.getCompanyId()),
                         fetchResumeSummary(application.getResumeId(), candidateId),
@@ -133,7 +131,7 @@ public class ApplicationServiceImpl implements ApplicationService {
         Application application = requireOwnedApplication(applicationId, candidateId);
         return applicationMapper.toDetail(
                 application,
-                fetchCandidateSummary(candidateId),
+                fetchCandidateSummary(candidateId, application.getResumeId()),
                 fetchCompanySummary(application.getCompanyId()),
                 fetchJobSummary(application.getJobId(), application.getCompanyId()),
                 fetchResumeSummary(application.getResumeId(), candidateId),
@@ -160,7 +158,7 @@ public class ApplicationServiceImpl implements ApplicationService {
         application.setWithdrawnAt(Instant.now());
         return applicationMapper.toDetail(
                 application,
-                fetchCandidateSummary(candidateId),
+                fetchCandidateSummary(candidateId, application.getResumeId()),
                 fetchCompanySummary(application.getCompanyId()),
                 fetchJobSummary(application.getJobId(), application.getCompanyId()),
                 fetchResumeSummary(application.getResumeId(), candidateId),
@@ -202,7 +200,7 @@ public class ApplicationServiceImpl implements ApplicationService {
 
         return applications.map(application -> applicationMapper.toDetail(
                 application,
-                fetchCandidateSummary(application.getCandidateId()),
+                fetchCandidateSummary(application.getCandidateId(), application.getResumeId()),
                 company,
                 fetchJobSummary(application.getJobId(), application.getCompanyId()),
                 fetchResumeSummary(application.getResumeId(), application.getCandidateId()),
@@ -221,7 +219,7 @@ public class ApplicationServiceImpl implements ApplicationService {
         Application application = requireCompanyApplication(companyId, applicationId);
         return applicationMapper.toDetail(
                 application,
-                fetchCandidateSummary(application.getCandidateId()),
+                fetchCandidateSummary(application.getCandidateId(), application.getResumeId()),
                 company,
                 fetchJobSummary(application.getJobId(), application.getCompanyId()),
                 fetchResumeSummary(application.getResumeId(), application.getCandidateId()),
@@ -240,7 +238,7 @@ public class ApplicationServiceImpl implements ApplicationService {
         application.setStarred(starred);
         return applicationMapper.toDetail(
                 application,
-                fetchCandidateSummary(application.getCandidateId()),
+                fetchCandidateSummary(application.getCandidateId(), application.getResumeId()),
                 company,
                 fetchJobSummary(application.getJobId(), application.getCompanyId()),
                 fetchResumeSummary(application.getResumeId(), application.getCandidateId()),
@@ -257,7 +255,7 @@ public class ApplicationServiceImpl implements ApplicationService {
         CompanySummaryResponse company = requireInboxAccess(companyId, requesterRole);
         Application application = requireCompanyApplication(companyId, applicationId);
         JobSummaryResponse job = fetchJobSummary(application.getJobId(), companyId);
-        CandidateSummaryResponse candidate = fetchCandidateSummary(application.getCandidateId());
+        CandidateSummaryResponse candidate = fetchCandidateSummary(application.getCandidateId(), application.getResumeId());
         ApplicationStatus oldStatus = application.getStatus();
         if (targetStatus == ApplicationStatus.WITHDRAWN) {
             throw ApiException.badRequest("Only candidates withdraw their own applications");
@@ -279,7 +277,7 @@ public class ApplicationServiceImpl implements ApplicationService {
         );
         return applicationMapper.toDetail(
                 application,
-                fetchCandidateSummary(application.getCandidateId()),
+                fetchCandidateSummary(application.getCandidateId(), application.getResumeId()),
                 company,
                 fetchJobSummary(application.getJobId(), application.getCompanyId()),
                 fetchResumeSummary(application.getResumeId(), application.getCandidateId()),
@@ -303,8 +301,21 @@ public class ApplicationServiceImpl implements ApplicationService {
         return resume;
     }
 
-    private CandidateSummaryResponse fetchCandidateSummary(Long candidateId) {
-        return userClient.getUserSummary(candidateId);
+    private CandidateSummaryResponse fetchCandidateSummary(Long candidateId, Long resumeId) {
+        return resumeClient.getCandidateSummary(resumeId, candidateId);
+    }
+
+    private void requirePersonalInfoForApply(ResumeSummaryResponse resume) {
+        PersonalInfoResponse personal = resume.personalInfo();
+        if (personal == null || isBlank(personal.firstName()) || isBlank(personal.lastName())
+                || isBlank(personal.email())) {
+            throw ApiException.badRequest(
+                    "Fill in the personal info section of the resume before applying with it");
+        }
+    }
+
+    private boolean isBlank(String value) {
+        return value == null || value.isBlank();
     }
 
     private CompanySummaryResponse fetchCompanySummary(@NotNull(message = "companyId is required") Long companyId) {
