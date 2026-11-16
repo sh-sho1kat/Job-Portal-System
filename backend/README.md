@@ -666,7 +666,7 @@ All endpoints are owner-scoped via `X-User-Id` (see authentication note).
 | `GET` | `/api/resumes/my-resumes` | list view, default first (sections empty) |
 | `GET` | `/api/resumes/{resumeId}` | detailed view incl. all sections; touches `lastViewedAt` |
 | `PUT` | `/api/resumes/{resumeId}` | update title/template/visibility (`null` keeps current) |
-| `PATCH` | `/api/resumes/{resumeId}/personal-info` | patch-style personal info (only supplied fields change) |
+| `PATCH` | `/api/resumes/{resumeId}/personal-info` | full personal-info form: name, email, phone, gender (`MALE|FEMALE|OTHER`), nationality, `dateOfBirth` (`MM-dd-yyyy`), present/permanent address required; `middleName`, headline and URLs optional |
 | `PATCH` | `/api/resumes/{resumeId}/summary` | replace summary (`null` clears) |
 | `POST` | `/api/resumes/{resumeId}/set-default` | make this the apply-with default |
 | `DELETE` | `/api/resumes/{resumeId}` | soft delete, promotes newest survivor |
