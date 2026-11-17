@@ -28,13 +28,6 @@ export const VISIBILITY_LABEL: Record<ResumeVisibility, string> = {
   LINK_ONLY: 'Link only',
 }
 
-export interface ResumeWorkEntry {
-  role: string
-  company: string
-  period: string
-  detail: string
-}
-
 /**
  * Section records mirror the resume-service entities one-to-one
  * (`Education`, `Project`, `Certification`, `Award`, `Language`), so the
@@ -151,6 +144,95 @@ export interface ResumeItem {
 }
 /** `UpdateSummaryRequest` — `@Size(max = 5000)` on the backend. */
 export const SUMMARY_MAX = 5000
+
+/** `EmploymentType` enum — work experience and job postings share it. */
+export type ResumeEmploymentType =
+  | 'FULL_TIME'
+  | 'PART_TIME'
+  | 'CONTRACT'
+  | 'INTERNSHIP'
+  | 'TEMPORARY'
+  | 'FREELANCE'
+
+export const EMPLOYMENT_TYPE_LABEL: Record<ResumeEmploymentType, string> = {
+  FULL_TIME: 'Full-time',
+  PART_TIME: 'Part-time',
+  CONTRACT: 'Contract',
+  INTERNSHIP: 'Internship',
+  TEMPORARY: 'Temporary',
+  FREELANCE: 'Freelance',
+}
+
+/**
+ * `WorkExperienceRequest` / `WorkExperienceResponse` — one role under
+ * `/api/resumes/{resumeId}/work-experiences`. Optional strings are '' here
+ * where the backend allows null; `endDate` is null while `isCurrentJob` is
+ * true (the backend requires it otherwise). Dates are ISO `YYYY-MM-DD`
+ * (`LocalDate` on the backend).
+ */
+export interface ResumeWorkEntry {
+  id: string
+  companyName: string
+  companyLogoUrl: string
+  position: string
+  employmentType: ResumeEmploymentType | null
+  address: string
+  city: string
+  state: string
+  country: string
+  zipCode: string
+  startDate: string
+  endDate: string | null
+  isCurrentJob: boolean
+  description: string
+  technologies: string[]
+  displayOrder: number
+}
+
+/** `@Size(max = 10000)` on `WorkExperienceRequest.description`. */
+export const WORK_DESCRIPTION_MAX = 10000
+
+/** `WorkExperienceRequest` — at most 30 technologies, 100 characters each. */
+export const WORK_TECHNOLOGIES_MAX = 30
+export const WORK_TECHNOLOGY_MAX = 100
+
+/** "Jun 2022 – Present" / "Jun 2020 – May 2022" — UTC-pinned month names. */
+export function formatWorkPeriod(
+  startDate: string,
+  endDate: string | null,
+  isCurrentJob: boolean,
+): string {
+  const month = new Intl.DateTimeFormat('en-US', { month: 'short', timeZone: 'UTC' })
+  const year = new Intl.DateTimeFormat('en-US', { year: 'numeric', timeZone: 'UTC' })
+  const start = new Date(`${startDate}T00:00:00Z`)
+  const end = endDate ? new Date(`${endDate}T00:00:00Z`) : null
+  const from = `${month.format(start)} ${year.format(start)}`
+  if (isCurrentJob || !end) return `${from} – Present`
+  return `${from} – ${month.format(end)} ${year.format(end)}`
+}
+
+/** "3 yrs 2 mo" span — whole months between start and end (or today). */
+export function workDuration(startDate: string, endDate: string | null, isCurrentJob: boolean): string {
+  const start = new Date(`${startDate}T00:00:00Z`)
+  const end = isCurrentJob || !endDate ? new Date() : new Date(`${endDate}T00:00:00Z`)
+  let months = (end.getUTCFullYear() - start.getUTCFullYear()) * 12 + (end.getUTCMonth() - start.getUTCMonth())
+  if (end.getUTCDate() < start.getUTCDate()) months -= 1
+  if (months < 1) return '< 1 mo'
+  const years = Math.floor(months / 12)
+  const rest = months % 12
+  if (years === 0) return `${rest} mo`
+  return rest > 0 ? `${years} yr ${rest} mo` : `${years} yr`
+}
+
+/** ISO date ↔ Date for the shared DatePicker (local calendar days). */
+export function workDateToDate(iso: string): Date | undefined {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso)
+  return match ? new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3])) : undefined
+}
+
+export function workDateFromDate(date: Date): string {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
+}
 
 /** en-US long date — consistent with the applications list. */
 export function formatResumeDate(iso: string): string {

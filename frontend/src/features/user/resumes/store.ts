@@ -2,7 +2,13 @@ import * as React from 'react'
 
 import { ACCOUNT } from '@/features/user/profile/data'
 
-import type { ResumeItem, ResumePersonalInfo, ResumeTemplateType, ResumeVisibility } from './data'
+import type {
+  ResumeItem,
+  ResumePersonalInfo,
+  ResumeTemplateType,
+  ResumeVisibility,
+  ResumeWorkEntry,
+} from './data'
 
 /**
  * The resumes store — the demo rows and every mutation the page performs.
@@ -62,20 +68,34 @@ let resumes: ResumeItem[] = [  {
     summary:
       'Frontend developer with four years of experience building accessible, performant web applications in React and TypeScript.',
     work: [
-      {
-        role: 'Frontend Developer',
-        company: 'Lumen Retail',
-        period: '2022 – Present',
-        detail:
+      workEntry('work-lumen', {
+        companyName: 'Lumen Retail',
+        position: 'Frontend Developer',
+        employmentType: 'FULL_TIME',
+        city: 'Dhaka',
+        country: 'Bangladesh',
+        startDate: '2022-03-01',
+        endDate: null,
+        isCurrentJob: true,
+        description:
           'Rebuilt the customer checkout in React, cutting page load time by 38% and raising completed orders.',
-      },
-      {
-        role: 'Web Developer',
-        company: 'Bluepeak Agency',
-        period: '2020 – 2022',
-        detail:
+        technologies: ['React', 'TypeScript', 'Playwright'],
+        displayOrder: 0,
+      }),
+      workEntry('work-bluepeak', {
+        companyName: 'Bluepeak Agency',
+        position: 'Web Developer',
+        employmentType: 'FULL_TIME',
+        city: 'Dhaka',
+        country: 'Bangladesh',
+        startDate: '2020-07-01',
+        endDate: '2022-02-28',
+        isCurrentJob: false,
+        description:
           'Shipped 20+ client sites from a shared TypeScript component library I maintained.',
-      },
+        technologies: ['JavaScript', 'CSS'],
+        displayOrder: 1,
+      }),
     ],
     skills: ['JavaScript', 'React', 'TypeScript', 'Playwright', 'CI/CD', 'Git'],
     education: [
@@ -152,20 +172,34 @@ let resumes: ResumeItem[] = [  {
     summary:
       'Marketing specialist focused on content strategy, brand campaigns, and analytics-driven growth.',
     work: [
-      {
-        role: 'Marketing Specialist',
-        company: 'Arcadia Media Group',
-        period: '2023 – 2025',
-        detail:
+      workEntry('work-arcadia', {
+        companyName: 'Arcadia Media Group',
+        position: 'Marketing Specialist',
+        employmentType: 'FULL_TIME',
+        city: 'Dhaka',
+        country: 'Bangladesh',
+        startDate: '2023-01-01',
+        endDate: '2025-06-30',
+        isCurrentJob: false,
+        description:
           'Ran seasonal campaign programs that lifted newsletter signups 24% year over year.',
-      },
-      {
-        role: 'Marketing Assistant',
-        company: 'Fieldstone Studio',
-        period: '2021 – 2023',
-        detail:
+        technologies: ['SEO', 'Content strategy'],
+        displayOrder: 0,
+      }),
+      workEntry('work-fieldstone-mkt', {
+        companyName: 'Fieldstone Studio',
+        position: 'Marketing Assistant',
+        employmentType: 'FULL_TIME',
+        city: 'Dhaka',
+        country: 'Bangladesh',
+        startDate: '2021-02-01',
+        endDate: '2022-12-31',
+        isCurrentJob: false,
+        description:
           'Managed social calendars and landing-page copy for six product lines.',
-      },
+        technologies: [],
+        displayOrder: 1,
+      }),
     ],
     skills: ['Canva', 'Zeplin', 'Communication', 'Problem Solving', 'SEO'],
     education: [
@@ -199,13 +233,20 @@ let resumes: ResumeItem[] = [  {
     summary:
       'Data analyst turning operational data into dashboards and decisions leadership can act on.',
     work: [
-      {
-        role: 'Junior Data Analyst',
-        company: 'Fieldstone Studio',
-        period: '2024 – Present',
-        detail:
+      workEntry('work-fieldstone-data', {
+        companyName: 'Fieldstone Studio',
+        position: 'Junior Data Analyst',
+        employmentType: 'FULL_TIME',
+        city: 'Dhaka',
+        country: 'Bangladesh',
+        startDate: '2024-05-01',
+        endDate: null,
+        isCurrentJob: true,
+        description:
           'Automated the weekly sales report in SQL, saving the team half a day every week.',
-      },
+        technologies: ['SQL', 'Power BI'],
+        displayOrder: 0,
+      }),
     ],
     skills: ['SQL', 'Excel', 'Power BI', 'Python'],
     education: [
@@ -227,6 +268,20 @@ let resumes: ResumeItem[] = [  {
     updatedAt: '2025-10-20T11:00:00Z',
   },
 ]
+
+/** A work entry as the backend would return it — optional strings default
+ *  to '' (the backend's null), ids and stamps filled in. */
+function workEntry(
+  id: string,
+  fields: Omit<ResumeWorkEntry, 'id' | 'address' | 'state' | 'companyLogoUrl' | 'zipCode'> &
+    Partial<Pick<ResumeWorkEntry, 'address' | 'state' | 'companyLogoUrl' | 'zipCode'>>,
+): ResumeWorkEntry {
+  return { id, address: '', state: '', companyLogoUrl: '', zipCode: '', ...fields }
+}
+
+/** `WorkExperienceRequest` minus the server-side identity — what the
+ *  create/update endpoints accept. */
+export type WorkExperienceInput = Omit<ResumeWorkEntry, 'id'>
 
 const listeners = new Set<() => void>()
 
@@ -286,6 +341,64 @@ export function updatePersonalInfo(id: string, info: ResumePersonalInfo) {
 export function updateSummary(id: string, summary: string) {
   resumes = resumes.map((item) =>
     item.id === id ? { ...item, summary, updatedAt: new Date().toISOString() } : item,
+  )
+  emit()
+}
+
+
+/** `POST /api/resumes/{id}/work-experiences` — the new role leads
+ *  (displayOrder 0, later roles pushed down). Seam: swap for the gateway
+ *  call (it returns the created `WorkExperienceResponse`). */
+export function addWorkExperience(resumeId: string, input: WorkExperienceInput): ResumeWorkEntry {
+  const created: ResumeWorkEntry = {
+    ...input,
+    id: `work-${Date.now().toString(36)}`,
+  }
+  resumes = resumes.map((item) =>
+    item.id === resumeId
+      ? {
+          ...item,
+          work: [
+            created,
+            ...item.work.map((entry) => ({ ...entry, displayOrder: entry.displayOrder + 1 })),
+          ],
+          updatedAt: new Date().toISOString(),
+        }
+      : item,
+  )
+  emit()
+  return created
+}
+
+/** `PUT /api/resumes/{id}/work-experiences/{workExperienceId}` — the full
+ *  record is sent and validated server-side. Seam: swap for the gateway
+ *  call (it returns the updated `WorkExperienceResponse`). */
+export function updateWorkExperience(resumeId: string, workId: string, input: WorkExperienceInput) {
+  resumes = resumes.map((item) =>
+    item.id === resumeId
+      ? {
+          ...item,
+          work: item.work.map((entry) => (entry.id === workId ? { ...input, id: workId } : entry)),
+          updatedAt: new Date().toISOString(),
+        }
+      : item,
+  )
+  emit()
+}
+
+/** `DELETE /api/resumes/{id}/work-experiences/{workExperienceId}` — the
+ *  backend soft-deletes; the remaining roles close the displayOrder gap. */
+export function removeWorkExperience(resumeId: string, workId: string) {
+  resumes = resumes.map((item) =>
+    item.id === resumeId
+      ? {
+          ...item,
+          work: item.work
+            .filter((entry) => entry.id !== workId)
+            .map((entry, index) => ({ ...entry, displayOrder: index })),
+          updatedAt: new Date().toISOString(),
+        }
+      : item,
   )
   emit()
 }

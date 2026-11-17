@@ -16,8 +16,8 @@ export function canGenerateSummary(resume: ResumeItem): boolean {
 
 export function generateSummaryDraft(resume: ResumeItem): string {
   const { personalInfo, work, skills, education } = resume
-  const role = personalInfo.headline.trim() || work[0]?.role || ''
-  const companies = work.map((entry) => entry.company).filter(Boolean)
+  const role = personalInfo.headline.trim() || work[0]?.position || ''
+  const companies = work.map((entry) => entry.companyName).filter(Boolean)
   const topSkills = skills.slice(0, 4)
   const degree = education[0]
     ? education[0].fieldOfStudy
@@ -36,8 +36,8 @@ export function generateSummaryDraft(resume: ResumeItem): string {
   }
 
   const latest = work[0]
-  if (latest?.detail) {
-    sentences.push(`Most recently: ${latest.detail.charAt(0).toLowerCase()}${latest.detail.slice(1)}`)
+  if (latest?.description) {
+    sentences.push(`Most recently: ${latest.description.charAt(0).toLowerCase()}${latest.description.slice(1)}`)
   }
 
   if (topSkills.length > 0) {

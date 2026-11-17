@@ -42,7 +42,7 @@ export function careerFeedback(resume: ResumeItem): CareerFeedback {
       },
       {
         area: 'Experience',
-        issue: resume.work.some((entry) => !/\d/.test(entry.detail))
+        issue: resume.work.some((entry) => !/\d/.test(entry.description))
           ? 'Role descriptions state duties without outcomes.'
           : 'Some roles may lack measurable outcomes.',
         action: 'Rewrite each bullet as "did X, which moved Y by Z%".',

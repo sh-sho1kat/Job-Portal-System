@@ -21,6 +21,7 @@ import {
 } from '@hugeicons/core-free-icons'
 import { PersonalInfoSection } from './personal-info'
 import { SummarySection } from './summary'
+import { WorkExperienceSection } from './work-experience'
 
 /**
  * The view sidebar's sections — the registry, the shared row primitives,
@@ -78,34 +79,6 @@ function SectionEmpty({ message }: { message: string }) {
         Add entries once section editing arrives.
       </p>
     </div>
-  )
-}
-
-/** Work experience — the resume service's `WorkExperienceResponse` list. */
-function WorkSection({ resume }: { resume: ResumeItem }) {
-  return resume.work.length > 0 ? (
-    <ol className="flex min-w-0 flex-col gap-3">
-      {resume.work.map((entry, index) => (
-        <li
-          key={`${entry.company}-${index}`}
-          className="rounded-[var(--neu-radius-control)] bg-[var(--neu-surface)] px-4 py-3.5 [background-image:var(--neu-fill-inset)] shadow-[var(--neu-shadow-inset-sm)]"
-        >
-          <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5">
-            <p className="text-sm font-semibold text-[var(--foreground)]">
-              {entry.role} · {entry.company}
-            </p>
-            <span className="text-xs tabular-nums text-[var(--muted-foreground)]">
-              {entry.period}
-            </span>
-          </div>
-          <p className="mt-1 text-[13px] leading-relaxed text-[var(--muted-foreground)]">
-            {entry.detail}
-          </p>
-        </li>
-      ))}
-    </ol>
-  ) : (
-    <SectionEmpty message="No work experience added yet." />
   )
 }
 
@@ -293,7 +266,7 @@ export function SectionContent({ resume, section }: { resume: ResumeItem; sectio
     case 'summary':
       return <SummarySection resume={resume} />
     case 'work':
-      return <WorkSection resume={resume} />
+      return <WorkExperienceSection resume={resume} />
     case 'education':
       return <EducationSection resume={resume} />
     case 'skills':

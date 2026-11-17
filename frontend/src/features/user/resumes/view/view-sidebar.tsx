@@ -19,7 +19,7 @@ import {
 import { ResumePreviewDialog } from '@/features/user/jobs/apply/steps/resume-step'
 import { cn } from '@/lib/utils'
 import type { ResumeItem } from '../data'
-import { formatResumeDate } from '../data'
+import { formatResumeDate, formatWorkPeriod } from '../data'
 import { SectionContent, SECTIONS, type ResumeSectionId } from './sections'
 
 
@@ -38,6 +38,8 @@ const RAIL_SHADE_STYLE = {
 
 /** The apply flow's preview dialog consumes its own `Resume` shape; this
  *  adapts the list item onto it. */
+/** The preview dialog reads {role, company, period, detail}; the stored
+ *  entries are the backend's richer `WorkExperienceResponse` shape. */
 function toPreviewShape(item: ResumeItem) {
   return {
     id: item.id,
@@ -46,7 +48,12 @@ function toPreviewShape(item: ResumeItem) {
     isDefault: item.isDefault,
     headline: item.personalInfo.headline,
     summary: item.summary,
-    experience: item.work,
+    experience: item.work.map((entry) => ({
+      role: entry.position,
+      company: entry.companyName,
+      period: formatWorkPeriod(entry.startDate, entry.endDate, entry.isCurrentJob),
+      detail: entry.description,
+    })),
     skills: item.skills,
   }
 }
