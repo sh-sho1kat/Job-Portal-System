@@ -178,3 +178,19 @@ export function personalDateFromInput(value: string): string {
   const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value)
   return match ? `${match[2]}-${match[3]}-${match[1]}` : ''
 }
+
+/** The personal-info `MM-dd-yyyy` pattern → local Date; null when unset or
+ *  malformed (parsed by parts so it can't cross a UTC boundary). */
+export function personalDateToDate(value: string): Date | null {
+  const match = /^(\d{2})-(\d{2})-(\d{4})$/.exec(value)
+  if (!match) return null
+  const date = new Date(Number(match[3]), Number(match[1]) - 1, Number(match[2]))
+  return Number.isNaN(date.getTime()) ? null : date
+}
+
+/** Local Date → the personal-info `MM-dd-yyyy` pattern. */
+export function personalDateFromDate(value: Date): string {
+  return `${String(value.getMonth() + 1).padStart(2, '0')}-${String(
+    value.getDate(),
+  ).padStart(2, '0')}-${value.getFullYear()}`
+}

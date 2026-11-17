@@ -8,6 +8,7 @@ import {
 import * as React from 'react'
 
 import { Button } from '@/components/ui/button'
+import { DatePicker } from '@/components/ui/date-picker'
 import { Field, FieldDescription, FieldLabel } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
 import { Select, SelectItem } from '@/components/ui/select'
@@ -21,8 +22,8 @@ import type {
 import {
   GENDER_LABEL,
   formatPersonalDate,
-  personalDateFromInput,
-  personalDateToInput,
+  personalDateFromDate,
+  personalDateToDate,
 } from '../data'
 import { updatePersonalInfo } from '../store'
 
@@ -516,13 +517,16 @@ function PersonalInfoForm({ resume, onDone }: { resume: ResumeItem; onDone: () =
         </Field>
         <Field data-invalid={invalid('dateOfBirth') ? true : undefined}>
           <FieldLabel htmlFor="pi-dob">Date of birth</FieldLabel>
-          <Input
+          {/* The shared DatePicker popover — the native date input's stock
+              calendar didn't match the design. Future dates are disabled:
+              a date of birth can't be ahead of today. */}
+          <DatePicker
             id="pi-dob"
-            type="date"
-            value={personalDateToInput(draft.dateOfBirth)}
-            required
-            aria-invalid={invalid('dateOfBirth') ? true : undefined}
-            onChange={(event) => set('dateOfBirth', personalDateFromInput(event.target.value))}
+            label="Date of birth"
+            value={personalDateToDate(draft.dateOfBirth) ?? undefined}
+            onValueChange={(date) => set('dateOfBirth', date ? personalDateFromDate(date) : '')}
+            disabledDates={{ after: new Date() }}
+            invalid={invalid('dateOfBirth') ? true : undefined}
           />
           {invalid('dateOfBirth') && (
             <p className="text-[13px] font-medium text-[var(--neu-error-text)]">
