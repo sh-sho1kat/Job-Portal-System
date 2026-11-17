@@ -10,7 +10,7 @@ import * as React from 'react'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import { DatePicker } from '@/components/ui/date-picker'
-import { Field, FieldDescription, FieldLabel } from '@/components/ui/field'
+import { Field, FieldLabel } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
 import { Select, SelectItem } from '@/components/ui/select'
 import { cn } from '@/lib/utils'
@@ -463,7 +463,6 @@ function PersonalInfoForm({ resume, onDone }: { resume: ResumeItem; onDone: () =
           placeholder="Frontend Developer — React & TypeScript"
           onChange={(event) => set('headline', event.target.value)}
         />
-        <FieldDescription>One line under your name, up to 150 characters.</FieldDescription>
       </Field>
 
       <div className="grid gap-4 sm:grid-cols-2">
