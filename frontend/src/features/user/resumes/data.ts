@@ -115,36 +115,72 @@ export const HTTP_URL_PATTERN = /^https?:\/\/\S+$/
 /** `@Size(max = 150)` on `UpdateResumeRequest.title`. */
 export const RESUME_TITLE_MAX = 150
 
+/**
+ * `CertificationRequest` / `CertificationResponse` — one entry under
+ * `/api/resumes/{resumeId}/certifications`. Optional strings are '' where
+ * the backend allows null; dates are ISO `YYYY-MM-DD`.
+ */
 export interface ResumeCertificationEntry {
+  id: string
   name: string
   issuingOrganization: string
-  /** ISO date */
   issueDate: string
   expirationDate: string | null
-  credentialId: string | null
+  credentialId: string
+  credentialUrl: string
+  displayOrder: number
 }
 
+/** `@Size` limits on `CertificationRequest`. */
+export const CERTIFICATION_NAME_MAX = 200
+export const CERTIFICATION_ORG_MAX = 150
+export const CERTIFICATION_CREDENTIAL_ID_MAX = 255
+export const CERTIFICATION_URL_MAX = 500
+
+/**
+ * `AwardRequest` / `AwardResponse` — one entry under
+ * `/api/resumes/{resumeId}/awards`. `dateAwarded` is optional but must
+ * not be in the future (`@PastOrPresent`).
+ */
 export interface ResumeAwardEntry {
+  id: string
   title: string
   issuer: string
-  /** ISO date */
+  /** ISO date, '' when not provided. */
   dateAwarded: string
-  description: string | null
+  description: string
+  displayOrder: number
 }
 
-/** `LanguageProficiency`: BASIC / CONVERSATIONAL / FLUENT. */
-export type ResumeLanguageProficiency = 'BASIC' | 'CONVERSATIONAL' | 'FLUENT'
+/** `@Size` limits on `AwardRequest`. */
+export const AWARD_TITLE_MAX = 200
+export const AWARD_ISSUER_MAX = 150
+export const AWARD_DESCRIPTION_MAX = 5000
+
+/** `LanguageProficiency`: BASIC / CONVERSATIONAL / FLUENT / NATIVE. */
+export type ResumeLanguageProficiency = 'BASIC' | 'CONVERSATIONAL' | 'FLUENT' | 'NATIVE'
 
 export const LANGUAGE_PROFICIENCY_LABEL: Record<ResumeLanguageProficiency, string> = {
   BASIC: 'Basic',
   CONVERSATIONAL: 'Conversational',
   FLUENT: 'Fluent',
+  NATIVE: 'Native',
 }
 
+/**
+ * `LanguageProficiencyRequest` / `LanguageProficiencyResponse` — one entry
+ * under `/api/resumes/{resumeId}/languages`. The response names the field
+ * `language`; the request sends `languageName`.
+ */
 export interface ResumeLanguageEntry {
-  languageName: string
+  id: string
+  language: string
   proficiency: ResumeLanguageProficiency
+  displayOrder: number
 }
+
+/** `@Size(max = 100)` on `LanguageProficiencyRequest.languageName`. */
+export const LANGUAGE_NAME_MAX = 100
 
 /** `Gender` enum — `PersonalInfoResponse.gender`. */
 export type ResumeGender = 'MALE' | 'FEMALE' | 'OTHER'

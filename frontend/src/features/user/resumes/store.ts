@@ -3,7 +3,10 @@ import * as React from 'react'
 import { ACCOUNT } from '@/features/user/profile/data'
 
 import type {
+  ResumeAwardEntry,
+  ResumeCertificationEntry,
   ResumeEducationEntry,
+  ResumeLanguageEntry,
   ResumeProjectEntry,
   ResumeSkillEntry,
   ResumeItem,
@@ -153,25 +156,26 @@ let resumes: ResumeItem[] = [  {
       }),
     ],
     certifications: [
-      {
+      certificationEntry('cert-aws-ccp', {
         name: 'AWS Certified Cloud Practitioner',
         issuingOrganization: 'Amazon Web Services',
         issueDate: '2023-08-01',
         expirationDate: null,
         credentialId: 'AWS-CCP-8842',
-      },
+        displayOrder: 0,
+      }),
     ],
     awards: [
-      {
+      awardEntry('awd-champion', {
         title: 'Champion — Inter-university programming contest',
         issuer: 'IUT CSE Society',
         dateAwarded: '2019-11-20',
-        description: null,
-      },
+        displayOrder: 0,
+      }),
     ],
     languages: [
-      { languageName: 'Bengali', proficiency: 'FLUENT' },
-      { languageName: 'English', proficiency: 'CONVERSATIONAL' },
+      languageEntry('lang-bn', { language: 'Bengali', proficiency: 'NATIVE', displayOrder: 0 }),
+      languageEntry('lang-en', { language: 'English', proficiency: 'FLUENT', displayOrder: 1 }),
     ],
     completionScore: 92,
     createdAt: '2025-01-12T10:00:00Z',
@@ -242,7 +246,9 @@ let resumes: ResumeItem[] = [  {
     projects: [],
     certifications: [],
     awards: [],
-    languages: [{ languageName: 'Bengali', proficiency: 'FLUENT' }],
+    languages: [
+      languageEntry('lang-bn-mkt', { language: 'Bengali', proficiency: 'FLUENT', displayOrder: 0 }),
+    ],
     completionScore: 74,
     createdAt: '2024-06-02T08:00:00Z',
     updatedAt: '2025-09-28T14:30:00Z',
@@ -353,6 +359,42 @@ function projectEntry(
   }
 }
 
+/** A certification as the backend would return it — optional strings
+ *  default to '' (the backend's null). */
+function certificationEntry(
+  id: string,
+  fields: Pick<ResumeCertificationEntry, 'name' | 'issueDate'> &
+    Partial<Omit<ResumeCertificationEntry, 'id' | 'name' | 'issueDate'>>,
+): ResumeCertificationEntry {
+  return {
+    id,
+    issuingOrganization: '',
+    expirationDate: null,
+    credentialId: '',
+    credentialUrl: '',
+    displayOrder: 0,
+    ...fields,
+  }
+}
+
+/** An award as the backend would return it. */
+function awardEntry(
+  id: string,
+  fields: Pick<ResumeAwardEntry, 'title'> &
+    Partial<Omit<ResumeAwardEntry, 'id' | 'title'>>,
+): ResumeAwardEntry {
+  return { id, issuer: '', dateAwarded: '', description: '', displayOrder: 0, ...fields }
+}
+
+/** A language as the backend would return it. */
+function languageEntry(
+  id: string,
+  fields: Pick<ResumeLanguageEntry, 'language' | 'proficiency'> &
+    Partial<Pick<ResumeLanguageEntry, 'displayOrder'>>,
+): ResumeLanguageEntry {
+  return { id, displayOrder: 0, ...fields }
+}
+
 /** `WorkExperienceRequest` minus the server-side identity — what the
  *  create/update endpoints accept. */
 export type WorkExperienceInput = Omit<ResumeWorkEntry, 'id'>
@@ -365,6 +407,15 @@ export type SkillInput = Omit<ResumeSkillEntry, 'id'>
 
 /** `ProjectRequest` minus the server-side identity. */
 export type ProjectInput = Omit<ResumeProjectEntry, 'id'>
+
+/** `CertificationRequest` minus the server-side identity. */
+export type CertificationInput = Omit<ResumeCertificationEntry, 'id'>
+
+/** `AwardRequest` minus the server-side identity. */
+export type AwardInput = Omit<ResumeAwardEntry, 'id'>
+
+/** `LanguageProficiencyRequest` minus the server-side identity. */
+export type LanguageInput = Omit<ResumeLanguageEntry, 'id'>
 
 const listeners = new Set<() => void>()
 
@@ -660,6 +711,183 @@ export function removeProject(resumeId: string, projectId: string) {
           ...item,
           projects: item.projects
             .filter((entry) => entry.id !== projectId)
+            .map((entry, index) => ({ ...entry, displayOrder: index })),
+          updatedAt: new Date().toISOString(),
+        }
+      : item,
+  )
+  emit()
+}
+
+/** `POST /api/resumes/{id}/certifications` — the new entry leads
+ *  (displayOrder 0, later entries pushed down). Seam: swap for the
+ *  gateway call (it returns the created `CertificationResponse`). */
+export function addCertification(resumeId: string, input: CertificationInput): ResumeCertificationEntry {
+  const created: ResumeCertificationEntry = {
+    ...input,
+    id: `cert-${Date.now().toString(36)}`,
+  }
+  resumes = resumes.map((item) =>
+    item.id === resumeId
+      ? {
+          ...item,
+          certifications: [
+            created,
+            ...item.certifications.map((entry) => ({ ...entry, displayOrder: entry.displayOrder + 1 })),
+          ],
+          updatedAt: new Date().toISOString(),
+        }
+      : item,
+  )
+  emit()
+  return created
+}
+
+/** `PUT /api/resumes/{id}/certifications/{certificationId}` — the full
+ *  record is sent and validated server-side. Seam: swap for the gateway
+ *  call (it returns the updated `CertificationResponse`). */
+export function updateCertification(resumeId: string, certificationId: string, input: CertificationInput) {
+  resumes = resumes.map((item) =>
+    item.id === resumeId
+      ? {
+          ...item,
+          certifications: item.certifications.map((entry) =>
+            entry.id === certificationId ? { ...input, id: certificationId } : entry,
+          ),
+          updatedAt: new Date().toISOString(),
+        }
+      : item,
+  )
+  emit()
+}
+
+/** `DELETE /api/resumes/{id}/certifications/{certificationId}` — the
+ *  remaining entries close the displayOrder gap. */
+export function removeCertification(resumeId: string, certificationId: string) {
+  resumes = resumes.map((item) =>
+    item.id === resumeId
+      ? {
+          ...item,
+          certifications: item.certifications
+            .filter((entry) => entry.id !== certificationId)
+            .map((entry, index) => ({ ...entry, displayOrder: index })),
+          updatedAt: new Date().toISOString(),
+        }
+      : item,
+  )
+  emit()
+}
+
+/** `POST /api/resumes/{id}/awards` — the new award leads (displayOrder 0,
+ *  later entries pushed down). Seam: swap for the gateway call (it
+ *  returns the created `AwardResponse`). */
+export function addAward(resumeId: string, input: AwardInput): ResumeAwardEntry {
+  const created: ResumeAwardEntry = {
+    ...input,
+    id: `awd-${Date.now().toString(36)}`,
+  }
+  resumes = resumes.map((item) =>
+    item.id === resumeId
+      ? {
+          ...item,
+          awards: [
+            created,
+            ...item.awards.map((entry) => ({ ...entry, displayOrder: entry.displayOrder + 1 })),
+          ],
+          updatedAt: new Date().toISOString(),
+        }
+      : item,
+  )
+  emit()
+  return created
+}
+
+/** `PUT /api/resumes/{id}/awards/{awardId}` — the full record is sent and
+ *  validated server-side. Seam: swap for the gateway call (it returns the
+ *  updated `AwardResponse`). */
+export function updateAward(resumeId: string, awardId: string, input: AwardInput) {
+  resumes = resumes.map((item) =>
+    item.id === resumeId
+      ? {
+          ...item,
+          awards: item.awards.map((entry) =>
+            entry.id === awardId ? { ...input, id: awardId } : entry,
+          ),
+          updatedAt: new Date().toISOString(),
+        }
+      : item,
+  )
+  emit()
+}
+
+/** `DELETE /api/resumes/{id}/awards/{awardId}` — the remaining entries
+ *  close the displayOrder gap. */
+export function removeAward(resumeId: string, awardId: string) {
+  resumes = resumes.map((item) =>
+    item.id === resumeId
+      ? {
+          ...item,
+          awards: item.awards
+            .filter((entry) => entry.id !== awardId)
+            .map((entry, index) => ({ ...entry, displayOrder: index })),
+          updatedAt: new Date().toISOString(),
+        }
+      : item,
+  )
+  emit()
+}
+
+/** `POST /api/resumes/{id}/languages` — the new language leads
+ *  (displayOrder 0, later entries pushed down). Seam: swap for the
+ *  gateway call (it returns the created `LanguageProficiencyResponse`). */
+export function addLanguage(resumeId: string, input: LanguageInput): ResumeLanguageEntry {
+  const created: ResumeLanguageEntry = {
+    ...input,
+    id: `lang-${Date.now().toString(36)}`,
+  }
+  resumes = resumes.map((item) =>
+    item.id === resumeId
+      ? {
+          ...item,
+          languages: [
+            created,
+            ...item.languages.map((entry) => ({ ...entry, displayOrder: entry.displayOrder + 1 })),
+          ],
+          updatedAt: new Date().toISOString(),
+        }
+      : item,
+  )
+  emit()
+  return created
+}
+
+/** `PUT /api/resumes/{id}/languages/{languageId}` — the full record is
+ *  sent and validated server-side. Seam: swap for the gateway call (it
+ *  returns the updated `LanguageProficiencyResponse`). */
+export function updateLanguage(resumeId: string, languageId: string, input: LanguageInput) {
+  resumes = resumes.map((item) =>
+    item.id === resumeId
+      ? {
+          ...item,
+          languages: item.languages.map((entry) =>
+            entry.id === languageId ? { ...input, id: languageId } : entry,
+          ),
+          updatedAt: new Date().toISOString(),
+        }
+      : item,
+  )
+  emit()
+}
+
+/** `DELETE /api/resumes/{id}/languages/{languageId}` — the remaining
+ *  entries close the displayOrder gap. */
+export function removeLanguage(resumeId: string, languageId: string) {
+  resumes = resumes.map((item) =>
+    item.id === resumeId
+      ? {
+          ...item,
+          languages: item.languages
+            .filter((entry) => entry.id !== languageId)
             .map((entry, index) => ({ ...entry, displayOrder: index })),
           updatedAt: new Date().toISOString(),
         }

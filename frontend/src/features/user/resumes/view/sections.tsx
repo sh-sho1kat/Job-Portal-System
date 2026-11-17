@@ -2,10 +2,6 @@ import type * as React from 'react'
 
 import type { ResumeItem } from '../data'
 import {
-  LANGUAGE_PROFICIENCY_LABEL,
-  formatResumeDate,
-} from '../data'
-import {
   DraftingCompassIcon,
   GraduationCapIcon,
   LicenseIcon,
@@ -23,6 +19,9 @@ import { WorkExperienceSection } from './work-experience'
 import { EducationSection } from './education'
 import { SkillsSection } from './skills'
 import { ProjectsSection } from './projects'
+import { CertificationsSection } from './certifications'
+import { AwardsSection } from './awards'
+import { LanguagesSection } from './languages'
 import { SettingsSection } from './settings-section'
 
 /**
@@ -70,86 +69,6 @@ export function MetaRow({ label, children }: { label: string; children: React.Re
 
 export function MetaList({ children }: { children: React.ReactNode }) {
   return <dl className="flex min-w-0 flex-col divide-y divide-[color:var(--border)]">{children}</dl>
-}
-
-/** Quiet empty panel — the section exists on the backend but has no rows yet. */
-function SectionEmpty({ message }: { message: string }) {
-  return (
-    <div className="flex flex-col items-center gap-1.5 rounded-[var(--neu-radius-control)] border border-dashed border-[color:var(--border)] px-4 py-8 text-center">
-      <p className="text-[13px] font-medium text-[var(--foreground)]">{message}</p>
-      <p className="text-xs text-[var(--muted-foreground)]">
-        Add entries once section editing arrives.
-      </p>
-    </div>
-  )
-}
-
-/** Certifications — the resume service's `CertificationResponse` list. */
-function CertificationsSection({ resume }: { resume: ResumeItem }) {
-  return resume.certifications.length > 0 ? (
-    <ol className="flex min-w-0 flex-col gap-3">
-      {resume.certifications.map((entry, index) => (
-        <li
-          key={`${entry.name}-${index}`}
-          className="rounded-[var(--neu-radius-control)] bg-[var(--neu-surface)] px-4 py-3.5 [background-image:var(--neu-fill-inset)] shadow-[var(--neu-shadow-inset-sm)]"
-        >
-          <p className="text-sm font-semibold text-[var(--foreground)]">{entry.name}</p>
-          <p className="mt-1 text-[13px] text-[var(--muted-foreground)]">
-            {entry.issuingOrganization} · Issued {formatResumeDate(entry.issueDate)}
-          </p>
-          {entry.credentialId && (
-            <p className="mt-0.5 text-xs text-[var(--muted-foreground)]">
-              Credential ID {entry.credentialId}
-            </p>
-          )}
-        </li>
-      ))}
-    </ol>
-  ) : (
-    <SectionEmpty message="No certifications added yet." />
-  )
-}
-
-/** Awards — the resume service's `AwardResponse` list. */
-function AwardsSection({ resume }: { resume: ResumeItem }) {
-  return resume.awards.length > 0 ? (
-    <ol className="flex min-w-0 flex-col gap-3">
-      {resume.awards.map((entry, index) => (
-        <li
-          key={`${entry.title}-${index}`}
-          className="rounded-[var(--neu-radius-control)] bg-[var(--neu-surface)] px-4 py-3.5 [background-image:var(--neu-fill-inset)] shadow-[var(--neu-shadow-inset-sm)]"
-        >
-          <p className="text-sm font-semibold text-[var(--foreground)]">{entry.title}</p>
-          <p className="mt-1 text-[13px] text-[var(--muted-foreground)]">
-            {entry.issuer} · {formatResumeDate(entry.dateAwarded)}
-          </p>
-        </li>
-      ))}
-    </ol>
-  ) : (
-    <SectionEmpty message="No awards added yet." />
-  )
-}
-
-/** Languages — the resume service's `LanguageProficiencyResponse` list. */
-function LanguagesSection({ resume }: { resume: ResumeItem }) {
-  return resume.languages.length > 0 ? (
-    <ol className="flex min-w-0 flex-col gap-3">
-      {resume.languages.map((entry, index) => (
-        <li
-          key={`${entry.languageName}-${index}`}
-          className="flex items-center justify-between gap-3 rounded-[var(--neu-radius-control)] bg-[var(--neu-surface)] px-4 py-3 [background-image:var(--neu-fill-inset)] shadow-[var(--neu-shadow-inset-sm)]"
-        >
-          <p className="text-sm font-semibold text-[var(--foreground)]">{entry.languageName}</p>
-          <span className="text-xs font-medium text-[var(--muted-foreground)]">
-            {LANGUAGE_PROFICIENCY_LABEL[entry.proficiency]}
-          </span>
-        </li>
-      ))}
-    </ol>
-  ) : (
-    <SectionEmpty message="No languages added yet." />
-  )
 }
 
 /** The active section's stored content — shared by the desktop detail and
