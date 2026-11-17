@@ -246,6 +246,20 @@
   .dark {
     color-scheme: dark;
   }
+  /* The calendar's month/year native select popups must follow the theme:
+     the list paints each option with the theme's surface and ink, and the
+     select carries the matching color-scheme so the popup chrome (bg,
+     scrollbar, highlight) matches too. */
+  [data-slot="calendar"] select {
+    color-scheme: light;
+  }
+  [data-slot="calendar"] option {
+    background-color: var(--neu-surface);
+    color: var(--foreground);
+  }
+  .dark [data-slot="calendar"] select {
+    color-scheme: dark;
+  }
   /* Only smooth-scroll for people who haven't asked the OS to calm motion. */
   @media (prefers-reduced-motion: no-preference) {
     html {
