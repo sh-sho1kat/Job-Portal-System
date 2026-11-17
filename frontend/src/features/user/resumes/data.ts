@@ -135,6 +135,7 @@ export interface ResumeItem {
   isDefault: boolean
   /** The identity record — `ResumeResponse.personalInfo`. */
   personalInfo: ResumePersonalInfo
+  /** `UpdateSummaryRequest` — at most 5000 characters; null clears it. */
   summary: string
   work: ResumeWorkEntry[]
   skills: string[]
@@ -148,6 +149,9 @@ export interface ResumeItem {
   createdAt: string
   updatedAt: string
 }
+/** `UpdateSummaryRequest` — `@Size(max = 5000)` on the backend. */
+export const SUMMARY_MAX = 5000
+
 /** en-US long date — consistent with the applications list. */
 export function formatResumeDate(iso: string): string {
   return new Date(iso).toLocaleDateString('en-US', {
