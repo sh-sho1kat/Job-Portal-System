@@ -1,11 +1,17 @@
-import { HugeiconsIcon } from '@hugeicons/react'
-import { PencilEdit02Icon } from '@hugeicons/core-free-icons'
+import { HugeiconsIcon, type IconSvgElement } from '@hugeicons/react'
+import {
+  ArrowUpRight02Icon,
+  CallIcon,
+  Mail01Icon,
+  PencilEdit02Icon,
+} from '@hugeicons/core-free-icons'
 import * as React from 'react'
 
 import { Button } from '@/components/ui/button'
 import { Field, FieldDescription, FieldLabel } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
 import { Select, SelectItem } from '@/components/ui/select'
+import { cn } from '@/lib/utils'
 import type {
   ResumeAddress,
   ResumeGender,
@@ -19,7 +25,7 @@ import {
   personalDateToInput,
 } from '../data'
 import { updatePersonalInfo } from '../store'
-import { MetaList, MetaRow } from './sections'
+
 
 /** Backend `RegexPatterns` — kept identical so the local form rejects what
  *  the server would reject. */
@@ -36,19 +42,130 @@ const URL_FIELDS: Array<{ key: UrlKey; label: string }> = [
   { key: 'websiteUrl', label: 'Website' },
 ]
 
-function formatAddressLine(value: ResumeAddress): string {
-  return [value.address, value.city, value.state, value.country, value.zipCode]
-    .filter(Boolean)
-    .join(', ')
-}
-
 function NotProvided() {
   return <em className="text-[var(--muted-foreground)]">Not provided</em>
 }
 
-/** Personal Info — the resume's identity record (`PersonalInfoResponse`).
- *  Read view: name and headline lead, the record follows as divide rows,
- *  links as accent anchors. */
+function initialsOf(info: ResumePersonalInfo): string {
+  const first = info.firstName.trim()[0] ?? ''
+  const last = info.lastName.trim()[0] ?? ''
+  return (first + last).toUpperCase() || '—'
+}
+
+/** Inset tile shared by the contact, address, and link grids. */
+function InfoTile({ children, className }: { children: React.ReactNode; className?: string }) {
+  return (
+    <div
+      className={cn(
+        'rounded-[var(--neu-radius-control)] bg-[var(--neu-surface)] px-4 py-3.5 [background-image:var(--neu-fill-inset)] shadow-[var(--neu-shadow-inset-sm)]',
+        className,
+      )}
+    >
+      {children}
+    </div>
+  )
+}
+
+function TileLabel({ children }: { children: React.ReactNode }) {
+  return <p className="text-[11px] font-medium text-[var(--muted-foreground)]">{children}</p>
+}
+
+/** Contact channel tile — icon plate + label + value. */
+function ContactTile({
+  icon,
+  label,
+  value,
+}: {
+  icon: IconSvgElement
+  label: string
+  value: string
+}) {
+  return (
+    <InfoTile className="flex min-w-0 items-center gap-3">
+      <span
+        aria-hidden="true"
+        className="flex size-9 shrink-0 items-center justify-center rounded-[10px] bg-[var(--neu-surface)] [background-image:var(--neu-fill-raised)] shadow-[var(--neu-shadow-raised-sm)]"
+      >
+        <HugeiconsIcon
+          icon={icon}
+          strokeWidth={1.8}
+          className="size-4 text-[var(--neu-accent-ink)]"
+        />
+      </span>
+      <div className="min-w-0">
+        <TileLabel>{label}</TileLabel>
+        {value ? (
+          <p className="truncate text-[13px] font-medium text-[var(--foreground)]">{value}</p>
+        ) : (
+          <p className="text-[13px]">
+            <NotProvided />
+          </p>
+        )}
+      </div>
+    </InfoTile>
+  )
+}
+
+/** One address, letter-form: street / city, state / country zip. */
+function AddressTile({ label, value }: { label: string; value: ResumeAddress }) {
+  const lines = [
+    value.address,
+    [value.city, value.state].filter(Boolean).join(', '),
+    [value.country, value.zipCode].filter(Boolean).join(' '),
+  ].filter(Boolean)
+  return (
+    <InfoTile className="min-w-0">
+      <TileLabel>{label}</TileLabel>
+      {lines.length > 0 ? (
+        <p className="mt-1.5 text-[13px] leading-relaxed text-[var(--foreground)]">
+          {lines.map((line, index) => (
+            <React.Fragment key={index}>
+              {index > 0 && <br />}
+              {line}
+            </React.Fragment>
+          ))}
+        </p>
+      ) : (
+        <p className="mt-1.5 text-[13px]">
+          <NotProvided />
+        </p>
+      )}
+    </InfoTile>
+  )
+}
+
+/** Profile link tile — site name + hostname; the whole tile is the link. */
+function LinkTile({ label, url }: { label: string; url: string }) {
+  let host = url
+  try {
+    host = new URL(url).hostname.replace(/^www\./, '')
+  } catch {
+    // keep the raw string when the URL doesn't parse
+  }
+  return (
+    <a
+      href={url}
+      target="_blank"
+      rel="noreferrer"
+      className="group flex min-w-0 items-center justify-between gap-3 rounded-[var(--neu-radius-control)] bg-[var(--neu-surface)] px-4 py-3.5 [background-image:var(--neu-fill-inset)] shadow-[var(--neu-shadow-inset-sm)] transition-shadow duration-[var(--neu-duration)] hover:shadow-[var(--neu-shadow-hover)] motion-reduce:transition-none"
+    >
+      <span className="min-w-0">
+        <span className="block text-[13px] font-semibold text-[var(--foreground)]">{label}</span>
+        <span className="block truncate text-xs text-[var(--muted-foreground)]">{host}</span>
+      </span>
+      <HugeiconsIcon
+        icon={ArrowUpRight02Icon}
+        strokeWidth={1.8}
+        aria-hidden="true"
+        className="size-4 shrink-0 text-[var(--muted-foreground)] transition-colors duration-[var(--neu-duration)] group-hover:text-[var(--neu-accent-ink)] motion-reduce:transition-none"
+      />
+    </a>
+  )
+}
+
+/** Personal Info — the resume's identity record (`PersonalInfoResponse`),
+ *  laid out as a nameplate: identity header, quick-fact pills, then quiet
+ *  contact, address, and link tiles. */
 export function PersonalInfoSection({ resume }: { resume: ResumeItem }) {
   const [editing, setEditing] = React.useState(false)
   const info = resume.personalInfo
@@ -57,21 +174,36 @@ export function PersonalInfoSection({ resume }: { resume: ResumeItem }) {
   const links = URL_FIELDS.map(({ key, label }) => [label, info[key]] as const).filter(
     ([, url]) => Boolean(url),
   )
+  const facts = [
+    info.gender ? GENDER_LABEL[info.gender] : null,
+    info.nationality || null,
+    dateOfBirth ? `Born ${dateOfBirth}` : null,
+  ].filter(Boolean) as string[]
 
   if (editing) {
     return <PersonalInfoForm resume={resume} onDone={() => setEditing(false)} />
   }
 
   return (
-    <div className="flex min-w-0 flex-col gap-4">
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <p className="text-[15px] font-semibold text-[var(--foreground)]">
-            {name || <NotProvided />}
-          </p>
-          <p className="mt-0.5 text-[13px] text-[var(--muted-foreground)]">
-            {info.headline || 'No headline yet'}
-          </p>
+    <div className="flex min-w-0 flex-col gap-5">
+      {/* Identity header — the nameplate moment; the monogram plate echoes
+          the file plates used across the app. */}
+      <div className="flex items-start justify-between gap-4">
+        <div className="flex min-w-0 items-start gap-3.5">
+          <span
+            aria-hidden="true"
+            className="flex size-12 shrink-0 items-center justify-center rounded-[14px] bg-[var(--neu-surface)] text-[15px] font-bold tracking-tight text-[var(--neu-accent-ink)] [background-image:var(--neu-fill-inset)] shadow-[var(--neu-shadow-inset)]"
+          >
+            {initialsOf(info)}
+          </span>
+          <div className="min-w-0 pt-0.5">
+            <h3 className="text-xl font-bold tracking-tight text-[var(--foreground)]">
+              {name || 'Unnamed resume'}
+            </h3>
+            <p className="mt-0.5 text-[13px] text-[var(--muted-foreground)]">
+              {info.headline || 'No headline yet'}
+            </p>
+          </div>
         </div>
         <Button variant="soft" size="sm" onClick={() => setEditing(true)} className="shrink-0">
           <HugeiconsIcon icon={PencilEdit02Icon} strokeWidth={2} data-icon="inline-start" />
@@ -79,32 +211,40 @@ export function PersonalInfoSection({ resume }: { resume: ResumeItem }) {
         </Button>
       </div>
 
-      <MetaList>
-        <MetaRow label="Gender">{info.gender ? GENDER_LABEL[info.gender] : <NotProvided />}</MetaRow>
-        <MetaRow label="Nationality">{info.nationality || <NotProvided />}</MetaRow>
-        <MetaRow label="Date of birth">{dateOfBirth ?? <NotProvided />}</MetaRow>
-        <MetaRow label="Email">{info.email || <NotProvided />}</MetaRow>
-        <MetaRow label="Phone">{info.phone || <NotProvided />}</MetaRow>
-        <MetaRow label="Present address">
-          {formatAddressLine(info.presentAddress) || <NotProvided />}
-        </MetaRow>
-        <MetaRow label="Permanent address">
-          {formatAddressLine(info.permanentAddress) || <NotProvided />}
-        </MetaRow>
-        {links.map(([label, url]) => (
-          <MetaRow key={label} label={label}>
-            <a
-              href={url}
-              target="_blank"
-              rel="noreferrer"
-              className="truncate text-[var(--neu-accent-ink)] underline-offset-2 hover:underline"
+      {/* Quick facts — the three single-value facts, as quiet pills. */}
+      {facts.length > 0 && (
+        <ul className="flex flex-wrap gap-2">
+          {facts.map((fact) => (
+            <li
+              key={fact}
+              className="rounded-full bg-[var(--neu-surface)] px-3 py-1 text-xs font-medium text-[var(--foreground)] [background-image:var(--neu-fill-raised)] shadow-[var(--neu-shadow-raised-sm)]"
             >
-              {url}
-            </a>
-          </MetaRow>
-        ))}
-      </MetaList>
+              {fact}
+            </li>
+          ))}
+        </ul>
+      )}
 
+      {/* Contact channels. */}
+      <div className="grid gap-3 sm:grid-cols-2">
+        <ContactTile icon={Mail01Icon} label="Email" value={info.email} />
+        <ContactTile icon={CallIcon} label="Phone" value={info.phone} />
+      </div>
+
+      {/* The two addresses, letter-form. */}
+      <div className="grid gap-3 sm:grid-cols-2">
+        <AddressTile label="Present address" value={info.presentAddress} />
+        <AddressTile label="Permanent address" value={info.permanentAddress} />
+      </div>
+
+      {/* Profile links — only when the resume carries any. */}
+      {links.length > 0 && (
+        <div className="grid gap-3 sm:grid-cols-2">
+          {links.map(([label, url]) => (
+            <LinkTile key={label} label={label} url={url} />
+          ))}
+        </div>
+      )}
       {links.length === 0 && (
         <p className="text-[13px] leading-relaxed text-[var(--muted-foreground)]">
           No profile links on this resume yet — add LinkedIn, GitHub or a portfolio in Edit.

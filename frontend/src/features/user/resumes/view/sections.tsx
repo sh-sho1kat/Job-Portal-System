@@ -34,6 +34,7 @@ import { PersonalInfoSection } from './personal-info'
  * land and graduate to their own files when they do.
  */
 
+// eslint-disable-next-line react-refresh/only-export-components -- the section registry is data, not a component; moving it would fragment the file set
 export const SECTIONS = [
   { id: 'personal-info', label: 'Personal Info', icon: UserIcon },
   { id: 'summary', label: 'Summary', icon: StickyNote01Icon },
