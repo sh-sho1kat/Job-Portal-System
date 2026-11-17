@@ -44,6 +44,17 @@ const URL_FIELDS: Array<{ key: UrlKey; label: string }> = [
   { key: 'websiteUrl', label: 'Website' },
 ]
 
+/** Marks the fields `PersonalInfoRequest` requires (@NotBlank / @NotNull).
+ *  The star is for the eye only — the inputs' `required` attribute carries
+ *  the semantics. */
+function RequiredStar() {
+  return (
+    <span aria-hidden="true" className="text-[var(--neu-error-text)]">
+      {' '}*
+    </span>
+  )
+}
+
 function NotProvided() {
   return <em className="text-[var(--muted-foreground)]">Not provided</em>
 }
@@ -412,7 +423,7 @@ function PersonalInfoForm({ resume, onDone }: { resume: ResumeItem; onDone: () =
     <form onSubmit={handleSubmit} noValidate className="flex min-w-0 flex-col gap-5">
       <div className="grid gap-4 sm:grid-cols-3">
         <Field data-invalid={invalid('firstName') ? true : undefined}>
-          <FieldLabel htmlFor="pi-first-name">First name</FieldLabel>
+          <FieldLabel htmlFor="pi-first-name">First name<RequiredStar /></FieldLabel>
           <Input
             id="pi-first-name"
             value={draft.firstName}
@@ -437,7 +448,7 @@ function PersonalInfoForm({ resume, onDone }: { resume: ResumeItem; onDone: () =
           />
         </Field>
         <Field data-invalid={invalid('lastName') ? true : undefined}>
-          <FieldLabel htmlFor="pi-last-name">Last name</FieldLabel>
+          <FieldLabel htmlFor="pi-last-name">Last name<RequiredStar /></FieldLabel>
           <Input
             id="pi-last-name"
             value={draft.lastName}
@@ -467,7 +478,7 @@ function PersonalInfoForm({ resume, onDone }: { resume: ResumeItem; onDone: () =
 
       <div className="grid gap-4 sm:grid-cols-2">
         <Field data-invalid={invalid('email') ? true : undefined}>
-          <FieldLabel htmlFor="pi-email">Email</FieldLabel>
+          <FieldLabel htmlFor="pi-email">Email<RequiredStar /></FieldLabel>
           <Input
             id="pi-email"
             type="email"
@@ -484,7 +495,7 @@ function PersonalInfoForm({ resume, onDone }: { resume: ResumeItem; onDone: () =
           )}
         </Field>
         <Field data-invalid={invalid('phone') ? true : undefined}>
-          <FieldLabel htmlFor="pi-phone">Phone</FieldLabel>
+          <FieldLabel htmlFor="pi-phone">Phone<RequiredStar /></FieldLabel>
           <Input
             id="pi-phone"
             type="tel"
@@ -566,7 +577,7 @@ function PersonalInfoForm({ resume, onDone }: { resume: ResumeItem; onDone: () =
       </div>
 
       <div className="flex flex-col gap-4">
-        <p className="text-[13px] font-semibold text-[var(--foreground)]">Present address</p>
+        <p className="text-[13px] font-semibold text-[var(--foreground)]">Present address<RequiredStar /></p>
         <AddressFields
           idPrefix="pi-present"
           value={draft.presentAddress}
@@ -574,7 +585,7 @@ function PersonalInfoForm({ resume, onDone }: { resume: ResumeItem; onDone: () =
         />
       </div>
       <div className="flex flex-col gap-4">
-        <p className="text-[13px] font-semibold text-[var(--foreground)]">Permanent address</p>
+        <p className="text-[13px] font-semibold text-[var(--foreground)]">Permanent address<RequiredStar /></p>
         <label htmlFor="pi-same-address" className="flex cursor-pointer items-center gap-2 text-sm text-[var(--foreground)]">
           <Checkbox
             id="pi-same-address"
