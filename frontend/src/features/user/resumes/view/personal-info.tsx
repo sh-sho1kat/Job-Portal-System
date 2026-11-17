@@ -133,7 +133,7 @@ function ContactTile({
 }
 
 /** One address, field by field — street, city, state, country, zip each on
- *  its own labeled row. */
+ *  its own labeled row, under a prominent tile title. */
 function AddressTile({ label, value }: { label: string; value: ResumeAddress }) {
   const rows: Array<[field: string, v: string]> = [
     ['Street address', value.address],
@@ -145,7 +145,7 @@ function AddressTile({ label, value }: { label: string; value: ResumeAddress }) 
   const filled = rows.filter(([, v]) => Boolean(v))
   return (
     <InfoTile className="min-w-0">
-      <TileLabel>{label}</TileLabel>
+      <p className="text-[13px] text-[var(--foreground)]">{label}</p>
       {filled.length > 0 ? (
         <dl className="mt-2 flex flex-col gap-1">
           {filled.map(([field, v]) => (
@@ -164,14 +164,8 @@ function AddressTile({ label, value }: { label: string; value: ResumeAddress }) 
   )
 }
 
-/** Profile link tile — site name + hostname; the whole tile is the link. */
+/** Profile link tile — site name; the whole tile is the link. */
 function LinkTile({ label, url }: { label: string; url: string }) {
-  let host = url
-  try {
-    host = new URL(url).hostname.replace(/^www\./, '')
-  } catch {
-    // keep the raw string when the URL doesn't parse
-  }
   return (
     <a
       href={url}
@@ -179,10 +173,7 @@ function LinkTile({ label, url }: { label: string; url: string }) {
       rel="noreferrer"
       className="group flex min-w-0 items-center justify-between gap-3 rounded-[var(--neu-radius-control)] bg-[var(--neu-surface)] px-4 py-3.5 [background-image:var(--neu-fill-inset)] shadow-[var(--neu-shadow-inset-sm)] transition-shadow duration-[var(--neu-duration)] hover:shadow-[var(--neu-shadow-hover)] motion-reduce:transition-none"
     >
-      <span className="min-w-0">
-        <span className="block text-[13px] font-semibold text-[var(--foreground)]">{label}</span>
-        <span className="block truncate text-xs text-[var(--muted-foreground)]">{host}</span>
-      </span>
+      <span className="truncate text-[13px] font-semibold text-[var(--foreground)]">{label}</span>
       <HugeiconsIcon
         icon={ArrowUpRight02Icon}
         strokeWidth={1.8}
@@ -260,7 +251,7 @@ export function PersonalInfoSection({ resume }: { resume: ResumeItem }) {
         </div>
       </RecordGroup>
 
-      {/* The two addresses, letter-form. */}
+      {/* The two addresses, side by side. */}
       <RecordGroup label="Address">
         <div className="grid gap-3 sm:grid-cols-2">
           <AddressTile label="Present address" value={info.presentAddress} />
