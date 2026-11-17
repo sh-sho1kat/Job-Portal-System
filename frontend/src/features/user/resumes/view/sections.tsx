@@ -20,6 +20,7 @@ import {
   WorkHistoryIcon,
 } from '@hugeicons/core-free-icons'
 import { PersonalInfoSection } from './personal-info'
+import { SummarySection } from './summary'
 
 /**
  * The view sidebar's sections — the registry, the shared row primitives,
@@ -30,8 +31,9 @@ import { PersonalInfoSection } from './personal-info'
  * LanguageController) plus the `UpdateResumeRequest` fields under
  * Settings; the order here is the resume document's reading order.
  * Personal Info is editable and lives in its own file
- * (`personal-info.tsx`); the rest stay read-only until their endpoints
- * land and graduate to their own files when they do.
+ * (`personal-info.tsx`), as is Summary (`summary.tsx`); the rest stay
+ * read-only until their endpoints land and graduate to their own files
+ * when they do.
  */
 
 // eslint-disable-next-line react-refresh/only-export-components -- the section registry is data, not a component; moving it would fragment the file set
@@ -76,18 +78,6 @@ function SectionEmpty({ message }: { message: string }) {
         Add entries once section editing arrives.
       </p>
     </div>
-  )
-}
-
-/** Professional summary — `ResumeResponse.summary` (`UpdateSummaryRequest`
- *  on the backend). */
-function SummarySection({ resume }: { resume: ResumeItem }) {
-  return resume.summary ? (
-    <p className="max-w-prose text-sm leading-relaxed text-[var(--foreground)]">
-      {resume.summary}
-    </p>
-  ) : (
-    <SectionEmpty message="No summary written yet." />
   )
 }
 

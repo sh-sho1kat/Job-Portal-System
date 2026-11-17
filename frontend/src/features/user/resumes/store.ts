@@ -279,6 +279,17 @@ export function updatePersonalInfo(id: string, info: ResumePersonalInfo) {
   emit()
 }
 
+/** `PATCH /api/resumes/{id}/summary` with `UpdateSummaryRequest{summary}` —
+ *  replaces the summary (the backend clears it with a null); the empty
+ *  string stands in for that here. Seam: swap the local update for the
+ *  gateway call (it returns `ResumeResponse`). */
+export function updateSummary(id: string, summary: string) {
+  resumes = resumes.map((item) =>
+    item.id === id ? { ...item, summary, updatedAt: new Date().toISOString() } : item,
+  )
+  emit()
+}
+
 /** `POST /api/resumes/create` with `ResumeRequest{title, template,
  *  visibility, isDefault}` — a fresh resume starts empty (completion 0). */
 export function createResume(input: {
