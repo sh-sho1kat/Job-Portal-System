@@ -54,7 +54,7 @@ function toPreviewShape(item: ResumeItem) {
       period: formatDateRange(entry.startDate, entry.endDate, entry.isCurrentJob),
       detail: entry.description,
     })),
-    skills: item.skills,
+    skills: item.skills.map((skill) => skill.skillName),
   }
 }
 

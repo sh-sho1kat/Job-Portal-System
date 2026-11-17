@@ -4,6 +4,8 @@ import { ACCOUNT } from '@/features/user/profile/data'
 
 import type {
   ResumeEducationEntry,
+  ResumeProjectEntry,
+  ResumeSkillEntry,
   ResumeItem,
   ResumePersonalInfo,
   ResumeTemplateType,
@@ -98,7 +100,14 @@ let resumes: ResumeItem[] = [  {
         displayOrder: 1,
       }),
     ],
-    skills: ['JavaScript', 'React', 'TypeScript', 'Playwright', 'CI/CD', 'Git'],
+    skills: [
+      skillEntry('sk-js', { skillName: 'JavaScript', proficiencyLevel: 'EXPERT', yearsOfExperience: 5, displayOrder: 0 }),
+      skillEntry('sk-react', { skillName: 'React', proficiencyLevel: 'EXPERT', yearsOfExperience: 5, displayOrder: 1 }),
+      skillEntry('sk-ts', { skillName: 'TypeScript', proficiencyLevel: 'ADVANCED', yearsOfExperience: 4, displayOrder: 2 }),
+      skillEntry('sk-playwright', { skillName: 'Playwright', proficiencyLevel: 'ADVANCED', yearsOfExperience: 3, displayOrder: 3 }),
+      skillEntry('sk-cicd', { skillName: 'CI/CD', proficiencyLevel: 'INTERMEDIATE', yearsOfExperience: 3, displayOrder: 4 }),
+      skillEntry('sk-git', { skillName: 'Git', proficiencyLevel: 'ADVANCED', yearsOfExperience: 6, displayOrder: 5 }),
+    ],
     education: [
       educationEntry('edu-iut-bsc', {
         institutionName: 'Islamic University of Technology',
@@ -121,20 +130,27 @@ let resumes: ResumeItem[] = [  {
       }),
     ],
     projects: [
-      {
+      projectEntry('prj-checkout', {
         title: 'Checkout rebuild — Lumen Retail',
         description:
           'Led the React rewrite of the checkout flow around a shared design-system component library.',
         technologies: ['React', 'TypeScript', 'Storybook'],
-        projectUrl: null,
-      },
-      {
+        startDate: '2024-03-01',
+        endDate: '2024-09-30',
+        isOngoing: false,
+        displayOrder: 0,
+      }),
+      projectEntry('prj-neu-kit', {
         title: 'Neumorphic UI kit',
         description:
           'Open-source shadcn component kit that later became the design system used across this portal.',
         technologies: ['Tailwind CSS', 'Base UI'],
-        projectUrl: 'github.com/sahil-hossain/neu-kit',
-      },
+        projectUrl: 'https://github.com/sahil-hossain/neu-kit',
+        startDate: '2023-06-01',
+        endDate: null,
+        isOngoing: true,
+        displayOrder: 1,
+      }),
     ],
     certifications: [
       {
@@ -205,7 +221,13 @@ let resumes: ResumeItem[] = [  {
         displayOrder: 1,
       }),
     ],
-    skills: ['Canva', 'Zeplin', 'Communication', 'Problem Solving', 'SEO'],
+    skills: [
+      skillEntry('sk-canva', { skillName: 'Canva', proficiencyLevel: 'ADVANCED', yearsOfExperience: 3, displayOrder: 0 }),
+      skillEntry('sk-zeplin', { skillName: 'Zeplin', proficiencyLevel: 'INTERMEDIATE', yearsOfExperience: 2, displayOrder: 1 }),
+      skillEntry('sk-comm', { skillName: 'Communication', proficiencyLevel: 'ADVANCED', yearsOfExperience: 4, displayOrder: 2 }),
+      skillEntry('sk-solving', { skillName: 'Problem Solving', proficiencyLevel: 'ADVANCED', yearsOfExperience: 4, displayOrder: 3 }),
+      skillEntry('sk-seo', { skillName: 'SEO', proficiencyLevel: 'BEGINNER', yearsOfExperience: 1, displayOrder: 4 }),
+    ],
     education: [
       educationEntry('edu-du-bba', {
         institutionName: 'University of Dhaka',
@@ -253,7 +275,12 @@ let resumes: ResumeItem[] = [  {
         displayOrder: 0,
       }),
     ],
-    skills: ['SQL', 'Excel', 'Power BI', 'Python'],
+    skills: [
+      skillEntry('sk-sql', { skillName: 'SQL', proficiencyLevel: 'ADVANCED', yearsOfExperience: 3, displayOrder: 0 }),
+      skillEntry('sk-excel', { skillName: 'Excel', proficiencyLevel: 'EXPERT', yearsOfExperience: 4, displayOrder: 1 }),
+      skillEntry('sk-pbi', { skillName: 'Power BI', proficiencyLevel: 'INTERMEDIATE', yearsOfExperience: 2, displayOrder: 2 }),
+      skillEntry('sk-python', { skillName: 'Python', proficiencyLevel: 'INTERMEDIATE', yearsOfExperience: 2, displayOrder: 3 }),
+    ],
     education: [
       educationEntry('edu-iut-bsc-data', {
         institutionName: 'Islamic University of Technology',
@@ -296,12 +323,48 @@ function educationEntry(
   return { id, grade: '', description: '', ...fields }
 }
 
+/** A skill entry as the backend would return it. */
+function skillEntry(
+  id: string,
+  fields: Pick<ResumeSkillEntry, 'skillName' | 'proficiencyLevel'> &
+    Partial<Pick<ResumeSkillEntry, 'yearsOfExperience' | 'displayOrder'>>,
+): ResumeSkillEntry {
+  return { id, yearsOfExperience: null, displayOrder: 0, ...fields }
+}
+
+/** A project entry as the backend would return it — optional strings
+ *  default to '' (the backend's null). */
+function projectEntry(
+  id: string,
+  fields: Pick<ResumeProjectEntry, 'title'> &
+    Partial<Omit<ResumeProjectEntry, 'id' | 'title'>>,
+): ResumeProjectEntry {
+  return {
+    id,
+    description: '',
+    technologies: [],
+    projectUrl: '',
+    sourceCodeUrl: '',
+    startDate: '',
+    endDate: null,
+    isOngoing: false,
+    displayOrder: 0,
+    ...fields,
+  }
+}
+
 /** `WorkExperienceRequest` minus the server-side identity — what the
  *  create/update endpoints accept. */
 export type WorkExperienceInput = Omit<ResumeWorkEntry, 'id'>
 
 /** `EducationRequest` minus the server-side identity. */
 export type EducationInput = Omit<ResumeEducationEntry, 'id'>
+
+/** `ResumeSkillRequest` minus the server-side identity. */
+export type SkillInput = Omit<ResumeSkillEntry, 'id'>
+
+/** `ProjectRequest` minus the server-side identity. */
+export type ProjectInput = Omit<ResumeProjectEntry, 'id'>
 
 const listeners = new Set<() => void>()
 
@@ -475,6 +538,128 @@ export function removeEducation(resumeId: string, educationId: string) {
           ...item,
           education: item.education
             .filter((entry) => entry.id !== educationId)
+            .map((entry, index) => ({ ...entry, displayOrder: index })),
+          updatedAt: new Date().toISOString(),
+        }
+      : item,
+  )
+  emit()
+}
+
+/** `POST /api/resumes/{id}/skills` — the new skill leads (displayOrder 0,
+ *  later entries pushed down). Seam: swap for the gateway call (it
+ *  returns the created `ResumeSkillResponse`). */
+export function addSkill(resumeId: string, input: SkillInput): ResumeSkillEntry {
+  const created: ResumeSkillEntry = {
+    ...input,
+    id: `sk-${Date.now().toString(36)}`,
+  }
+  resumes = resumes.map((item) =>
+    item.id === resumeId
+      ? {
+          ...item,
+          skills: [
+            created,
+            ...item.skills.map((entry) => ({ ...entry, displayOrder: entry.displayOrder + 1 })),
+          ],
+          updatedAt: new Date().toISOString(),
+        }
+      : item,
+  )
+  emit()
+  return created
+}
+
+/** `PUT /api/resumes/{id}/skills/{skillId}` — the full record is sent and
+ *  validated server-side. Seam: swap for the gateway call (it returns the
+ *  updated `ResumeSkillResponse`). */
+export function updateSkill(resumeId: string, skillId: string, input: SkillInput) {
+  resumes = resumes.map((item) =>
+    item.id === resumeId
+      ? {
+          ...item,
+          skills: item.skills.map((entry) =>
+            entry.id === skillId ? { ...input, id: skillId } : entry,
+          ),
+          updatedAt: new Date().toISOString(),
+        }
+      : item,
+  )
+  emit()
+}
+
+/** `DELETE /api/resumes/{id}/skills/{skillId}` — the remaining entries
+ *  close the displayOrder gap. */
+export function removeSkill(resumeId: string, skillId: string) {
+  resumes = resumes.map((item) =>
+    item.id === resumeId
+      ? {
+          ...item,
+          skills: item.skills
+            .filter((entry) => entry.id !== skillId)
+            .map((entry, index) => ({ ...entry, displayOrder: index })),
+          updatedAt: new Date().toISOString(),
+        }
+      : item,
+  )
+  emit()
+}
+
+/** `POST /api/resumes/{id}/projects` — the new project leads (displayOrder
+ *  0, later entries pushed down). Seam: swap for the gateway call (it
+ *  returns the created `ProjectResponse`). */
+export function addProject(resumeId: string, input: ProjectInput): ResumeProjectEntry {
+  const created: ResumeProjectEntry = {
+    ...input,
+    // The backend derives `isOngoing` from an omitted end date.
+    isOngoing: input.endDate === null,
+    id: `prj-${Date.now().toString(36)}`,
+  }
+  resumes = resumes.map((item) =>
+    item.id === resumeId
+      ? {
+          ...item,
+          projects: [
+            created,
+            ...item.projects.map((entry) => ({ ...entry, displayOrder: entry.displayOrder + 1 })),
+          ],
+          updatedAt: new Date().toISOString(),
+        }
+      : item,
+  )
+  emit()
+  return created
+}
+
+/** `PUT /api/resumes/{id}/projects/{projectId}` — the full record is sent
+ *  and validated server-side. Seam: swap for the gateway call (it returns
+ *  the updated `ProjectResponse`). */
+export function updateProject(resumeId: string, projectId: string, input: ProjectInput) {
+  resumes = resumes.map((item) =>
+    item.id === resumeId
+      ? {
+          ...item,
+          projects: item.projects.map((entry) =>
+            entry.id === projectId
+              ? { ...input, isOngoing: input.endDate === null, id: projectId }
+              : entry,
+          ),
+          updatedAt: new Date().toISOString(),
+        }
+      : item,
+  )
+  emit()
+}
+
+/** `DELETE /api/resumes/{id}/projects/{projectId}` — the remaining
+ *  entries close the displayOrder gap. */
+export function removeProject(resumeId: string, projectId: string) {
+  resumes = resumes.map((item) =>
+    item.id === resumeId
+      ? {
+          ...item,
+          projects: item.projects
+            .filter((entry) => entry.id !== projectId)
             .map((entry, index) => ({ ...entry, displayOrder: index })),
           updatedAt: new Date().toISOString(),
         }

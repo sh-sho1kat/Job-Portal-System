@@ -3,8 +3,6 @@ import type * as React from 'react'
 import type { ResumeItem } from '../data'
 import {
   LANGUAGE_PROFICIENCY_LABEL,
-  TEMPLATE_LABEL,
-  VISIBILITY_LABEL,
   formatResumeDate,
 } from '../data'
 import {
@@ -23,6 +21,9 @@ import { PersonalInfoSection } from './personal-info'
 import { SummarySection } from './summary'
 import { WorkExperienceSection } from './work-experience'
 import { EducationSection } from './education'
+import { SkillsSection } from './skills'
+import { ProjectsSection } from './projects'
+import { SettingsSection } from './settings-section'
 
 /**
  * The view sidebar's sections — the registry, the shared row primitives,
@@ -80,62 +81,6 @@ function SectionEmpty({ message }: { message: string }) {
         Add entries once section editing arrives.
       </p>
     </div>
-  )
-}
-
-/** Skills — the resume service's `ResumeSkillResponse` list. */
-function SkillsSection({ resume }: { resume: ResumeItem }) {
-  return resume.skills.length > 0 ? (
-    <ul className="flex min-w-0 flex-wrap gap-2">
-      {resume.skills.map((skill) => (
-        <li
-          key={skill}
-          className="rounded-full bg-[var(--neu-surface)] px-3 py-1 text-[13px] font-medium text-[var(--foreground)] [background-image:var(--neu-fill-inset)] shadow-[var(--neu-shadow-inset-sm)]"
-        >
-          {skill}
-        </li>
-      ))}
-    </ul>
-  ) : (
-    <SectionEmpty message="No skills listed yet." />
-  )
-}
-
-/** Projects — the resume service's `ProjectResponse` list. */
-function ProjectsSection({ resume }: { resume: ResumeItem }) {
-  return resume.projects.length > 0 ? (
-    <ol className="flex min-w-0 flex-col gap-3">
-      {resume.projects.map((entry, index) => (
-        <li
-          key={`${entry.title}-${index}`}
-          className="rounded-[var(--neu-radius-control)] bg-[var(--neu-surface)] px-4 py-3.5 [background-image:var(--neu-fill-inset)] shadow-[var(--neu-shadow-inset-sm)]"
-        >
-          <p className="text-sm font-semibold text-[var(--foreground)]">{entry.title}</p>
-          <p className="mt-1 text-[13px] leading-relaxed text-[var(--muted-foreground)]">
-            {entry.description}
-          </p>
-          {entry.technologies.length > 0 && (
-            <ul className="mt-2 flex min-w-0 flex-wrap gap-1.5">
-              {entry.technologies.map((tech) => (
-                <li
-                  key={tech}
-                  className="rounded-full bg-[var(--neu-surface)] px-2.5 py-0.5 text-xs font-medium text-[var(--muted-foreground)] [background-image:var(--neu-fill-raised)] shadow-[var(--neu-shadow-raised-sm)]"
-                >
-                  {tech}
-                </li>
-              ))}
-            </ul>
-          )}
-          {entry.projectUrl && (
-            <p className="mt-2 truncate text-xs text-[var(--neu-accent-ink)]">
-              {entry.projectUrl}
-            </p>
-          )}
-        </li>
-      ))}
-    </ol>
-  ) : (
-    <SectionEmpty message="No projects added yet." />
   )
 }
 
@@ -204,28 +149,6 @@ function LanguagesSection({ resume }: { resume: ResumeItem }) {
     </ol>
   ) : (
     <SectionEmpty message="No languages added yet." />
-  )
-}
-
-/** Settings — the resume shell's own fields (`UpdateResumeRequest`) plus
- *  the backend's timestamps; editing happens through the page's Edit
- *  dialog. */
-function SettingsSection({ resume }: { resume: ResumeItem }) {
-  return (
-    <div className="flex min-w-0 flex-col gap-3">
-      <MetaList>
-        <MetaRow label="Template">{TEMPLATE_LABEL[resume.template]}</MetaRow>
-        <MetaRow label="Visibility">{VISIBILITY_LABEL[resume.visibility]}</MetaRow>
-        <MetaRow label="Default">{resume.isDefault ? 'Yes' : 'No'}</MetaRow>
-        <MetaRow label="Completion">{resume.completionScore}%</MetaRow>
-        <MetaRow label="Created">{formatResumeDate(resume.createdAt)}</MetaRow>
-        <MetaRow label="Last updated">{formatResumeDate(resume.updatedAt)}</MetaRow>
-      </MetaList>
-      <p className="text-[13px] leading-relaxed text-[var(--muted-foreground)]">
-        Title, template and visibility are edited from the Edit dialog — per-section editing
-        arrives with the backend endpoints.
-      </p>
-    </div>
   )
 }
 

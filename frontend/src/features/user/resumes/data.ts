@@ -55,12 +55,65 @@ export interface ResumeEducationEntry {
 /** `@Size(max = 5000)` on `EducationRequest.description`. */
 export const EDUCATION_DESCRIPTION_MAX = 5000
 
+/**
+ * `ResumeSkillRequest` / `ResumeSkillResponse` — one entry under
+ * `/api/resumes/{resumeId}/skills`. `yearsOfExperience` is optional
+ * (0–50 when present).
+ */
+export type ResumeProficiencyLevel = 'BEGINNER' | 'INTERMEDIATE' | 'ADVANCED' | 'EXPERT'
+
+export const PROFICIENCY_LABEL: Record<ResumeProficiencyLevel, string> = {
+  BEGINNER: 'Beginner',
+  INTERMEDIATE: 'Intermediate',
+  ADVANCED: 'Advanced',
+  EXPERT: 'Expert',
+}
+
+export interface ResumeSkillEntry {
+  id: string
+  skillName: string
+  proficiencyLevel: ResumeProficiencyLevel
+  yearsOfExperience: number | null
+  displayOrder: number
+}
+
+/** `@Size(max = 100)` on `ResumeSkillRequest.skillName`. */
+export const SKILL_NAME_MAX = 100
+
+/** `@Min(0)` / `@Max(50)` on `ResumeSkillRequest.yearsOfExperience`. */
+export const SKILL_YEARS_MAX = 50
+
+/**
+ * `ProjectRequest` / `ProjectResponse` — one entry under
+ * `/api/resumes/{resumeId}/projects`. The backend derives `isOngoing`:
+ * an omitted `endDate` means the project is ongoing.
+ */
 export interface ResumeProjectEntry {
+  id: string
   title: string
   description: string
   technologies: string[]
-  projectUrl: string | null
+  projectUrl: string
+  sourceCodeUrl: string
+  startDate: string
+  endDate: string | null
+  isOngoing: boolean
+  displayOrder: number
 }
+
+/** `@Size(max = 10000)` on `ProjectRequest.description`. */
+export const PROJECT_DESCRIPTION_MAX = 10000
+
+/** `@Size(max = 30)` / `@Size(max = 100)` on `ProjectRequest.technologies`. */
+export const PROJECT_TECHNOLOGIES_MAX = 30
+export const PROJECT_TECH_MAX = 100
+
+/** `@Size(max = 500)` + `@Pattern(RegexPatterns.HTTP_URL)` on both URLs. */
+export const PROJECT_URL_MAX = 500
+export const HTTP_URL_PATTERN = /^https?:\/\/\S+$/
+
+/** `@Size(max = 150)` on `UpdateResumeRequest.title`. */
+export const RESUME_TITLE_MAX = 150
 
 export interface ResumeCertificationEntry {
   name: string
@@ -144,7 +197,7 @@ export interface ResumeItem {
   /** `UpdateSummaryRequest` — at most 5000 characters; null clears it. */
   summary: string
   work: ResumeWorkEntry[]
-  skills: string[]
+  skills: ResumeSkillEntry[]
   education: ResumeEducationEntry[]
   projects: ResumeProjectEntry[]
   certifications: ResumeCertificationEntry[]
