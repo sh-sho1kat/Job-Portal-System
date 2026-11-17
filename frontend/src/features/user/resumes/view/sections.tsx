@@ -22,6 +22,7 @@ import {
 import { PersonalInfoSection } from './personal-info'
 import { SummarySection } from './summary'
 import { WorkExperienceSection } from './work-experience'
+import { EducationSection } from './education'
 
 /**
  * The view sidebar's sections — the registry, the shared row primitives,
@@ -79,35 +80,6 @@ function SectionEmpty({ message }: { message: string }) {
         Add entries once section editing arrives.
       </p>
     </div>
-  )
-}
-
-/** Education — the resume service's `EducationResponse` list. */
-function EducationSection({ resume }: { resume: ResumeItem }) {
-  return resume.education.length > 0 ? (
-    <ol className="flex min-w-0 flex-col gap-3">
-      {resume.education.map((entry, index) => (
-        <li
-          key={`${entry.institutionName}-${index}`}
-          className="rounded-[var(--neu-radius-control)] bg-[var(--neu-surface)] px-4 py-3.5 [background-image:var(--neu-fill-inset)] shadow-[var(--neu-shadow-inset-sm)]"
-        >
-          <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5">
-            <p className="text-sm font-semibold text-[var(--foreground)]">
-              {entry.degree} · {entry.fieldOfStudy}
-            </p>
-            <span className="text-xs tabular-nums text-[var(--muted-foreground)]">
-              {entry.period}
-            </span>
-          </div>
-          <p className="mt-1 text-[13px] text-[var(--muted-foreground)]">
-            {entry.institutionName}
-            {entry.grade ? ` · ${entry.grade}` : ''}
-          </p>
-        </li>
-      ))}
-    </ol>
-  ) : (
-    <SectionEmpty message="No education added yet." />
   )
 }
 

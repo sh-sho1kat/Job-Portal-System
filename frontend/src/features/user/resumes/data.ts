@@ -33,14 +33,27 @@ export const VISIBILITY_LABEL: Record<ResumeVisibility, string> = {
  * (`Education`, `Project`, `Certification`, `Award`, `Language`), so the
  * view sidebar can render each section exactly as the backend stores it.
  */
+/**
+ * `EducationRequest` / `EducationResponse` — one entry under
+ * `/api/resumes/{resumeId}/educations`. Optional strings are '' where the
+ * backend allows null; `endDate` is null while `isCurrentlyStudying` is
+ * true (the backend requires it otherwise). Dates are ISO `YYYY-MM-DD`.
+ */
 export interface ResumeEducationEntry {
+  id: string
   institutionName: string
   degree: string
   fieldOfStudy: string
-  grade: string | null
-  period: string
+  grade: string
+  startDate: string
+  endDate: string | null
   isCurrentlyStudying: boolean
+  description: string
+  displayOrder: number
 }
+
+/** `@Size(max = 5000)` on `EducationRequest.description`. */
+export const EDUCATION_DESCRIPTION_MAX = 5000
 
 export interface ResumeProjectEntry {
   title: string
@@ -197,7 +210,7 @@ export const WORK_TECHNOLOGIES_MAX = 30
 export const WORK_TECHNOLOGY_MAX = 100
 
 /** "Jun 2022 – Present" / "Jun 2020 – May 2022" — UTC-pinned month names. */
-export function formatWorkPeriod(
+export function formatDateRange(
   startDate: string,
   endDate: string | null,
   isCurrentJob: boolean,
@@ -212,7 +225,7 @@ export function formatWorkPeriod(
 }
 
 /** "3 yrs 2 mo" span — whole months between start and end (or today). */
-export function workDuration(startDate: string, endDate: string | null, isCurrentJob: boolean): string {
+export function rangeDuration(startDate: string, endDate: string | null, isCurrentJob: boolean): string {
   const start = new Date(`${startDate}T00:00:00Z`)
   const end = isCurrentJob || !endDate ? new Date() : new Date(`${endDate}T00:00:00Z`)
   let months = (end.getUTCFullYear() - start.getUTCFullYear()) * 12 + (end.getUTCMonth() - start.getUTCMonth())
@@ -225,12 +238,12 @@ export function workDuration(startDate: string, endDate: string | null, isCurren
 }
 
 /** ISO date ↔ Date for the shared DatePicker (local calendar days). */
-export function workDateToDate(iso: string): Date | undefined {
+export function isoDateToDate(iso: string): Date | undefined {
   const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso)
   return match ? new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3])) : undefined
 }
 
-export function workDateFromDate(date: Date): string {
+export function dateToIsoDate(date: Date): string {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
 }
 

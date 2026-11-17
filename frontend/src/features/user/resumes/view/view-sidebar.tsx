@@ -19,7 +19,7 @@ import {
 import { ResumePreviewDialog } from '@/features/user/jobs/apply/steps/resume-step'
 import { cn } from '@/lib/utils'
 import type { ResumeItem } from '../data'
-import { formatResumeDate, formatWorkPeriod } from '../data'
+import { formatResumeDate, formatDateRange } from '../data'
 import { SectionContent, SECTIONS, type ResumeSectionId } from './sections'
 
 
@@ -51,7 +51,7 @@ function toPreviewShape(item: ResumeItem) {
     experience: item.work.map((entry) => ({
       role: entry.position,
       company: entry.companyName,
-      period: formatWorkPeriod(entry.startDate, entry.endDate, entry.isCurrentJob),
+      period: formatDateRange(entry.startDate, entry.endDate, entry.isCurrentJob),
       detail: entry.description,
     })),
     skills: item.skills,

@@ -3,6 +3,7 @@ import * as React from 'react'
 import { ACCOUNT } from '@/features/user/profile/data'
 
 import type {
+  ResumeEducationEntry,
   ResumeItem,
   ResumePersonalInfo,
   ResumeTemplateType,
@@ -99,22 +100,25 @@ let resumes: ResumeItem[] = [  {
     ],
     skills: ['JavaScript', 'React', 'TypeScript', 'Playwright', 'CI/CD', 'Git'],
     education: [
-      {
+      educationEntry('edu-iut-bsc', {
         institutionName: 'Islamic University of Technology',
         degree: 'B.Sc. Engineering',
         fieldOfStudy: 'Computer Science & Engineering',
-        grade: '3.71 CGPA',
-        period: '2016 – 2020',
+        grade: '3.71',
+        startDate: '2016-01-01',
+        endDate: '2020-12-31',
         isCurrentlyStudying: false,
-      },
-      {
+        displayOrder: 0,
+      }),
+      educationEntry('edu-rajuk-hsc', {
         institutionName: 'Rajuk Uttara Model College',
         degree: 'HSC',
         fieldOfStudy: 'Science',
-        grade: null,
-        period: '2014 – 2016',
+        startDate: '2014-01-01',
+        endDate: '2016-12-31',
         isCurrentlyStudying: false,
-      },
+        displayOrder: 1,
+      }),
     ],
     projects: [
       {
@@ -203,14 +207,15 @@ let resumes: ResumeItem[] = [  {
     ],
     skills: ['Canva', 'Zeplin', 'Communication', 'Problem Solving', 'SEO'],
     education: [
-      {
+      educationEntry('edu-du-bba', {
         institutionName: 'University of Dhaka',
         degree: 'BBA',
         fieldOfStudy: 'Marketing',
-        grade: null,
-        period: '2017 – 2021',
+        startDate: '2017-01-01',
+        endDate: '2021-12-31',
         isCurrentlyStudying: false,
-      },
+        displayOrder: 0,
+      }),
     ],
     projects: [],
     certifications: [],
@@ -250,14 +255,16 @@ let resumes: ResumeItem[] = [  {
     ],
     skills: ['SQL', 'Excel', 'Power BI', 'Python'],
     education: [
-      {
+      educationEntry('edu-iut-bsc-data', {
         institutionName: 'Islamic University of Technology',
         degree: 'B.Sc. Engineering',
         fieldOfStudy: 'Computer Science & Engineering',
-        grade: '3.58 CGPA',
-        period: '2020 – 2024',
+        grade: '3.58',
+        startDate: '2020-01-01',
+        endDate: '2024-12-31',
         isCurrentlyStudying: false,
-      },
+        displayOrder: 0,
+      }),
     ],
     projects: [],
     certifications: [],
@@ -279,9 +286,22 @@ function workEntry(
   return { id, address: '', state: '', companyLogoUrl: '', zipCode: '', ...fields }
 }
 
+/** An education entry as the backend would return it — optional strings
+ *  default to '' (the backend's null), ids and stamps filled in. */
+function educationEntry(
+  id: string,
+  fields: Omit<ResumeEducationEntry, 'id' | 'grade' | 'description'> &
+    Partial<Pick<ResumeEducationEntry, 'grade' | 'description'>>,
+): ResumeEducationEntry {
+  return { id, grade: '', description: '', ...fields }
+}
+
 /** `WorkExperienceRequest` minus the server-side identity — what the
  *  create/update endpoints accept. */
 export type WorkExperienceInput = Omit<ResumeWorkEntry, 'id'>
+
+/** `EducationRequest` minus the server-side identity. */
+export type EducationInput = Omit<ResumeEducationEntry, 'id'>
 
 const listeners = new Set<() => void>()
 
@@ -395,6 +415,66 @@ export function removeWorkExperience(resumeId: string, workId: string) {
           ...item,
           work: item.work
             .filter((entry) => entry.id !== workId)
+            .map((entry, index) => ({ ...entry, displayOrder: index })),
+          updatedAt: new Date().toISOString(),
+        }
+      : item,
+  )
+  emit()
+}
+
+
+/** `POST /api/resumes/{id}/educations` — the new entry leads (displayOrder
+ *  0, later entries pushed down). Seam: swap for the gateway call (it
+ *  returns the created `EducationResponse`). */
+export function addEducation(resumeId: string, input: EducationInput): ResumeEducationEntry {
+  const created: ResumeEducationEntry = {
+    ...input,
+    id: `edu-${Date.now().toString(36)}`,
+  }
+  resumes = resumes.map((item) =>
+    item.id === resumeId
+      ? {
+          ...item,
+          education: [
+            created,
+            ...item.education.map((entry) => ({ ...entry, displayOrder: entry.displayOrder + 1 })),
+          ],
+          updatedAt: new Date().toISOString(),
+        }
+      : item,
+  )
+  emit()
+  return created
+}
+
+/** `PUT /api/resumes/{id}/educations/{educationId}` — the full record is
+ *  sent and validated server-side. Seam: swap for the gateway call (it
+ *  returns the updated `EducationResponse`). */
+export function updateEducation(resumeId: string, educationId: string, input: EducationInput) {
+  resumes = resumes.map((item) =>
+    item.id === resumeId
+      ? {
+          ...item,
+          education: item.education.map((entry) =>
+            entry.id === educationId ? { ...input, id: educationId } : entry,
+          ),
+          updatedAt: new Date().toISOString(),
+        }
+      : item,
+  )
+  emit()
+}
+
+/** `DELETE /api/resumes/{id}/educations/{educationId}` — the backend
+ *  soft-deletes; the remaining entries close the displayOrder gap. */
+export function removeEducation(resumeId: string, educationId: string) {
+  resumes = resumes.map((item) =>
+    item.id === resumeId
+      ? {
+          ...item,
+          education: item.education
+            .filter((entry) => entry.id !== educationId)
             .map((entry, index) => ({ ...entry, displayOrder: index })),
           updatedAt: new Date().toISOString(),
         }

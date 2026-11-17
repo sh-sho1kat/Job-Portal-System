@@ -20,10 +20,10 @@ import {
   WORK_DESCRIPTION_MAX,
   WORK_TECHNOLOGIES_MAX,
   WORK_TECHNOLOGY_MAX,
-  formatWorkPeriod,
-  workDateFromDate,
-  workDateToDate,
-  workDuration,
+  formatDateRange,
+  rangeDuration,
+  isoDateToDate,
+  dateToIsoDate,
 } from '../data'
 import {
   addWorkExperience,
@@ -205,8 +205,8 @@ function EntryForm({
           <DatePicker
             id="work-start"
             label="Start date"
-            value={workDateToDate(draft.startDate)}
-            onValueChange={(date) => set({ startDate: date ? workDateFromDate(date) : '' })}
+            value={isoDateToDate(draft.startDate)}
+            onValueChange={(date) => set({ startDate: date ? dateToIsoDate(date) : '' })}
             endMonth={new Date(new Date().getFullYear() + 1, 11)}
           />
         </Field>
@@ -215,8 +215,8 @@ function EntryForm({
           <DatePicker
             id="work-end"
             label="End date"
-            value={workDateToDate(draft.endDate ?? '')}
-            onValueChange={(date) => set({ endDate: date ? workDateFromDate(date) : null })}
+            value={isoDateToDate(draft.endDate ?? '')}
+            onValueChange={(date) => set({ endDate: date ? dateToIsoDate(date) : null })}
             disabled={draft.isCurrentJob}
             endMonth={new Date(new Date().getFullYear() + 1, 11)}
           />
@@ -373,9 +373,9 @@ function EntryCard({
             <span className="font-normal text-[var(--muted-foreground)]"> · {entry.companyName}</span>
           </p>
           <p className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs tabular-nums text-[var(--muted-foreground)]">
-            {formatWorkPeriod(entry.startDate, entry.endDate, entry.isCurrentJob)}
+            {formatDateRange(entry.startDate, entry.endDate, entry.isCurrentJob)}
             <span aria-hidden="true">·</span>
-            {workDuration(entry.startDate, entry.endDate, entry.isCurrentJob)}
+            {rangeDuration(entry.startDate, entry.endDate, entry.isCurrentJob)}
             {entry.employmentType && (
               <>
                 <span aria-hidden="true">·</span>
