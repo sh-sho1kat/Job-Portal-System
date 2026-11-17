@@ -207,7 +207,6 @@ function EntryForm({
             label="Start date"
             value={workDateToDate(draft.startDate)}
             onValueChange={(date) => set({ startDate: date ? workDateFromDate(date) : '' })}
-            startMonth={new Date(1970, 0)}
             endMonth={new Date(new Date().getFullYear() + 1, 11)}
           />
         </Field>
@@ -219,7 +218,6 @@ function EntryForm({
             value={workDateToDate(draft.endDate ?? '')}
             onValueChange={(date) => set({ endDate: date ? workDateFromDate(date) : null })}
             disabled={draft.isCurrentJob}
-            startMonth={new Date(1970, 0)}
             endMonth={new Date(new Date().getFullYear() + 1, 11)}
           />
         </Field>
