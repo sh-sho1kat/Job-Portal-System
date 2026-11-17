@@ -70,6 +70,32 @@ function TileLabel({ children }: { children: React.ReactNode }) {
   return <p className="text-[11px] font-medium text-[var(--muted-foreground)]">{children}</p>
 }
 
+/** One labeled group of the record — the section-by-section rhythm. */
+function RecordGroup({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <section className="flex min-w-0 flex-col gap-2.5">
+      <h4 className="text-[12px] font-semibold text-[var(--muted-foreground)]">{label}</h4>
+      {children}
+    </section>
+  )
+}
+
+/** Single-value tile for the personal details group. */
+function FactTile({ label, value }: { label: string; value: string }) {
+  return (
+    <InfoTile className="min-w-0">
+      <TileLabel>{label}</TileLabel>
+      {value ? (
+        <p className="mt-1.5 truncate text-[13px] font-medium text-[var(--foreground)]">{value}</p>
+      ) : (
+        <p className="mt-1.5 text-[13px]">
+          <NotProvided />
+        </p>
+      )}
+    </InfoTile>
+  )
+}
+
 /** Contact channel tile — icon plate + label + value. */
 function ContactTile({
   icon,
@@ -106,25 +132,29 @@ function ContactTile({
   )
 }
 
-/** One address, letter-form: street / city, state / country zip. */
+/** One address, field by field — street, city, state, country, zip each on
+ *  its own labeled row. */
 function AddressTile({ label, value }: { label: string; value: ResumeAddress }) {
-  const lines = [
-    value.address,
-    [value.city, value.state].filter(Boolean).join(', '),
-    [value.country, value.zipCode].filter(Boolean).join(' '),
-  ].filter(Boolean)
+  const rows: Array<[field: string, v: string]> = [
+    ['Street address', value.address],
+    ['City', value.city],
+    ['State', value.state],
+    ['Country', value.country],
+    ['Zip code', value.zipCode],
+  ]
+  const filled = rows.filter(([, v]) => Boolean(v))
   return (
     <InfoTile className="min-w-0">
       <TileLabel>{label}</TileLabel>
-      {lines.length > 0 ? (
-        <p className="mt-1.5 text-[13px] leading-relaxed text-[var(--foreground)]">
-          {lines.map((line, index) => (
-            <React.Fragment key={index}>
-              {index > 0 && <br />}
-              {line}
-            </React.Fragment>
+      {filled.length > 0 ? (
+        <dl className="mt-2 flex flex-col gap-1">
+          {filled.map(([field, v]) => (
+            <div key={field} className="flex min-w-0 gap-3">
+              <dt className="w-28 shrink-0 text-xs text-[var(--muted-foreground)]">{field}</dt>
+              <dd className="min-w-0 text-[13px] font-medium text-[var(--foreground)]">{v}</dd>
+            </div>
           ))}
-        </p>
+        </dl>
       ) : (
         <p className="mt-1.5 text-[13px]">
           <NotProvided />
@@ -185,22 +215,22 @@ export function PersonalInfoSection({ resume }: { resume: ResumeItem }) {
   }
 
   return (
-    <div className="flex min-w-0 flex-col gap-5">
-      {/* Identity header — the nameplate moment; the monogram plate echoes
-          the file plates used across the app. */}
-      <div className="flex items-start justify-between gap-4">
+    <div className="flex min-w-0 flex-col gap-6">
+      {/* Identity header — the highlighted nameplate: a raised panel (the only
+          raised block in the record) with the accent-filled monogram. */}
+      <div className="flex items-start justify-between gap-4 rounded-[var(--neu-radius-surface)] bg-[var(--neu-surface)] p-4 [background-image:var(--neu-fill-raised)] shadow-[var(--neu-shadow-raised)] sm:p-5">
         <div className="flex min-w-0 items-start gap-3.5">
           <span
             aria-hidden="true"
-            className="flex size-12 shrink-0 items-center justify-center rounded-[14px] bg-[var(--neu-surface)] text-[15px] font-bold tracking-tight text-[var(--neu-accent-ink)] [background-image:var(--neu-fill-inset)] shadow-[var(--neu-shadow-inset)]"
+            className="flex size-12 shrink-0 items-center justify-center rounded-[14px] bg-[var(--neu-surface)] text-[15px] font-bold tracking-tight text-[var(--neu-surface)] [background-image:var(--neu-fill-primary)] shadow-[var(--neu-shadow-plate)]"
           >
             {initialsOf(info)}
           </span>
           <div className="min-w-0 pt-0.5">
-            <h3 className="text-xl font-bold tracking-tight text-[var(--foreground)]">
+            <h3 className="text-[22px] font-bold tracking-tight text-[var(--foreground)]">
               {name || 'Unnamed resume'}
             </h3>
-            <p className="mt-0.5 text-[13px] text-[var(--muted-foreground)]">
+            <p className="mt-1 text-[13px] text-[var(--muted-foreground)]">
               {info.headline || 'No headline yet'}
             </p>
           </div>
@@ -211,45 +241,47 @@ export function PersonalInfoSection({ resume }: { resume: ResumeItem }) {
         </Button>
       </div>
 
-      {/* Quick facts — the three single-value facts, as quiet pills. */}
+      {/* Personal details — the three single-value facts, out of the header. */}
       {facts.length > 0 && (
-        <ul className="flex flex-wrap gap-2">
-          {facts.map((fact) => (
-            <li
-              key={fact}
-              className="rounded-full bg-[var(--neu-surface)] px-3 py-1 text-xs font-medium text-[var(--foreground)] [background-image:var(--neu-fill-raised)] shadow-[var(--neu-shadow-raised-sm)]"
-            >
-              {fact}
-            </li>
-          ))}
-        </ul>
+        <RecordGroup label="Personal details">
+          <div className="grid gap-3 sm:grid-cols-3">
+            <FactTile label="Gender" value={info.gender ? GENDER_LABEL[info.gender] : ''} />
+            <FactTile label="Nationality" value={info.nationality} />
+            <FactTile label="Date of birth" value={dateOfBirth ?? ''} />
+          </div>
+        </RecordGroup>
       )}
 
       {/* Contact channels. */}
-      <div className="grid gap-3 sm:grid-cols-2">
-        <ContactTile icon={Mail01Icon} label="Email" value={info.email} />
-        <ContactTile icon={CallIcon} label="Phone" value={info.phone} />
-      </div>
+      <RecordGroup label="Contact">
+        <div className="grid gap-3 sm:grid-cols-2">
+          <ContactTile icon={Mail01Icon} label="Email" value={info.email} />
+          <ContactTile icon={CallIcon} label="Phone" value={info.phone} />
+        </div>
+      </RecordGroup>
 
       {/* The two addresses, letter-form. */}
-      <div className="grid gap-3 sm:grid-cols-2">
-        <AddressTile label="Present address" value={info.presentAddress} />
-        <AddressTile label="Permanent address" value={info.permanentAddress} />
-      </div>
-
-      {/* Profile links — only when the resume carries any. */}
-      {links.length > 0 && (
+      <RecordGroup label="Address">
         <div className="grid gap-3 sm:grid-cols-2">
-          {links.map(([label, url]) => (
-            <LinkTile key={label} label={label} url={url} />
-          ))}
+          <AddressTile label="Present address" value={info.presentAddress} />
+          <AddressTile label="Permanent address" value={info.permanentAddress} />
         </div>
-      )}
-      {links.length === 0 && (
-        <p className="text-[13px] leading-relaxed text-[var(--muted-foreground)]">
-          No profile links on this resume yet — add LinkedIn, GitHub or a portfolio in Edit.
-        </p>
-      )}
+      </RecordGroup>
+
+      {/* Profile links — tiles when the resume carries any. */}
+      <RecordGroup label="Links">
+        {links.length > 0 ? (
+          <div className="grid gap-3 sm:grid-cols-2">
+            {links.map(([label, url]) => (
+              <LinkTile key={label} label={label} url={url} />
+            ))}
+          </div>
+        ) : (
+          <p className="text-[13px] leading-relaxed text-[var(--muted-foreground)]">
+            No profile links on this resume yet — add LinkedIn, GitHub or a portfolio in Edit.
+          </p>
+        )}
+      </RecordGroup>
     </div>
   )
 }
