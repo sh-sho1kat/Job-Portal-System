@@ -8,6 +8,7 @@ import {
 import * as React from 'react'
 
 import { Button } from '@/components/ui/button'
+import { Checkbox } from '@/components/ui/checkbox'
 import { DatePicker } from '@/components/ui/date-picker'
 import { Field, FieldDescription, FieldLabel } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
@@ -284,10 +285,14 @@ function AddressFields({
   idPrefix,
   value,
   onChange,
+  disabled,
 }: {
   idPrefix: string
   value: ResumeAddress
   onChange: (next: ResumeAddress) => void
+  /** Locked view while "same as present address" is ticked — the copied
+   *  values stay visible but can't be edited here. */
+  disabled?: boolean
 }) {
   const set = (key: keyof ResumeAddress, v: string) => onChange({ ...value, [key]: v })
   const text = (
@@ -309,6 +314,7 @@ function AddressFields({
         value={value[key]}
         maxLength={maxLength}
         placeholder={placeholder}
+        disabled={disabled}
         onChange={(event) => set(key, event.target.value)}
       />
     </Field>
@@ -336,8 +342,32 @@ function PersonalInfoForm({ resume, onDone }: { resume: ResumeItem; onDone: () =
   const [draft, setDraft] = React.useState<ResumePersonalInfo>(resume.personalInfo)
   const [errors, setErrors] = React.useState<Partial<Record<keyof ResumePersonalInfo, string>>>({})
 
+  /* "Same as present address" — starts ticked only when the saved record
+     already holds identical, non-empty addresses. While ticked, every
+     present-address keystroke mirrors into the permanent copy, and the
+     permanent fields render locked (disabled) showing what will be saved. */
+  const [sameAsPresent, setSameAsPresent] = React.useState(() => {
+    const present = JSON.stringify(resume.personalInfo.presentAddress)
+    const permanent = JSON.stringify(resume.personalInfo.permanentAddress)
+    return present === permanent && Object.values(resume.personalInfo.presentAddress).some(Boolean)
+  })
+
   const set = <K extends keyof ResumePersonalInfo>(key: K, value: ResumePersonalInfo[K]) =>
     setDraft((previous) => ({ ...previous, [key]: value }))
+
+  const setPresentAddress = (next: ResumeAddress) =>
+    setDraft((previous) => ({
+      ...previous,
+      presentAddress: next,
+      permanentAddress: sameAsPresent ? { ...next } : previous.permanentAddress,
+    }))
+
+  const setSameAddress = (checked: boolean) => {
+    setSameAsPresent(checked)
+    if (checked) {
+      setDraft((previous) => ({ ...previous, permanentAddress: { ...previous.presentAddress } }))
+    }
+  }
 
   const handleSubmit = (event: React.FormEvent) => {
     event.preventDefault()
@@ -541,14 +571,23 @@ function PersonalInfoForm({ resume, onDone }: { resume: ResumeItem; onDone: () =
         <AddressFields
           idPrefix="pi-present"
           value={draft.presentAddress}
-          onChange={(next) => set('presentAddress', next)}
+          onChange={setPresentAddress}
         />
       </div>
       <div className="flex flex-col gap-4">
         <p className="text-[13px] font-semibold text-[var(--foreground)]">Permanent address</p>
+        <label htmlFor="pi-same-address" className="flex cursor-pointer items-center gap-2 text-sm text-[var(--foreground)]">
+          <Checkbox
+            id="pi-same-address"
+            checked={sameAsPresent}
+            onCheckedChange={(checked) => setSameAddress(checked === true)}
+          />
+          Same as present address
+        </label>
         <AddressFields
           idPrefix="pi-permanent"
-          value={draft.permanentAddress}
+          value={sameAsPresent ? draft.presentAddress : draft.permanentAddress}
+          disabled={sameAsPresent}
           onChange={(next) => set('permanentAddress', next)}
         />
       </div>
