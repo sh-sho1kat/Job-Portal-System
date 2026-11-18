@@ -25,17 +25,14 @@ import { LanguagesSection } from './languages'
 import { SettingsSection } from './settings-section'
 
 /**
- * The view sidebar's sections — the registry, the shared row primitives,
- * and the read-only section pages in one file. The resume service keeps
- * each section as its own aggregate (PersonalInfoController,
- * WorkExperienceController, EducationController, ResumeSkillController,
- * ProjectController, CertificationController, AwardController,
- * LanguageController) plus the `UpdateResumeRequest` fields under
- * Settings; the order here is the resume document's reading order.
- * Personal Info is editable and lives in its own file
- * (`personal-info.tsx`), as is Summary (`summary.tsx`); the rest stay
- * read-only until their endpoints land and graduate to their own files
- * when they do.
+ * The view sidebar's registry, the shared row primitives, and the section
+ * dispatcher. The resume service keeps each section as its own aggregate
+ * (PersonalInfoController, WorkExperienceController, EducationController,
+ * ResumeSkillController, ProjectController, CertificationController,
+ * AwardController, LanguageController) plus the `UpdateResumeRequest`
+ * fields under Settings; the order here is the resume document's reading
+ * order. Every section page is editable and lives in its own file
+ * (`personal-info.tsx`, `summary.tsx`, `work-experience.tsx`, …).
  */
 
 // eslint-disable-next-line react-refresh/only-export-components -- the section registry is data, not a component; moving it would fragment the file set

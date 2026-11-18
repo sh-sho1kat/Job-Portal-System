@@ -18,7 +18,7 @@ export function generateSummaryDraft(resume: ResumeItem): string {
   const { personalInfo, work, skills, education } = resume
   const role = personalInfo.headline.trim() || work[0]?.position || ''
   const companies = work.map((entry) => entry.companyName).filter(Boolean)
-  const topSkills = skills.slice(0, 4)
+  const topSkills = skills.slice(0, 4).map((skill) => skill.skillName).filter(Boolean)
   const degree = education[0]
     ? education[0].fieldOfStudy
       ? `${education[0].degree} in ${education[0].fieldOfStudy}`
